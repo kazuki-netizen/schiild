@@ -1,7 +1,7 @@
 name: Demo checks
 on:
   push:
-    branches: [demo]
+    branches: [demo, 'fix/**']
   workflow_dispatch:
 jobs:
   demo:
