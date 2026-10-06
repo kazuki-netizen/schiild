@@ -26,7 +26,11 @@ export default function AtelierApp(){
  },[input,view]);
  if(!collection)return <div className="loading">{t('common.loading')}</div>;
  const active=collection.ateliers.find(a=>a.code===collection.selected);
- function change(state:State){setCollection(old=>old?{...old,ateliers:old.ateliers.map(a=>a.code===collection?.selected?{...a,state}:!a.online&&state.photo&&a.state.day===state.day&&a.activeFrom<=state.day&&!a.state.photo&&!a.state.ready?{...a,state:{...a.state,photo:state.photo,count:a.state.count+1}}:a)}:old);}
+ function change(state:State){
+  if(!collection)return;
+  const next={...collection,ateliers:collection.ateliers.map(a=>a.code===collection.selected?{...a,state}:!a.online&&state.photo&&a.state.day===state.day&&a.activeFrom<=state.day&&!a.state.photo&&!a.state.ready?{...a,state:{...a.state,photo:state.photo,count:a.state.count+1}}:a)};
+  localStorage.setItem(COLLECTION,JSON.stringify(next));setCollection(next);
+ }
  function go(next:string){setMessage('');setView(next);window.scrollTo(0,0);}
  async function operation(task:()=>Promise<void>){if(lock.current)return;lock.current=true;setBusy(true);setMessage('');try{await task();}catch(error){setMessage(error instanceof Error?error.message:t('demo.shared.unavailable'));}finally{lock.current=false;setBusy(false);}}
  async function create(source?:Atelier){
