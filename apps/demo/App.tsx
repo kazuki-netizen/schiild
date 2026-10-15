@@ -86,11 +86,12 @@ export function Reveal({work,atelier,onOpened,onNext,shared=false}:{work:Work;at
  </section>;
 }
 
-export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,navigation}:{entry:Atelier;onChange:(state:State)=>void;onManage:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string,sample?:Work)=>void;navigation:Navigation}){
+export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,navigation,onScreenChange}:{entry:Atelier;onChange:(state:State)=>void;onManage:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string,sample?:Work)=>void;navigation:Navigation;onScreenChange:(screen:string)=>void}){
  const atelier=entry.name,cap=entry.capacity;
  const [state,setState]=useState<State|null>(entry.state),[screen,setScreen]=useState<'home'|'camera'|'work'|'archive'|'draft'>('home'),[selected,setSelected]=useState<string|null>(null),[panel,setPanel]=useState(false),[busy,setBusy]=useState(false),[storageError,setStorageError]=useState(false);
  const [draft,setDraft]=useState<Draft|null>(null),[draftError,setDraftError]=useState(''),draftSequence=useRef(0);
  const taps=useRef<number[]>([]);
+ useEffect(()=>onScreenChange(screen),[screen,onScreenChange]);
  useEffect(()=>{document.title='Schiild';},[]);
  useEffect(()=>{if(state)try{onChange(state);setStorageError(false);}catch{setStorageError(true);}},[state]);
  useEffect(()=>{if(!state?.photo||state.ready||state.count>=Math.max(1,cap-2))return;const timer=setTimeout(()=>setState(old=>old?{...old,count:Math.min(Math.max(1,cap-2),old.count+1)}:old),2200);return()=>clearTimeout(timer);},[state?.count,state?.photo,state?.ready]);
@@ -115,7 +116,7 @@ export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,n
   setState({...state,ready:state.day,works:[made,...state.works.filter(w=>w.day!==state.day)]});setSelected(state.day);navigate('work');setPanel(false);
  }catch{setStorageError(true);}finally{setBusy(false);}}
  function nextDay(){if(!state)return;const seed=state.seed+131;setState({...state,day:dayAfter(state.day),seed,rects:partition(cap,random(seed)),photo:null,count:0,ready:null});setPanel(false);navigate('home');}
- return <div className={screen==='archive'?'app archive-app':'app'}><header className="header"><button className="brand" onClick={onAccount} aria-label="Schiild"><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="header-date text-button mono" data-testid="operator-trigger" onClick={hidden}>{date(state.day)}</button></header>
+ return <div className={screen==='archive'?'app archive-app':'app'} data-tab-screen={screen}><header className="header"><button className="brand" onClick={onAccount} aria-label="Schiild"><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="header-date text-button mono" data-testid="operator-trigger" onClick={hidden}>{date(state.day)}</button></header>
  <main>{storageError&&<p className="error" role="alert">{t('error.server.title')}</p>}
  {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{atelier}</h1><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></div><AtelierConcept/>
   <div className="artboard today-board" data-testid="today-board">{state.rects.map(rect=>{const filled=rect.slot===0?Boolean(state.photo):rect.slot<=(state.photo?state.count-1:state.count);return <div key={rect.slot} className={`today-tile ${filled?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:filled?['#b5b7a5','#c39582','#87a6b0','#d7c49a','#61777a'][rect.slot%5]:undefined}}/>;})}</div>

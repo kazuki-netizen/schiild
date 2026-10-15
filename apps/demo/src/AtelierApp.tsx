@@ -13,6 +13,7 @@ import {COLLECTION,restore,inviteUrl,parseInvite,addAtelier,removeAtelier,leaveA
 import {sharedPreview,sharedRequest,saveSession,clearSession,clearAccountBrowser,SharedError} from './shared-api';
 import type {Account} from './shared-api';
 import DemoNav from './DemoNav';
+import useSwipe from './useSwipe';
 import type {Navigation} from './DemoNav';
 import GlobalPage from './GlobalPage';
 import type {GlobalSelection} from './GlobalPage';
@@ -31,7 +32,7 @@ import type {State,Work} from './model';
 
 export default function AtelierApp(){
  const [browserReady]=useState(resetBrowser);
- const [concept,setConcept]=useState('');
+ const [concept,setConcept]=useState(''),[experienceScreen,setExperienceScreen]=useState('home');
  const [language,setLanguage]=useState(readLanguage);activateLanguage(language);
  useEffect(()=>{document.documentElement.lang=language;},[language]);
  const [collection,setCollection]=useState<Collection|null>(null),[view,setView]=useState('experience'),[name,setName]=useState(''),[capacity,setCapacity]=useState(12),[input,setInput]=useState(''),[invitation,setInvitation]=useState<Invitation|null>(null),[sharing,setSharing]=useState<Atelier|null>(null),[deleting,setDeleting]=useState<string|null>(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
@@ -55,6 +56,20 @@ export default function AtelierApp(){
   const timer=setTimeout(()=>{void sharedPreview(code,controller.signal).then(value=>{setInvitation(value);setMessage('');}).catch(error=>{if(!controller.signal.aborted)setMessage(error instanceof Error?error.message:t('demo.shared.unavailable'));});},250);
   return()=>{clearTimeout(timer);controller.abort();};
  },[input,view]);
+ const tabSwipe=useSwipe({
+  canStart:(target,surface)=>{
+   if(!['experience','list','global','empty-archive'].includes(view))return false;
+   const screen=surface.querySelector('[data-tab-screen]')?.getAttribute('data-tab-screen');
+   if(screen&&!['home','archive'].includes(screen))return false;
+   if(target.closest('.global-explorer,.operator,input,textarea,select,a,summary,[contenteditable],[role=slider]'))return false;
+   return !target.closest('button')||Boolean(target.closest('.nav'));
+  },
+  onSwipe:direction=>{
+   const screen=document.querySelector('[data-tab-screen]')?.getAttribute('data-tab-screen');
+   const current=view==='global'?1:view==='empty-archive'||screen==='archive'&&view==='experience'?2:0,next=current+direction;
+   if(next===0)visit('home');else if(next===1)showGlobal(new Date().toISOString().slice(0,10));else if(next===2)visit('archive');
+  },
+ });
  if(!browserReady)return <main className="app"><p className="error" role="alert">{t('demo.reset.storage')}</p></main>;
  if(!collection)return <div className="loading">{t('common.loading')}</div>;
  const active=collection.ateliers.find(a=>a.code===collection.selected);
@@ -121,8 +136,8 @@ export default function AtelierApp(){
  async function share(copy:boolean){if(!sharing)return;const url=inviteUrl(sharing);try{if(!copy&&navigator.share)await navigator.share({title:sharing.name,url});else{await navigator.clipboard.writeText(copy?sharing.code:url);setMessage(t('common.done'));}}catch(error){if(!(error instanceof DOMException&&error.name==='AbortError'))setMessage(t('error.server.title'));}}
  const preview=partition(capacity,random(414));
  const confirm=collection.ateliers.find(a=>a.code===deleting&&a.creator===collection.device&&!a.online);
- return <div className={settings.reduceMotion?'demo-shell motion-reduced':'demo-shell'} data-language={language}>
- {view==='experience'&&active?(active.online?<SharedExperience key={active.code+accountRevision} entry={active} navigation={navigation} onManage={()=>go('list')} onAccount={()=>void openAccount()} onPosts={()=>go('posts')} onGlobal={day=>showGlobal(day)} onShare={()=>{setSharing(active);go('share');}}/>:<Experience key={active.code} entry={active} navigation={navigation} onChange={change} onManage={()=>go('list')} onAccount={()=>void openAccount()} onPosts={()=>go('posts')} onGlobal={(day,sample)=>showGlobal(day,sample)}/>):<div className="app atelier-app">
+ return <div className={settings.reduceMotion?'demo-shell motion-reduced':'demo-shell'} data-language={language} data-swipe-scope="tabs" {...tabSwipe}>
+ {view==='experience'&&active?(active.online?<SharedExperience key={active.code+accountRevision} entry={active} navigation={navigation} onScreenChange={setExperienceScreen} onManage={()=>go('list')} onAccount={()=>void openAccount()} onPosts={()=>go('posts')} onGlobal={day=>showGlobal(day)} onShare={()=>{setSharing(active);go('share');}}/>:<Experience key={active.code} entry={active} navigation={navigation} onScreenChange={setExperienceScreen} onChange={change} onManage={()=>go('list')} onAccount={()=>void openAccount()} onPosts={()=>go('posts')} onGlobal={(day,sample)=>showGlobal(day,sample)}/>):<div className="app atelier-app">
   <header className="header"><button className="brand" aria-label="Schiild" onClick={()=>void openAccount()}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" disabled={busy} onClick={()=>visit('home')}>{t('common.back')}</button></header>
   {message&&<p className="shared-error" role="status">{message}</p>}
   {view==='posts'&&<DailyPostsPage collection={collection} onLocalReuse={reuseLocalPosts} onRefresh={()=>setAccountRevision(value=>value+1)} onBack={()=>visit('home')}/>}
@@ -137,6 +152,6 @@ export default function AtelierApp(){
   {view==='join'&&<section><h1>{t('join.title')}</h1><label className="field">{t('created.code_label')}<input placeholder={t('join.code_ph')} value={input} onChange={e=>lookup(e.target.value)} autoCapitalize="characters" spellCheck={false}/></label>{invitation?.name&&<div className="join-preview"><h2>{invitation.name}</h2><AtelierConcept concept={invitation.concept}/><p>{t('join.preview.stats',{cap:invitation.capacity,n:(invitation as SharedPreview).members??1,total:(invitation as SharedPreview).total??0})}</p></div>}<p>{t(invitation&&!invitation.online?'join.tomorrow':'demo.shared.join_now')}</p><button className="button" disabled={busy} onClick={()=>void join()}>{t(busy?'common.loading':'join.submit')}</button></section>}
  </div>}
  {confirm&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-atelier-title"><h2 id="delete-atelier-title">{t('demo.atelier.delete')}</h2><p>{t('demo.atelier.delete_body',{name:confirm.name})}</p><button className="button" onClick={()=>{setCollection(removeAtelier(collection,confirm.code));setDeleting(null);setSharing(null);}}>{t('delete.confirm')}</button><button className="button secondary" onClick={()=>setDeleting(null)}>{t('delete.cancel')}</button></section></div>}
- <DemoNav active={view==='global'?'global':view==='experience'?navigation.screen:''} onHome={()=>visit('home')} onGlobal={()=>showGlobal(new Date().toISOString().slice(0,10))} onArchive={()=>visit('archive')}/>
+ <DemoNav active={view==='global'?'global':view==='empty-archive'?'archive':view==='list'?'home':view==='experience'?(experienceScreen==='home'||experienceScreen==='archive'?experienceScreen:navigation.screen):''} onHome={()=>visit('home')} onGlobal={()=>showGlobal(new Date().toISOString().slice(0,10))} onArchive={()=>visit('archive')}/>
  </div>;
 }
