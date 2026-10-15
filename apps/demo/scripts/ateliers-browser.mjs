@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{}),args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
 const origin=process.env.DEMO_URL||'http://localhost:8085';

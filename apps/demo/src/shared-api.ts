@@ -4,8 +4,8 @@ import type {Area} from './area';
 
 export type SharedState={code:string;name:string;capacity:number;members:number;day:string;seed:number;slot:number;postedSlots:number[];hasPhoto:boolean;canGenerate:boolean;area:Area;status:'open'|'generating'|'ready';works:{day:string;seed:number;count:number;index:number;custody:'self'|'other';area:Area}[]};
 export type SharedPreview={code:string;name:string;capacity:number;members:number;total:number;online:true};
-const credentialKey='schiild.shared.credential.v1';
-const sessionKey='schiild.account.session.v1';
+const credentialKey='schiild.shared.credential.v2';
+const sessionKey='schiild.account.session.v2';
 let deletionNotified=false;
 export function clearAccountBrowser(){let cleared=true;try{const keys=Object.keys(localStorage).filter(key=>key.startsWith('schiild.'));for(const key of keys)localStorage.removeItem(key);}catch{cleared=false;}return cleared;}
 export type Account={username:string;name:string;since:string;googleEmail?:string;canDelete?:boolean;ateliers:{code:string;name:string;capacity:number;canGenerate:boolean}[];custody:{code:string;name:string;day:string;index:number}[]};
@@ -31,6 +31,7 @@ export async function sharedRequest<T=SharedState>(action:string,values:Record<s
  let body;try{body=await response.json();}catch{throw Error(t('demo.shared.unavailable'));}
  if(!response.ok){
   const key=body.error;
+  if(key==='session_expired'||key==='unauthorized')window.dispatchEvent(new Event('schiild:session-expired'));
   if(key==='account_deleted'){if(!deletionNotified){deletionNotified=true;window.dispatchEvent(new Event('schiild:account-deleted'));}throw new SharedError(key,t('demo.delete.done'));}
   if(key==='delete_requires_password')throw new SharedError(key,t('demo.delete.requires_password'));
   const accountErrors={account_invalid:'demo.account.invalid',account_taken:'demo.account.taken',account_linked:'demo.account.linked',login_invalid:'demo.account.login_invalid',login_limited:'demo.account.limited',session_expired:'demo.account.expired',unauthorized:'demo.account.expired',slots_reserved:'demo.atelier.slots_reserved',google_invalid:'demo.google.invalid',google_expired:'demo.google.expired',google_conflict:'demo.google.conflict',google_unavailable:'demo.google.unavailable'} as const;

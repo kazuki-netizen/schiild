@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
@@ -8,7 +8,7 @@ const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?
 const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 const stage=page.getByTestId('global-explorer'),nav=page.locator('.nav');
-const api=async(action,values={},credential)=>page.evaluate(async({endpoint,action,values,credential})=>{const token=credential||localStorage.getItem('schiild.shared.credential.v1');const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action,...values})});const body=await response.json();if(!response.ok)throw Error(body.error);return body;},{endpoint,action,values,credential});
+const api=async(action,values={},credential)=>page.evaluate(async({endpoint,action,values,credential})=>{const token=credential||localStorage.getItem('schiild.shared.credential.v2');const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action,...values})});const body=await response.json();if(!response.ok)throw Error(body.error);return body;},{endpoint,action,values,credential});
 async function photo(color){return 'data:image/jpeg;base64,'+(await sharp({create:{width:1080,height:1080,channels:3,background:color}}).jpeg().toBuffer()).toString('base64');}
 async function scale(){return Number(await stage.getAttribute('data-scale'));}
 async function reset(){await page.getByRole('button',{name:'全体に戻す',exact:true}).click();assert.equal(await scale(),1);await stage.scrollIntoViewIfNeeded();}

@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 const origin=process.env.DEMO_URL||'http://localhost:8085';
@@ -12,7 +12,7 @@ async function preview(p,n){await p.getByRole('button',{name:'今日のシール
 async function back(p){await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByTestId('today-board').waitFor();}
 try{
  await mkdir('test-results',{recursive:true});await page.goto(origin);await page.getByTestId('today-board').waitFor();
- const before=await page.evaluate(()=>localStorage.getItem('schiild.demo.ateliers.v2'));await preview(page,2);await page.getByText('ひとりで試すアトリエでは、サンプルの参加者の写真も使います。',{exact:true}).waitFor();assert.equal(await page.evaluate(()=>localStorage.getItem('schiild.demo.ateliers.v2')),before);
+ const before=await page.evaluate(()=>localStorage.getItem('schiild.demo.ateliers.v3'));await preview(page,2);await page.getByText('ひとりで試すアトリエでは、サンプルの参加者の写真も使います。',{exact:true}).waitFor();assert.equal(await page.evaluate(()=>localStorage.getItem('schiild.demo.ateliers.v3')),before);
  await page.reload();await page.getByTestId('today-board').waitFor();assert.equal(await page.getByTestId('draft-preview').count(),0);await nav(page).getByRole('button',{name:'アーカイブ',exact:true}).click();await page.locator('.archive-work').first().waitFor();assert.equal(Number(await page.getByTestId('archive-calendar').getAttribute('data-total')),30);await nav(page).getByRole('button',{name:'アトリエ',exact:true}).click();
  await page.getByRole('button',{name:'アトリエ ＋',exact:true}).click();await page.getByRole('button',{name:'アトリエをつくる',exact:true}).click();await page.getByPlaceholder('アトリエの名前').fill('仮生成の窓');await page.getByRole('button',{name:'2',exact:true}).click();await page.getByRole('button',{name:'このアトリエをつくる',exact:true}).click();await page.locator('textarea').waitFor();const url=await page.locator('textarea').inputValue();
  await nav(page).getByRole('button',{name:'アトリエ',exact:true}).click();await page.getByTestId('today-board').waitFor();assert.equal(await page.getByRole('button',{name:'今日のシールトを仮生成する',exact:true}).isDisabled(),true);

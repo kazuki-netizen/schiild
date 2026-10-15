@@ -1,13 +1,13 @@
 // DEMO ONLY: local identity and invitation snapshots; no authentication or synchronization.
-import {initial,load,dayAfter} from './model';
+import {initial,dayAfter} from './model';
 import type {State} from './model';
 export type Invitation={code:string;name:string;capacity:number;online?:boolean};
 export type Atelier=Invitation&{creator:string|null;activeFrom:string;state:State};
-export type Collection={version:2;device:string;selected:string;ateliers:Atelier[];departed?:Atelier[]};
-export const COLLECTION='schiild.demo.ateliers.v2';
+export type Collection={version:3;device:string;selected:string;ateliers:Atelier[];departed?:Atelier[]};
+export const COLLECTION='schiild.demo.ateliers.v3';
 export function restore():Collection{
- try{const value=JSON.parse(localStorage.getItem(COLLECTION)||'null');if(value?.version===2&&typeof value.device==='string'&&Array.isArray(value.ateliers))return value;}catch{/* Fall back to the original demo. */}
- const state=load();return {version:2,device:crypto.randomUUID(),selected:'ASADEMO1',ateliers:[{code:'ASADEMO1',name:'あさ',capacity:12,creator:null,activeFrom:state.day,state}]};
+ try{const value=JSON.parse(localStorage.getItem(COLLECTION)||'null');if(value?.version===3&&typeof value.device==='string'&&Array.isArray(value.ateliers))return value;}catch{/* Start empty when stored data cannot be read. */}
+ return {version:3,device:crypto.randomUUID(),selected:'',ateliers:[]};
 }
 export function newCode(){return Array.from(crypto.getRandomValues(new Uint8Array(8)),n=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[n%32]).join('');}
 export function inviteUrl(atelier:Invitation){return atelier.online?`${location.origin}${location.pathname}#atelier=${atelier.code}`:`${location.origin}${location.pathname}#invite=${encodeURIComponent(JSON.stringify({code:atelier.code,name:atelier.name,capacity:atelier.capacity}))}`;}

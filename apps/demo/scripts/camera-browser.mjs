@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 const origin=process.env.DEMO_URL||'http://localhost:8085';

@@ -1,7 +1,7 @@
 // Mock only the external Google provider; verify actual signed tokens through the demo account service.
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-import {chromium} from '@playwright/test';
+import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import {generateKeyPair,exportJWK,createLocalJWKSet,SignJWT} from 'jose';
 import {accounts} from '../server/accounts.mjs';
 import {googleVerifier} from '../server/google-identity.mjs';

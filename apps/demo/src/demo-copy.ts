@@ -1,5 +1,7 @@
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
+ 'demo.auth.required':'プロフィールを見るにはログインしてください。初めての場合はアカウントをつくれます。',
+ 'demo.reset.storage':'初期化のため、このサイトの保存データを消去できるブラウザで開いてください。',
  // Demo archive design requested by the user; production copy stays unchanged.
  'demo.calendar.previous':'前の月',
  'demo.calendar.next':'次の月',

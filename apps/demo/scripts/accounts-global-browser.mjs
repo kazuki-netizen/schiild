@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
@@ -12,7 +12,7 @@ for(const current of [page,guest,other]){
 }
 const nav=p=>p.locator('.nav');
 async function global(p){assert.equal(await nav(p).getByRole('button',{name:'GLOBAL SCHIILD',exact:true}).count(),1);await nav(p).getByRole('button',{name:'GLOBAL SCHIILD',exact:true}).click();await p.getByTestId('global-page').waitFor();}
-async function account(p){await p.getByRole('button',{name:'Schiild',exact:true}).click();await p.getByRole('heading',{name:'わたし',exact:true}).waitFor();}
+async function account(p){await p.getByRole('button',{name:'Schiild',exact:true}).click();await p.getByRole('heading',{name:/^(わたし|ログインする)$/}).waitFor();}
 async function record(p){await p.getByRole('button',{name:'このアトリエに1日1枚',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.locator('.posted').waitFor();}
 async function create(p,name){await p.getByRole('button',{name:'アトリエ ＋',exact:true}).click();await p.getByRole('button',{name:'アトリエをつくる',exact:true}).click();await p.getByPlaceholder('アトリエの名前').fill(name);await p.getByRole('button',{name:'2',exact:true}).click();await p.getByRole('button',{name:'このアトリエをつくる',exact:true}).click();await p.locator('textarea').waitFor();return p.locator('textarea').inputValue();}
 try{
