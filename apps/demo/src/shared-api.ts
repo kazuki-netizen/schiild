@@ -2,7 +2,10 @@ import {t} from './copy';
 import type {Work} from './model';
 import type {Area} from './area';
 
-export type SharedState={concept:string;defaultConcept:string;code:string;name:string;capacity:number;members:number;day:string;seed:number;slot:number;postedSlots:number[];hasPhoto:boolean;canGenerate:boolean;area:Area;status:'open'|'generating'|'ready';works:{concept?:string;day:string;seed:number;count:number;index:number;custody:'self'|'other';area:Area}[]};
+export type Visibility='private'|'public';
+export type SharedState={visibility:Visibility;concept:string;defaultConcept:string;code:string;name:string;capacity:number;members:number;day:string;seed:number;slot:number;postedSlots:number[];hasPhoto:boolean;canGenerate:boolean;area:Area;status:'open'|'generating'|'ready';works:{concept?:string;day:string;seed:number;count:number;index:number;custody:'self'|'other';area:Area}[]};
+export type DirectoryAtelier={code:string;name:string;capacity:number;concept:string;members:number;total:number};
+export type DirectoryPage={ateliers:DirectoryAtelier[];nextCursor:string|null};
 export type SharedPreview={concept?:string;code:string;name:string;capacity:number;members:number;total:number;online:true};
 const credentialKey='schiild.shared.credential.v2';
 const sessionKey='schiild.account.session.v2';
@@ -34,6 +37,7 @@ export async function sharedRequest<T=SharedState>(action:string,values:Record<s
   if(key==='session_expired'||key==='unauthorized')window.dispatchEvent(new Event('schiild:session-expired'));
   if(key==='account_deleted'){if(!deletionNotified){deletionNotified=true;window.dispatchEvent(new Event('schiild:account-deleted'));}throw new SharedError(key,t('demo.delete.done'));}
   if(key==='concept_invalid'||key==='concept_forbidden')throw new SharedError(key,t(key==='concept_invalid'?'demo.concept.invalid':'demo.concept.forbidden'));
+  if(key==='visibility_invalid'||key==='visibility_forbidden')throw new SharedError(key,t(key==='visibility_invalid'?'demo.visibility.invalid':'demo.visibility.forbidden'));
   if(key==='delete_requires_password')throw new SharedError(key,t('demo.delete.requires_password'));
   const accountErrors={account_invalid:'demo.account.invalid',account_taken:'demo.account.taken',account_linked:'demo.account.linked',login_invalid:'demo.account.login_invalid',login_limited:'demo.account.limited',session_expired:'demo.account.expired',unauthorized:'demo.account.expired',slots_reserved:'demo.atelier.slots_reserved',google_invalid:'demo.google.invalid',google_expired:'demo.google.expired',google_conflict:'demo.google.conflict',google_unavailable:'demo.google.unavailable'} as const;
   throw new SharedError(key,key in accountErrors?t(accountErrors[key as keyof typeof accountErrors]):key==='already_recorded'||key==='source_forbidden'?sharedErrorMessage(key):key==='not_found'?t('join.error.not_found'):key==='full'?t('join.error.full'):key==='window_closed'?t('error.window_closed'):key==='image_invalid'?t('demo.shared.image_invalid'):key==='no_photos'?t('demo.shared.no_photos'):key==='forbidden'?t('demo.shared.forbidden'):action==='draft'?t('demo.draft.failed'):t('demo.shared.unavailable'));

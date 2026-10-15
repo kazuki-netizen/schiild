@@ -36,7 +36,9 @@ test('workerd and durable SQLite run complete shared generation against the actu
    return response;
   }}));
   const call=async(action,values={},credential='a'.repeat(64))=>{const response=await mf.dispatchFetch('https://api.example/api/atelier',{method:'POST',headers:{Origin:'http://localhost:8085',Authorization:`Bearer ${credential}`},body:JSON.stringify({action,...values})});const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));return body;};
-  const first='a'.repeat(64),second='b'.repeat(64),room=await call('create',{name:'ふたりの窓',capacity:2,concept:'朝の光'});assert.equal(room.concept,'朝の光');await call('join',{code:room.code},second);
+  const first='a'.repeat(64),second='b'.repeat(64),room=await call('create',{name:'ふたりの窓',capacity:2,concept:'朝の光'});assert.equal(room.concept,'朝の光');assert.equal(room.visibility,'private');assert.deepEqual((await call('directory')).ateliers,[]);
+  await call('visibility.update',{code:room.code,visibility:'public'});assert.equal((await call('directory',{query:'朝の光'},second)).ateliers[0].code,room.code);
+  await call('visibility.update',{code:room.code,visibility:'private'});assert.equal((await call('directory',{},second)).ateliers.length,0);await call('join',{code:room.code},second);
   const photo=await sharp({create:{width:1080,height:1080,channels:3,background:'#c39582'}}).jpeg().toBuffer();
   await Promise.all([first,second].map(credential=>call('post',{code:room.code,day:room.day,photo:`data:image/jpeg;base64,${photo.toString('base64')}`},credential)));
   const state=await call('state',{code:room.code});assert.equal(state.postedSlots.length,2);

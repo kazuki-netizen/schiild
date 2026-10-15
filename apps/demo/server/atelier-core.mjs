@@ -50,7 +50,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
  }
  function summary(room,member){
   const day=utcDay(now()),today=room.days[day],slot=authorize(room,member);
-  return {code:room.code,name:room.name,capacity:room.capacity,members:memberCount(room),day,concept:dayConcept(room,today),defaultConcept:room.concept??'',
+  return {code:room.code,name:room.name,visibility:room.visibility==='public'?'public':'private',capacity:room.capacity,members:memberCount(room),day,concept:dayConcept(room,today),defaultConcept:room.concept??'',
    seed:today?.seed??daySeed(room,day),slot,postedSlots:Object.keys(today?.posts??{}).map(Number),
    hasPhoto:Boolean(today?.posts[slot]),canGenerate:room.creator===member,
    area:dayArea(room,today,member),status:today?.status??'open',works:Object.values(room.days).filter(d=>d.status==='ready').sort((a,b)=>b.day.localeCompare(a.day)).map(d=>({day:d.day,concept:dayConcept(room,d),seed:d.seed,count:Object.keys(d.posts).length,index:d.index,custody:d.custodian===member?'self':'other',area:dayArea(room,d,member)}))};
@@ -58,6 +58,15 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
  return async function execute(body,credential){
   if(!credential||!/^[a-f0-9]{64}$/.test(credential))fail(401,'unauthorized');
   const member=memberForCredential(credential),action=body.action,code=String(body.code??'');
+  if(action==='directory'){
+   const query=body.query===undefined?'':body.query,cursor=body.cursor===undefined?'':body.cursor;
+   if(typeof query!=='string'||query.length>80||typeof cursor!=='string'||cursor&&!codePattern.test(cursor))fail(400,'invalid');
+   const day=utcDay(now()),needle=query.normalize('NFKC').trim().toLowerCase(),rows=await listRecords(store,'rooms/');
+   // Opt-in only. Never serialize private rooms, participant identities, photos or day records.
+   const matches=rows.map(row=>row.data).filter(room=>room.visibility==='public'&&room.code>cursor&&[room.name,dayConcept(room,room.days[day]),room.code].some(value=>value.normalize('NFKC').toLowerCase().includes(needle))).sort((a,b)=>a.code<b.code?-1:a.code>b.code?1:0);
+   const page=matches.slice(0,24);
+   return {ateliers:page.map(room=>({code:room.code,name:room.name,capacity:room.capacity,concept:dayConcept(room,room.days[day]),members:memberCount(room),total:Object.values(room.days).filter(day=>day.status==='ready').length})),nextCursor:matches.length>24?page.at(-1).code:null};
+  }
   if(action==='global')return global.view(String(body.day??utcDay(now())),member);
   if(action==='area')return areaSummary(await listRecords(store,'rooms/'),await listRecords(store,'globals/'),member);
   if(action==='posts'){
@@ -83,10 +92,11 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   if(action==='create'){
    if(typeof body.name!=='string'||!body.name.trim()||body.name.length>40||![2,5,12,20].includes(body.capacity))fail(400,'invalid');
    const concept=normalizeConcept(body.concept);if(concept===null)fail(400,'concept_invalid');
+   const visibility=body.visibility===undefined?'private':body.visibility;if(!['private','public'].includes(visibility))fail(400,'visibility_invalid');
    for(let attempt=0;attempt<8;attempt++){
     const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const nextCode=Array.from(randomBytes(8),n=>alphabet[n%32]).join('');
-    const room={code:nextCode,name:body.name.trim(),capacity:body.capacity,concept,creator:member,members:[member],seed:randomInt(2147483647),days:{}};
+    const room={code:nextCode,name:body.name.trim(),capacity:body.capacity,concept,visibility,creator:member,members:[member],seed:randomInt(2147483647),days:{}};
     const result=await store.setJSON(roomKey(nextCode),room,{onlyIfNew:true});
     if(result.modified)return summary(room,member);
    }
@@ -122,6 +132,11 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   }
   let {data:room}=await read(code);const slot=authorize(room,member);
   if(action==='state')return summary(room,member);
+  if(action==='visibility.update'){
+   if(!['private','public'].includes(body.visibility))fail(400,'visibility_invalid');
+   room=await mutate(code,room=>{if(room.creator!==member)fail(403,'visibility_forbidden');room.visibility=body.visibility;return room;});
+   return summary(room,member);
+  }
   if(action==='concept.update'){
    const concept=normalizeConcept(body.concept);if(concept===null)fail(400,'concept_invalid');
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');

@@ -1,6 +1,20 @@
 // DEMO ONLY. Spanish copy uses the same keys and restrictions as the other languages.
 import type {CopyKey} from './copy';
 export const spanish={
+ "demo.discover.title":"Descubrir",
+ "demo.discover.public":"Ateliers públicos",
+ "demo.discover.search":"Buscar ateliers",
+ "demo.discover.placeholder":"Nombre, tema o código",
+ "demo.discover.empty":"Todavía no hay ateliers públicos.",
+ "demo.discover.no_results":"No se han encontrado ateliers.",
+ "demo.discover.more":"Mostrar más",
+ "demo.discover.open":"Abrir atelier",
+ "demo.visibility.title":"Visibilidad",
+ "demo.visibility.public":"Público",
+ "demo.visibility.private":"Privado",
+ "demo.visibility.note":"Los ateliers públicos aparecen en la lista y las búsquedas. Un código de invitación permite unirse a los privados.",
+ "demo.visibility.forbidden":"Solo quien creó el atelier puede cambiar la visibilidad.",
+ "demo.visibility.invalid":"Elige una opción de visibilidad.",
  'demo.concept.label':'Tema de hoy (opcional)',
  'demo.concept.input':'Tema (opcional)',
  'demo.concept.title':'Tema',

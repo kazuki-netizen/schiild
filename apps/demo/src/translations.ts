@@ -2,6 +2,20 @@
 // Product names stay Schiil / Schiild; custody never implies a financial right.
 import type {CopyKey} from './copy';
 export const translations={
+ "demo.discover.title":["Discover", "찾기", "Découvrir", "Ontdekken"],
+ "demo.discover.public":["Public ateliers", "공개 아틀리에", "Ateliers publics", "Openbare ateliers"],
+ "demo.discover.search":["Search ateliers", "아틀리에 검색", "Rechercher un atelier", "Ateliers zoeken"],
+ "demo.discover.placeholder":["Name, theme or code", "이름, 주제 또는 코드", "Nom, thème ou code", "Naam, thema of code"],
+ "demo.discover.empty":["No public ateliers yet.", "아직 공개 아틀리에가 없습니다.", "Aucun atelier public pour le moment.", "Er zijn nog geen openbare ateliers."],
+ "demo.discover.no_results":["No ateliers found.", "아틀리에를 찾지 못했습니다.", "Aucun atelier trouvé.", "Geen ateliers gevonden."],
+ "demo.discover.more":["Show more", "더 보기", "Afficher la suite", "Meer tonen"],
+ "demo.discover.open":["Open atelier", "아틀리에 열기", "Ouvrir l’atelier", "Atelier openen"],
+ "demo.visibility.title":["Visibility", "공개 범위", "Visibilité", "Zichtbaarheid"],
+ "demo.visibility.public":["Public", "공개", "Public", "Openbaar"],
+ "demo.visibility.private":["Private", "비공개", "Privé", "Privé"],
+ "demo.visibility.note":["Public ateliers appear in the directory and search. Private ateliers can still be joined with an invitation code.", "공개 아틀리에는 목록과 검색에 표시됩니다. 비공개 아틀리에도 초대 코드로 참여할 수 있습니다.", "Les ateliers publics apparaissent dans la liste et la recherche. Un code d’invitation permet de rejoindre un atelier privé.", "Openbare ateliers verschijnen in de lijst en zoekresultaten. Met een uitnodigingscode kun je ook aan een privéatelier deelnemen."],
+ "demo.visibility.forbidden":["Only the atelier creator can change visibility.", "아틀리에를 만든 사람만 공개 범위를 바꿀 수 있습니다.", "Seule la personne qui a créé l’atelier peut modifier sa visibilité.", "Alleen de maker van het atelier kan de zichtbaarheid wijzigen."],
+ "demo.visibility.invalid":["Choose a visibility option.", "공개 범위를 선택해 주세요.", "Choisissez une option de visibilité.", "Kies een zichtbaarheid."],
  'demo.concept.label':["Today’s theme (optional)","오늘의 주제 (선택)","Thème du jour (facultatif)","Thema van vandaag (optioneel)"],
  'demo.concept.input':["Theme (optional)","주제 (선택)","Thème (facultatif)","Thema (optioneel)"],
  'demo.concept.title':["Theme","주제","Thème","Thema"],

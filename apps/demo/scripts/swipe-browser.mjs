@@ -40,7 +40,7 @@ try{
  await calendar.locator('.archive-work').first().tap();await page.getByRole('dialog').waitFor();await swipe('.calendar-detail-heading',-160);assert.equal(await month(),latest);assert.equal(await page.getByRole('dialog').count(),1);
  await page.getByRole('dialog').getByRole('button',{name:'戻る',exact:true}).tap();assert.equal(await page.getByRole('dialog').count(),0);
  await calendar.locator('.archive-work').first().tap();await page.locator('.calendar-open').tap();await page.getByTestId('reveal').waitFor();await swipe('.nav',170);assert.equal(await page.getByTestId('reveal').count(),1);
- await nav.getByRole('button',{name:'アーカイブ',exact:true}).tap();await calendar.waitFor();await swipe('.nav',-170);assert.equal(await active(),'アーカイブ');
+ await nav.getByRole('button',{name:'アーカイブ',exact:true}).tap();await calendar.waitFor();await swipe('.nav',-170);await page.getByTestId('discover-page').waitFor();assert.equal(await active(),'見つける');await swipe('.nav',-170);assert.equal(await active(),'見つける');await swipe('.nav',170);await calendar.waitFor();
  await swipe('.nav',170);await page.getByTestId('global-page').waitFor();await swipe('.nav',170);await page.getByTestId('today-board').waitFor();
  // Internally opened archive pages must also use the real current screen.
  await page.locator('.section-heading button').tap();await calendar.waitFor();await page.waitForFunction(()=>document.querySelector('.nav .active')?.textContent==='アーカイブ');await swipe('.nav',170);await page.getByTestId('global-page').waitFor();
