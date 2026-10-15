@@ -1,6 +1,7 @@
 // DEMO ONLY. Inspect the shared GLOBAL image; no access to other people's source photos.
 import React,{useEffect,useRef,useState} from 'react';
 import {t} from './copy';
+import HelpDetails from './HelpDetails';
 import {boundView,zoomAt,pixelAt,pixelPosition,fullView,MAX_SCALE} from './global-view';
 import type {View,Point} from './global-view';
 type Pointer={x:number;y:number};
@@ -32,13 +33,12 @@ export default function GlobalExplorer({image,positions,mine,sample=false}:{imag
  const selectedPosition=selected?pixelPosition(view,selected,size):null,minePosition=mine?pixelPosition(view,mine,size):null,pixelSize=size*view.scale/256,posted=selected&&positions?.includes(selected.y*256+selected.x),self=selected&&mine&&selected.x===mine.x&&selected.y===mine.y;
  function mark(point:Point,kind:string){return <span className={'explorer-marker '+kind} style={{left:point.x,top:point.y,width:Math.max(5,pixelSize),height:Math.max(5,pixelSize)}}/>;}
  return <div className="global-explorer">
-  <p className="explorer-help" id="explorer-help">{t('demo.global.gestures')}</p>
   <div className="global-overview artboard explorer-stage" ref={stage} role="region" tabIndex={0} aria-label={t('demo.global.explore')} aria-describedby="explorer-help" data-testid="global-explorer" data-scale={view.scale} data-pan-x={view.x} data-pan-y={view.y} onPointerDown={down} onPointerMove={move} onPointerUp={event=>up(event)} onPointerCancel={event=>up(event,true)} onLostPointerCapture={event=>{if(pointers.current.has(event.pointerId))up(event,true);}} onKeyDown={keyboard}>
    <img ref={bitmap} src={image} onLoad={imageReady} alt={t('global.label')} draggable={false} style={{transform:`matrix(${view.scale},0,0,${view.scale},${view.x},${view.y})`}}/>
    {minePosition&&mark(minePosition,'mine')}{selectedPosition&&mark(selectedPosition,'selected')}
   </div>
   <div className="explorer-controls"><button type="button" disabled={view.scale<=1} aria-label={t('demo.global.smaller')} onClick={()=>apply(zoomAt(viewRef.current,viewRef.current.scale/2,{x:0,y:0},sizeRef.current))}>−</button><label><span className="mono">{t('demo.global.scale',{n:Number(view.scale.toFixed(1))})}</span><input aria-label={t('demo.global.scale_control')} type="range" min="1" max={MAX_SCALE} step=".25" value={view.scale} onChange={event=>apply(zoomAt(viewRef.current,Number(event.target.value),{x:0,y:0},sizeRef.current))}/></label><button type="button" disabled={view.scale>=MAX_SCALE} aria-label={t('demo.global.larger')} onClick={()=>apply(zoomAt(viewRef.current,viewRef.current.scale*2,{x:0,y:0},sizeRef.current))}>＋</button><button type="button" className="text-button" onClick={()=>{apply(fullView());setSelected(null);setColor('');lastTap.current=null;}}>{t('demo.global.reset')}</button></div>
   {selected&&<div className="pixel-inspection" data-testid="global-pixel-inspection" data-x={selected.x} data-y={selected.y}><div className="pixel-swatch" style={{background:color||'transparent'}} aria-hidden="true"/><div><p>{t(sample?'demo.global.sample_pixel':self?'schiild.regions.mine':posted?'demo.global.selected_schiil':'demo.global.empty_pixel')}</p><p className="mono">{t('global.coords',selected)}</p>{color&&<p className="mono">{t('demo.global.color',{color})}</p>}</div></div>}
-  <p className="shared-note">{t('demo.global.pixel_note')}</p>
+  <HelpDetails label="demo.help.gestures"><p id="explorer-help">{t('demo.global.gestures')}</p><p>{t('demo.global.pixel_note')}</p></HelpDetails>
  </div>;
 }

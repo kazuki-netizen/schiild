@@ -34,6 +34,5 @@ export default function GlobalPage({selection,revision}:{selection:GlobalSelecti
    <AreaDisplay global area={{pixels:mine?1:0,total:65536,percent:(mine?1:0)/65536*100}}/>
    {!work.final&&!selection.sample&&<p className="shared-note">{t('demo.global.live')}</p>}
   </>}
-  <p className="quiet">{t('global.not_for_sale')}</p>
  </section>;
 }

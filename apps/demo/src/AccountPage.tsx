@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {t} from './copy';
+import HelpDetails from './HelpDetails';
 import type {Account} from './shared-api';
 import type {Preferences} from './preferences';
 import GoogleSignIn from './GoogleSignIn';
@@ -19,5 +20,5 @@ export default function AccountPage({account,collection,onPosts,onGoogle,onName,
 }
 export function SettingsPage({value,onChange,account,onAccount,onLogout,onDelete}:{value:Preferences;onChange:(value:Preferences)=>void;account:Account|null;onAccount:()=>void;onLogout:()=>Promise<void>;onDelete:()=>void}){
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
- return <section className="settings-page"><h1>{t('settings.title')}</h1><button className="atelier-select" onClick={onAccount}>{t('settings.account')}</button><label className="setting-toggle"><span>{t('demo.settings.motion')}</span><input type="checkbox" checked={value.reduceMotion} onChange={event=>onChange({...value,reduceMotion:event.target.checked})}/></label><h2>{t('settings.notifications')}</h2><p>{t('demo.settings.notifications')}</p><p className="shared-note">{t('demo.settings.notification_privacy')}</p><h2>{t('settings.privacy')}</h2><p>{t('demo.settings.privacy')}</p>{account&&<button className="button secondary" disabled={busy} onClick={()=>{setBusy(true);setError('');void onLogout().catch(cause=>setError(cause instanceof Error?cause.message:t('error.server.body'))).finally(()=>setBusy(false));}}>{t('settings.logout')}</button>}{account&&account.canDelete!==false&&<button className='button secondary settings-delete' disabled={busy} onClick={onDelete}>{t('settings.delete_account')}</button>}{error&&<p role="alert" className="error">{error}</p>}</section>;
+ return <section className="settings-page"><h1>{t('settings.title')}</h1><button className="atelier-select" onClick={onAccount}>{t('settings.account')}</button><label className="setting-toggle"><span>{t('demo.settings.motion')}</span><input type="checkbox" checked={value.reduceMotion} onChange={event=>onChange({...value,reduceMotion:event.target.checked})}/></label><h2>{t('settings.notifications')}</h2><p>{t('demo.settings.notifications')}</p><HelpDetails label="settings.privacy"><p>{t('demo.settings.privacy')}</p></HelpDetails>{account&&<button className="button secondary" disabled={busy} onClick={()=>{setBusy(true);setError('');void onLogout().catch(cause=>setError(cause instanceof Error?cause.message:t('error.server.body'))).finally(()=>setBusy(false));}}>{t('settings.logout')}</button>}{account&&account.canDelete!==false&&<button className='button secondary settings-delete' disabled={busy} onClick={onDelete}>{t('settings.delete_account')}</button>}{error&&<p role="alert" className="error">{error}</p>}</section>;
 }

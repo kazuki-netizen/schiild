@@ -17,6 +17,7 @@ import AreaDisplay from './src/AreaDisplay';
 import {rectArea} from './src/area';
 import ArchiveCalendar from './src/ArchiveCalendar';
 import {workSize} from './src/resolution';
+import HelpDetails from './src/HelpDetails';
 export {default} from './src/AtelierApp';
 
 
@@ -58,7 +59,7 @@ export function Camera({day,atelier,onBack,onSubmit,shared=false}:{day:string;at
   {!preview&&help&&status==='denied'&&<Button onClick={()=>{void start();document.querySelector('.camera-page')?.scrollIntoView({block:'start'});}}>{t('demo.camera.retry')}</Button>}
   {!preview&&<button className="shutter" disabled={status!=='ready'} aria-label={t('onboarding.1.title')} onClick={capture}><span/></button>}
   {failed&&<p role="alert">{t('camera.capture_failed')}</p>}
-  {preview&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><img className="confirm-photo" src={preview} alt={t('camera.date',{date:date(day)})}/><h2 id="confirm-title">{t('camera.confirm.title')}</h2><p>{t('camera.confirm.body',{ateliers:`「${atelier}」`})}</p>{shared&&<p>{t('demo.shared.photo_notice')}</p>}{sendError&&<p className="error" role="alert">{sendError}</p>}{!shared&&<p className="mono muted">{t('camera.confirm.remaining',{date:short(day),countdown:'00:15:00'})}</p>}<Button disabled={sending} onClick={()=>void submit()}>{t(sending?'common.loading':'camera.confirm.submit')}</Button><Button secondary disabled={sending} onClick={()=>{setPreview(null);setStatus('idle');}}>{t('camera.confirm.back')}</Button></section></div>}
+  {preview&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><img className="confirm-photo" src={preview} alt={t('camera.date',{date:date(day)})}/><h2 id="confirm-title">{t('camera.confirm.title')}</h2><p>{t('camera.confirm.body',{ateliers:`「${atelier}」`})}</p>{sendError&&<p className="error" role="alert">{sendError}</p>}<Button disabled={sending} onClick={()=>void submit()}>{t(sending?'common.loading':'camera.confirm.submit')}</Button><Button secondary disabled={sending} onClick={()=>{setPreview(null);setStatus('idle');}}>{t('camera.confirm.back')}</Button></section></div>}
  </section>;
 }
 
@@ -116,10 +117,11 @@ export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,n
  {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{atelier}</h1><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></div>
   <div className="artboard today-board" data-testid="today-board">{state.rects.map(rect=>{const filled=rect.slot===0?Boolean(state.photo):rect.slot<=(state.photo?state.count-1:state.count);return <div key={rect.slot} className={`today-tile ${filled?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:filled?['#b5b7a5','#c39582','#87a6b0','#d7c49a','#61777a'][rect.slot%5]:undefined}}/>;})}</div>
   <div className="today-details"><div><span className="wall-label">{t('atelier.closes_in')}</span><p className="countdown">{state.ready?'00:00:00':'00:15:00'}</p></div><div className="recorded"><span className="mono">{t('atelier.recorded',{n:state.count,cap})}</span><div className="members">{Array.from({length:cap},(_,n)=><i key={n} className={n<state.count?'recorded':''}/>)}</div></div></div><p className="window">{windowText(state.day)}</p>
-  <AreaDisplay area={rectArea(state.photo?state.rects.find(rect=>rect.slot===0):undefined,workSize(state))}/><p className="shared-note">{t('demo.posts.rule')}</p><button className="text-button" onClick={onPosts}>{t(state.photo?'demo.posts.reuse':'demo.posts.use')}</button>
+  <AreaDisplay area={rectArea(state.photo?state.rects.find(rect=>rect.slot===0):undefined,workSize(state))}/><button className="text-button" onClick={onPosts}>{t(state.photo?'demo.posts.reuse':'demo.posts.use')}</button>
   {state.day<entry.activeFrom?<p>{t('join.tomorrow')}</p>:state.ready?<Button onClick={()=>{setSelected(state.ready);navigate('work');}}>{t('reveal.open')}</Button>:state.photo?<div className="posted"><p>{t('posted.title')}<br/>{t('posted.title2')}</p>{state.count>=Math.max(1,cap-2)&&<span className="muted">{t('atelier.almost',{n:cap-state.count})}</span>}</div>:<Button onClick={()=>navigate('camera')}><Icon kind="camera"/>{t('onboarding.1.title')}</Button>}
-  {!state.ready&&state.day>=entry.activeFrom&&<div className="draft-actions"><p className="wall-label">{t('demo.draft.label')}</p><Button secondary disabled={busy||state.count===0} onClick={()=>void preview()}>{t(busy?'demo.draft.loading':'demo.draft.generate')}</Button>{state.count===0&&<p className="shared-note">{t('demo.draft.empty')}</p>}{draftError&&<p className="error" role="alert">{draftError}</p>}</div>}
+  {!state.ready&&state.day>=entry.activeFrom&&<div className="draft-actions"><p className="wall-label">{t('demo.draft.label')}</p><Button secondary disabled={busy||state.count===0} onClick={()=>void preview()}>{t(busy?'demo.draft.loading':'demo.draft.generate')}</Button>{draftError&&<p className="error" role="alert">{draftError}</p>}</div>}
   <div className="section-heading"><h2>{t('atelier.past')}</h2><button className="text-button" onClick={()=>navigate('archive')}><Icon kind="arrow"/></button></div><div className="recent">{state.works.filter(w=>w.opened).slice(0,3).map(w=><button key={w.day} onClick={()=>{setSelected(w.day);navigate('work');}}><img src={w.image} alt={t('schiild.label',{index:w.index})}/><span className="mono">{short(w.day)}</span></button>)}</div>
+  <HelpDetails><p>{t('demo.posts.rule')}</p><p>{t('demo.draft.empty')}</p></HelpDetails>
  </section>}
  {screen==='camera'&&<Camera atelier={atelier} day={state.day} onBack={()=>navigate('home')} onSubmit={url=>{const next={...state,photo:url,count:state.count+1};onChange(next);setState(next);navigate('home');}}/>}
  {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={atelier} local onClose={()=>{setDraft(null);navigate('home');}}/>}

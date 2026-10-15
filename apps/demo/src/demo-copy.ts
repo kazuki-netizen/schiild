@@ -1,5 +1,14 @@
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
+ // Optional explanations are collapsed in the demo at the user's request.
+ 'demo.help.rules':'ルールを確認',
+ 'demo.help.gestures':'操作のヒント',
+ 'demo.help.area':'集計について',
+ 'demo.help.account':'ログインについて',
+ 'demo.help.draft':'仮表示について',
+ 'demo.posts.irreversible':'記録後の取り消し・差し替えはできません。',
+ 'demo.account.id_hint':'3〜24文字（半角英小文字・数字・_・-）',
+ 'demo.account.password_hint':'12文字以上',
  'demo.auth.required':'プロフィールを見るにはログインしてください。初めての場合はアカウントをつくれます。',
  'demo.reset.storage':'初期化のため、このサイトの保存データを消去できるブラウザで開いてください。',
  // Demo archive design requested by the user; production copy stays unchanged.
@@ -13,7 +22,7 @@ export const demoCopy={
  'demo.calendar.sample_note':'S はサンプル作品です。',
  // User-selected label override for the demo's GLOBAL statistics.
  'global.stat.posts':'総投稿数',
- 'onboarding.1.title':'このアトリエに1日1枚',
+ 'onboarding.1.title':'今日の1枚を撮る',
  'camera.confirm.title':'このアトリエの今日のシールは一度きりです',
  'demo.posts.title':'今日の自分の投稿',
  'demo.posts.rule':'アトリエごとに1日1枚を記録できます。確定した写真の取り消し・差し替えはできません。ほかのアトリエには自動で投稿されません。',
@@ -30,8 +39,8 @@ export const demoCopy={
  'demo.posts.continue':'選んだ{n}アトリエに記録する',
  'demo.posts.confirm':'この写真を、次のアトリエの今日の1枚として記録します。',
  'demo.posts.done':'「{name}」に記録しました。',
- 'demo.posts.reuse':'今日の投稿を別のアトリエにも記録する',
- 'demo.posts.use':'今日の投稿から写真を選ぶ',
+ 'demo.posts.reuse':'別のアトリエにも記録',
+ 'demo.posts.use':'投稿した写真を選ぶ',
  'demo.posts.already':'このアトリエの今日の1枚は記録済みです。差し替えはできません。',
  'demo.posts.source_forbidden':'この日の自分の投稿を確認できませんでした。今日の投稿を選び直してください。',
  'demo.posts.target_forbidden':'追加先のアトリエに参加しているか確認してください。',
@@ -54,7 +63,7 @@ export const demoCopy={
  'demo.google.expired':'認証の受付時間が過ぎました。もう一度ログインしてください。',
  'demo.google.conflict':'このGoogleアカウントまたは参加情報は、別のアカウントに連携しています。ログアウトして、連携済みの方法でログインしてください。',
  'demo.google.retry':'Googleログインを再読み込みする',
- 'demo.draft.generate':'今日のシールトを仮生成する',
+ 'demo.draft.generate':'仮生成する',
  'demo.draft.loading':'仮生成しています',
  'demo.draft.label':'デモ専用・仮表示',
  'demo.draft.title':'今日のシールト（仮）',
@@ -108,6 +117,7 @@ export const demoCopy={
  'demo.shared.generate_body':'現在の{n}枚から生成します。まだ記録していない人は、生成後に今日の写真を追加できません。',
  'demo.shared.before_photo':'今日の1枚を記録すると、友達の写真と一緒にシールトに残せます。',
  'demo.shared.wait':'記録した写真は保存されています。作成者が生成すると、同じシールトを開けます。',
+ 'demo.shared.wait_short':'シールトの生成を待っています',
  'demo.shared.members':'参加 {n}人 ／ 定員 {cap}人',
  'demo.shared.custody.other':'このアトリエの参加者が預かります',
  'demo.shared.unavailable':'つながりませんでした。時間をおいて、もう一度試してください。',

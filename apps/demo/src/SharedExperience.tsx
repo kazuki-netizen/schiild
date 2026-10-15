@@ -12,6 +12,7 @@ import DraftPreview from './DraftPreview';
 import type {Draft} from './draft';
 import AreaDisplay from './AreaDisplay';
 import ArchiveCalendar from './ArchiveCalendar';
+import HelpDetails from './HelpDetails';
 
 export default function SharedExperience({entry,onManage,onShare,onAccount,onPosts,onGlobal,navigation}:{entry:Atelier;onManage:()=>void;onShare:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string)=>void;navigation:Navigation}){
  const [state,setState]=useState<SharedState|null>(null),[error,setError]=useState(''),[screen,setScreen]=useState('home'),[work,setWork]=useState<Work|null>(null),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false),[cameraDay,setCameraDay]=useState<string|null>(null);
@@ -69,18 +70,19 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
     <div className="artboard today-board" data-testid="today-board">{rects.map(rect=><div key={rect.slot} className={`today-tile ${state.postedSlots.includes(rect.slot)?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:state.postedSlots.includes(rect.slot)?'var(--strong)':undefined}}/>)}</div>
     <div className="today-details"><span className="mono">{state.day.replaceAll('-',' / ')}</span><span className="recorded mono">{t('atelier.recorded',{n:state.postedSlots.length,cap:state.capacity})}</span></div>
     <p className="window">{t('atelier.window',{start:short(state.day)+' 09:00',end:short(dayAfter(state.day))+' 09:00'})}</p>
-    <AreaDisplay area={state.area}/><p className="shared-note">{t('demo.posts.rule')}</p>
+    <AreaDisplay area={state.area}/>
     <button className="text-button" onClick={onPosts}>{t(state.hasPhoto?'demo.posts.reuse':'demo.posts.use')}</button>
     <div className="shared-actions">
      <button className="text-button" onClick={onShare}>{t('created.share')}</button>
      {state.status==='ready'?<button className="button" disabled={busy} onClick={()=>void open(state.day)}>{t('reveal.open')}</button>:<>
       {state.hasPhoto?<div className="posted"><p>{t('demo.shared.saved')}</p></div>:state.status==='open'&&<button className="button" onClick={()=>go('camera')}>{t('onboarding.1.title')}</button>}
-      {state.canGenerate&&state.postedSlots.length>0?<><p className="shared-note">{t('demo.shared.generate_note')}</p><button className="button secondary" disabled={busy} onClick={()=>setConfirm(true)}>{t(state.status==='generating'?'common.retry':'demo.shared.generate')}</button></>:<p className="shared-note">{t(state.hasPhoto?'demo.shared.wait':'demo.shared.before_photo')}</p>}
+      {state.canGenerate&&state.postedSlots.length>0?<><button className="button secondary" disabled={busy} onClick={()=>setConfirm(true)}>{t(state.status==='generating'?'common.retry':'demo.shared.generate')}</button></>:state.hasPhoto&&<p className="shared-status">{t('demo.shared.wait_short')}</p>}
      </>}
-     {state.status==='open'&&<div className="draft-actions"><p className="wall-label">{t('demo.draft.label')}</p><button className="button secondary" disabled={busy||state.postedSlots.length===0} onClick={()=>void preview()}>{t(busy?'demo.draft.loading':'demo.draft.generate')}</button>{state.postedSlots.length===0&&<p className="shared-note">{t('demo.draft.empty')}</p>}</div>}
+     {state.status==='open'&&<div className="draft-actions"><p className="wall-label">{t('demo.draft.label')}</p><button className="button secondary" disabled={busy||state.postedSlots.length===0} onClick={()=>void preview()}>{t(busy?'demo.draft.loading':'demo.draft.generate')}</button></div>}
     </div>
     <div className="section-heading"><h2>{t('atelier.past')}</h2><button className="text-button" onClick={()=>go('archive')}>{t('archive.title')}</button></div>
     <div className="atelier-list">{state.works.slice(0,3).map(item=><button className="atelier-select" key={item.day} disabled={busy} onClick={()=>void open(item.day)}><span className="mono">{item.day}</span><span className="mono">{t('schiild.label',{index:item.index})}</span></button>)}</div>
+    <HelpDetails><p>{t('demo.posts.rule')}</p><p>{t('demo.shared.generate_note')}</p>{state.hasPhoto&&!state.canGenerate&&<p>{t('demo.shared.wait')}</p>}<p>{t('demo.draft.empty')}</p></HelpDetails>
    </section>}
    {screen==='camera'&&<Camera shared day={cameraDay??state.day} atelier={state.name} onBack={()=>go('home')} onSubmit={post}/>}
    {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={state.name} onClose={()=>{setDraft(null);go('home');}}/>}
