@@ -1,6 +1,14 @@
 // DEMO ONLY. Spanish copy uses the same keys and restrictions as the other languages.
 import type {CopyKey} from './copy';
 export const spanish={
+ "demo.line.login":"Iniciar sesión con LINE",
+ "demo.line.linked":"LINE vinculado",
+ "demo.line.invalid":"No se pudo verificar tu identidad con LINE. Inténtalo de nuevo.",
+ "demo.line.expired":"Vuelve a iniciar sesión con LINE desde el principio.",
+ "demo.line.conflict":"Esta cuenta de LINE está vinculada a otra cuenta.",
+ "demo.line.unavailable":"El acceso con LINE no está disponible. Inténtalo más tarde.",
+ "demo.line.storage":"Permite el almacenamiento de este sitio para iniciar sesión con LINE.",
+ "demo.line.delete":"Tras confirmar la eliminación, verifica tu identidad con LINE.",
  "demo.discover.title":"Descubrir",
  "demo.discover.public":"Ateliers públicos",
  "demo.discover.search":"Buscar ateliers",

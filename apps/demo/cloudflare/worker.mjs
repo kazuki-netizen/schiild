@@ -7,6 +7,7 @@ import {xserverImages} from './xserver-store.mjs';
 import {gateway} from './gateway.mjs';
 import {accounts} from '../server/accounts.mjs';
 import {validGoogleClient} from '../server/google-identity.mjs';
+import {readLineConfig,validLineConfig} from '../server/line-identity.mjs';
 export class AtelierDirectory extends DurableObject {
  constructor(ctx,env){
   super(ctx,env);this.env=env;this.storage=ctx.storage;
@@ -17,11 +18,11 @@ export class AtelierDirectory extends DurableObject {
    let body;try{body=await request.json();}catch{throw new ApiError(400,'invalid');}
    if(!body||typeof body!=='object'||Array.isArray(body))throw new ApiError(400,'invalid');
    const images=xserverImages({url:this.env.XSERVER_STORAGE_URL,secret:this.env.XSERVER_STORAGE_SECRET});
-   const store=metadataStore(this.storage,images),auth=accounts(store,{googleClientId:this.env.GOOGLE_CLIENT_ID}),credential=request.headers.get('authorization')?.replace(/^Bearer /,'');
+   const store=metadataStore(this.storage,images),lineConfig=readLineConfig(this.env.LINE_LOGIN_CONFIG),auth=accounts(store,{googleClientId:this.env.GOOGLE_CLIENT_ID,lineConfig}),credential=request.headers.get('authorization')?.replace(/^Bearer /,'');
    let result;
    if(typeof body.action==='string'&&body.action.startsWith('account.')){
     // Disabled feature discovery must not consume password-login/deletion attempts.
-    const authAttempt=['account.login','account.register','account.google','account.delete'].includes(body.action)||body.action==='account.google.start'&&validGoogleClient(this.env.GOOGLE_CLIENT_ID);
+    const authAttempt=['account.login','account.register','account.google','account.delete','account.line'].includes(body.action)||body.action==='account.google.start'&&validGoogleClient(this.env.GOOGLE_CLIENT_ID)||body.action==='account.line.start'&&validLineConfig(lineConfig);
     if(authAttempt&&this.env.AUTH_RATE_LIMITER&&!((await this.env.AUTH_RATE_LIMITER.limit({key:request.headers.get('X-Demo-IP')??'local'})).success))throw new ApiError(429,'login_limited');
     result=await auth.execute(body,credential);
    }else{

@@ -2,6 +2,14 @@
 // Product names stay Schiil / Schiild; custody never implies a financial right.
 import type {CopyKey} from './copy';
 export const translations={
+ "demo.line.login":["Log in with LINE", "LINE으로 로그인", "Connexion avec LINE", "Inloggen met LINE"],
+ "demo.line.linked":["LINE linked", "LINE 연동됨", "LINE associé", "LINE gekoppeld"],
+ "demo.line.invalid":["LINE verification failed. Please try again.", "LINE 본인 확인에 실패했습니다. 다시 시도해 주세요.", "La vérification LINE a échoué. Réessayez.", "Verificatie met LINE is mislukt. Probeer het opnieuw."],
+ "demo.line.expired":["Please start LINE login again.", "LINE 로그인을 처음부터 다시 시도해 주세요.", "Recommencez la connexion avec LINE.", "Start het inloggen met LINE opnieuw."],
+ "demo.line.conflict":["This LINE account is linked to another account.", "이 LINE 계정은 다른 계정에 연동되어 있습니다.", "Ce compte LINE est associé à un autre compte.", "Dit LINE-account is gekoppeld aan een ander account."],
+ "demo.line.unavailable":["LINE login is unavailable. Please try again later.", "LINE 로그인에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.", "La connexion LINE est indisponible. Réessayez plus tard.", "Inloggen met LINE is niet beschikbaar. Probeer het later opnieuw."],
+ "demo.line.storage":["Allow browser storage for this site to log in with LINE.", "LINE 로그인을 위해 이 사이트의 브라우저 저장을 허용해 주세요.", "Autorisez le stockage de ce site pour vous connecter avec LINE.", "Sta browseropslag voor deze site toe om met LINE in te loggen."],
+ "demo.line.delete":["After confirming deletion, verify your identity with LINE.", "삭제를 확정하면 LINE에서 본인 확인을 진행합니다.", "Après confirmation de la suppression, vérifiez votre identité avec LINE.", "Bevestig de verwijdering en verifieer daarna je identiteit met LINE."],
  "demo.discover.title":["Discover", "찾기", "Découvrir", "Ontdekken"],
  "demo.discover.public":["Public ateliers", "공개 아틀리에", "Ateliers publics", "Openbare ateliers"],
  "demo.discover.search":["Search ateliers", "아틀리에 검색", "Rechercher un atelier", "Ateliers zoeken"],

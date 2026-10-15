@@ -1,0 +1,20 @@
+// DEMO ONLY. LINE secrets and authorization-code exchange stay on Cloudflare.
+import {ApiError} from './atelier-core.mjs';
+export function validLineConfig(config){
+ try{const url=new URL(config.redirectUri);return typeof config.channelId==='string'&&/^\d{5,20}$/.test(config.channelId)&&typeof config.channelSecret==='string'&&/^[\x21-\x7e]{16,256}$/.test(config.channelSecret)&&url.protocol==='https:'&&url.search==='?auth=line'&&!url.hash&&!url.username&&!url.password;}catch{return false;}
+}
+export function readLineConfig(value){try{const config=JSON.parse(value);return validLineConfig(config)?config:null;}catch{return null;}}
+export function lineVerifier(config,{fetcher=fetch,now=()=>Date.now()}={}){
+ return async({code,verifier,nonce,reauth=false})=>{
+  const post=async(path,values)=>{let response;try{response=await fetcher('https://api.line.me/oauth2/v2.1/'+path,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(values),signal:AbortSignal.timeout(15000),redirect:'manual'});}catch{throw new ApiError(503,'line_unavailable');}
+   if(!response.ok)throw new ApiError(response.status>=500||response.status===429?503:401,response.status>=500||response.status===429?'line_unavailable':'line_invalid');
+   try{return await response.json();}catch{throw new ApiError(503,'line_unavailable');}
+  };
+  const tokens=await post('token',{grant_type:'authorization_code',code,redirect_uri:config.redirectUri,client_id:config.channelId,client_secret:config.channelSecret,code_verifier:verifier});
+  if(typeof tokens.id_token!=='string'||tokens.id_token.length>16384)throw new ApiError(401,'line_invalid');
+  const claims=await post('verify',{id_token:tokens.id_token,client_id:config.channelId,nonce});
+  if(claims.iss!=='https://access.line.me'||claims.aud!==config.channelId||typeof claims.sub!=='string'||!/^U[a-f0-9]{32}$/.test(claims.sub)||claims.nonce!==nonce||!Number.isFinite(claims.exp)||claims.exp*1000<=now()||!Number.isFinite(claims.iat)||claims.iat*1000>now()+60000)throw new ApiError(401,'line_invalid');
+  if(reauth&&(!Number.isFinite(claims.auth_time)||claims.auth_time*1000<now()-300000||claims.auth_time*1000>now()+60000))throw new ApiError(401,'line_invalid');
+  return {subject:claims.sub,name:typeof claims.name==='string'?claims.name.trim().slice(0,40):''};
+ };
+}

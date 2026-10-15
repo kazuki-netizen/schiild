@@ -22,6 +22,19 @@ export function metadataStore(storage,images){
    }
    return {modified:true,account:updated};
   });},
+  async registerLine(account){return storage.transactionSync(()=>{
+   const read=key=>{const row=storage.sql.exec('SELECT data,etag FROM rooms WHERE key = ?',key).toArray()[0];return row?{data:JSON.parse(row.data),etag:row.etag}:null;};
+   const lineKey=`line-identities/${account.lineSubject}`,mapping=read(lineKey)?.data;
+   if(mapping)return {modified:false,reason:'line',username:mapping.username};
+   const memberKey=`members/${account.member}`,accountKey=`accounts/${account.username}`,linked=read(memberKey)?.data,current=read(accountKey)?.data;
+   if(linked?.deleted||linked&&linked.username!==account.username||current&&current.member!==account.member||current?.lineSubject&&current.lineSubject!==account.lineSubject)return {modified:false,reason:'member'};
+   const updated={...(current??account),lineSubject:account.lineSubject};
+   for(const [key,data] of [[accountKey,updated],[memberKey,{username:account.username}],[lineKey,{username:account.username}]]){
+    const etag=String(Number(read(key)?.etag??0)+1);
+    storage.sql.exec('INSERT INTO rooms (key,data,etag) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET data=excluded.data,etag=excluded.etag',key,JSON.stringify(data),etag);
+   }
+   return {modified:true,account:updated};
+  });},
   async getWithMetadata(key){const row=storage.sql.exec('SELECT data, etag FROM rooms WHERE key = ?',key).toArray()[0];return row?{data:JSON.parse(row.data),etag:row.etag,metadata:{}}:null;},
   async deleteAccount(account,anonymousMember,attemptKeys){return storage.transactionSync(()=>{
    const current=storage.sql.exec('SELECT data FROM rooms WHERE key = ?',`accounts/${account.username}`).toArray()[0];
@@ -35,7 +48,7 @@ export function metadataStore(storage,images){
   async get(key){return images.get(key);},
   async set(key,data){return images.set(key,data);},
   async setJSON(key,data,{onlyIfNew,onlyIfMatch}={}){
-   if(!/^(rooms\/[A-Z0-9]{8}|globals\/\d{4}-\d{2}-\d{2}|accounts\/[a-z0-9_-]{3,24}|members\/[a-f0-9]{64}|sessions\/[a-f0-9]{64}|auth-attempts\/[a-f0-9]{64}|google-(challenges|identities)\/[a-f0-9]{64})$/.test(key))throw Error('metadata_key');
+   if(!/^(rooms\/[A-Z0-9]{8}|globals\/\d{4}-\d{2}-\d{2}|accounts\/[a-z0-9_-]{3,24}|members\/[a-f0-9]{64}|sessions\/[a-f0-9]{64}|auth-attempts\/[a-f0-9]{64}|(google|line)-(challenges|identities)\/[a-f0-9]{64})$/.test(key))throw Error('metadata_key');
    return storage.transactionSync(()=>{
     const read=key=>{const value=storage.sql.exec('SELECT data FROM rooms WHERE key = ?',key).toArray()[0];return value?JSON.parse(value.data):undefined;};
     if(!metadataWriteAllowed(key,data,read))return {modified:false};

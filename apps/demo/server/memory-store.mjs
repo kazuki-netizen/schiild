@@ -19,6 +19,15 @@ export function memoryStore(){
    for(const [key,data] of [[accountKey,updated],[memberKey,{username:account.username}],[googleKey,{username:account.username}]])values.set(key,{data:structuredClone(data),etag:String(++revision),metadata:{}});
    return {modified:true,account:structuredClone(updated)};
   },
+  async registerLine(account){
+   const lineKey=`line-identities/${account.lineSubject}`,mapping=values.get(lineKey)?.data;
+   if(mapping)return {modified:false,reason:'line',username:mapping.username};
+   const memberKey=`members/${account.member}`,accountKey=`accounts/${account.username}`,linked=values.get(memberKey)?.data,current=values.get(accountKey)?.data;
+   if(linked?.deleted||linked&&linked.username!==account.username||current&&current.member!==account.member||current?.lineSubject&&current.lineSubject!==account.lineSubject)return {modified:false,reason:'member'};
+   const updated={...(current??account),lineSubject:account.lineSubject};
+   for(const [key,data] of [[accountKey,updated],[memberKey,{username:account.username}],[lineKey,{username:account.username}]])values.set(key,{data:structuredClone(data),etag:String(++revision),metadata:{}});
+   return {modified:true,account:structuredClone(updated)};
+  },
   async getWithMetadata(key){const value=values.get(key);return value?structuredClone(value):null;},
   async deleteAccount(account,anonymousMember,attemptKeys){
    if(values.get(`accounts/${account.username}`)?.data.member!==account.member)return {modified:false};

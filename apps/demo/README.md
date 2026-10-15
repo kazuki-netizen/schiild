@@ -4,6 +4,20 @@
 
 `demo`ブランチ専用です。本番のM1〜M4、API、DB、Rust/WASMには接続しません。TypeScript生成エンジンと暫定32色は、このデモだけで使います。
 
+## LINEログイン（デモ専用・2026年10月15日）
+
+[ユーザー確認済み] LINEログインだけを追加し、WhatsAppとGoogleの新しい設定は保留します。通常のID・パスワードでも引き続きログインできます。LINEで初めてログインするとアカウントを作り、次回以降は同じLINEから同じアカウントへ戻ります。既存のID・パスワードのアカウントへ連携する場合は、先にそのアカウントへログインし、プロフィールのLINEログインから連携します。表示名やメールアドレスだけではアカウントを結合しません。
+
+LINE DevelopersのLINEログインチャネルでウェブアプリを有効にし、コールバックURLを `https://schiild.pickleballnavi.jp/?auth=line` に設定してください。一般の利用者に使ってもらう場合は、チャネルを公開する必要があります。要求スコープは `openid profile` だけです。メールアドレス・電話番号・友だち一覧にはアクセスしません。
+
+Cloudflare WorkerのSecret `LINE_LOGIN_CONFIG` に `channelId`・`channelSecret`・`redirectUri` の3項目を持つJSONを設定します。秘密情報はチャット、Git、Expoの公開環境変数、Xserverへ入れません。接続設定がない間はLINEの導線を表示しません。手動の設定は `apps/demo` で `pnpm exec wrangler secret put LINE_LOGIN_CONFIG --config wrangler.jsonc` を実行し、JSONをCLIの入力欄へ渡します。ローカルの接続入力画面を使う場合、Channel secretはWindows資格情報マネージャーへ保存します。
+
+認可コードはCloudflareで交換し、LINEの検証APIで署名・発行元・対象チャネル・有効期限・nonceを確認します。state、PKCE S256、5分で失効する一度限りのブラウザ別チャレンジ、IPごとの認証試行制限を付けています。戻りURLから認可コードとstateを除去し、LINEのアクセストークンは保存しません。LINE識別子はチャネルIDと合わせたハッシュだけを保存します。
+
+LINEだけで作ったアカウントも設定から完全削除できます。ID入力と削除確認の後、同じLINEで再認証してから削除します。投稿・共同作品は従来どおり匿名の記録として残し、セッション・LINE連携・途中の認証情報は消去します。ID・パスワードとLINEの両方を連携したアカウントは、従来のパスワード確認で削除できます。
+
+`line-auth.test.mjs` と `line-runtime.test.mjs` は、外部APIをモックしてメモリー・SQLite・workerdで認証、別ブラウザからの復帰、不正なstateや再利用の拒否、試行制限、アカウント削除を検証します。`line-browser.mjs` は6言語の導線、320/390/768px表示、認証の往復、URL消去、LINEでの削除を検証します。実際のLINEアカウントでの接続確認は、チャネル設定後に利用者が行います。
+
 ## 2026年10月15日の初期化とログイン制限
 
 [ユーザー確認済み] アトリエ・生成作品だけでなく、アカウント・元写真も含めた全削除を行い、初期状態で再公開しました。Cloudflareではデモ専用Durable Objectの `deleteAll()` でアカウント・認証情報・参加情報・投稿・GLOBALを消去し、Xserverではデモ専用画像フォルダーの写真・作品ファイルを消去しました。他のプロジェクトには触れていません。削除処理は認証付きの一時保守用Workerだけで実行し、公開後の通常APIには削除用の入口を残していません。

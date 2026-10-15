@@ -2,6 +2,7 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {ApiError} from './atelier-core.mjs';
 import {googleVerifier,validGoogleClient} from './google-identity.mjs';
+import {lineAccounts} from './line-accounts.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const fail=(status,code)=>{throw new ApiError(status,code);};
 const accountKey=username=>`accounts/${username}`;
@@ -16,7 +17,7 @@ export async function listRecords(store,prefix){
  const rows=await Promise.all((listing.blobs??[]).map(async blob=>({key:blob.key,...await store.getWithMetadata(blob.key,{type:'json'})})));
  return rows;
 }
-export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now})}={}){
+export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine}={}){
  async function identity(credential){
   if(!/^[a-f0-9]{64}$/.test(credential??''))fail(401,'unauthorized');
   const member=hash(credential),session=await store.getWithMetadata(`sessions/${member}`,{type:'json'});
@@ -34,14 +35,16 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
  }
  async function profile(account){
   const rooms=(await listRecords(store,'rooms/')).map(row=>row.data).filter(room=>room.members.includes(account.member));
-  return {username:account.username,name:account.name,since:account.since,googleEmail:account.googleEmail,canDelete:Boolean(account.passwordHash),ateliers:rooms.map(room=>({code:room.code,name:room.name,capacity:room.capacity,canGenerate:room.creator===account.member})),custody:rooms.flatMap(room=>Object.values(room.days).filter(day=>day.status==='ready'&&day.custodian===account.member).map(day=>({code:room.code,name:room.name,day:day.day,index:day.index})))};
+  return {username:account.username,name:account.name,since:account.since,googleEmail:account.googleEmail,...(account.lineSubject?{lineLinked:true,hasPassword:Boolean(account.passwordHash)}:{}),canDelete:Boolean(account.passwordHash||account.lineSubject),ateliers:rooms.map(room=>({code:room.code,name:room.name,capacity:room.capacity,canGenerate:room.creator===account.member})),custody:rooms.flatMap(room=>Object.values(room.days).filter(day=>day.status==='ready'&&day.custodian===account.member).map(day=>({code:room.code,name:room.name,day:day.day,index:day.index})))};
  }
  async function session(account){
   const token=randomBytes(32).toString('hex');
   if(!(await store.setJSON(`sessions/${hash(token)}`,{username:account.username,member:account.member,expires:now()+SESSION_MS,revoked:false},{onlyIfNew:true})).modified)fail(401,'account_deleted');
   return {token,account:await profile(account)};
  }
+ const line=lineAccounts(store,{config:lineConfig,now,identity,session,verify:verifyLine});
  async function execute(body,credential){
+  if(typeof body.action==='string'&&body.action.startsWith('account.line'))return line(body,credential);
   const username=typeof body.username==='string'?body.username.trim().toLowerCase():'';
   if(body.action==='account.google.start'){
    if(!validGoogleClient(googleClientId))return {enabled:false};

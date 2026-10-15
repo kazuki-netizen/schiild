@@ -1,5 +1,13 @@
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
+ 'demo.line.login':'LINEでログイン',
+ 'demo.line.linked':'LINE連携済み',
+ 'demo.line.invalid':'LINEで本人確認できませんでした。もう一度お試しください。',
+ 'demo.line.expired':'LINEログインを最初からやり直してください。',
+ 'demo.line.conflict':'このLINEアカウントは別のアカウントと連携しています。',
+ 'demo.line.unavailable':'LINEログインに接続できません。時間をおいてお試しください。',
+ 'demo.line.storage':'LINEログインには、このサイトのブラウザ保存を許可してください。',
+ 'demo.line.delete':'削除の確定後、LINEで本人確認します。',
  "demo.discover.title":"見つける",
  "demo.discover.public":"公開アトリエ",
  "demo.discover.search":"アトリエを検索",
