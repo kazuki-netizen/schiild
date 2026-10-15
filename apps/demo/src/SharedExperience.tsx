@@ -1,4 +1,4 @@
-import React,{useEffect,useRef,useState} from 'react';
+import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {Camera,Reveal} from '../App';
 import type {Navigation} from './DemoNav';
 import {t} from './copy';
@@ -11,10 +11,12 @@ import type {SharedState} from './shared-api';
 import DraftPreview from './DraftPreview';
 import type {Draft} from './draft';
 import AreaDisplay from './AreaDisplay';
+import ArchiveCalendar from './ArchiveCalendar';
 
 export default function SharedExperience({entry,onManage,onShare,onAccount,onPosts,onGlobal,navigation}:{entry:Atelier;onManage:()=>void;onShare:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string)=>void;navigation:Navigation}){
  const [state,setState]=useState<SharedState|null>(null),[error,setError]=useState(''),[screen,setScreen]=useState('home'),[work,setWork]=useState<Work|null>(null),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false),[cameraDay,setCameraDay]=useState<string|null>(null);
  const sequence=useRef(0),mounted=useRef(true),lock=useRef(false);
+ const loadArchiveImage=useCallback(async(day:string,signal:AbortSignal)=>(await sharedRequest<Work>('work',{code:entry.code,day},signal)).image,[entry.code]);
  const [draft,setDraft]=useState<Draft|null>(null),draftController=useRef<AbortController|null>(null);
  async function refresh(){
   const request=++sequence.current;
@@ -60,7 +62,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
  useEffect(()=>{if(navigation.openDay)void open(navigation.openDay);else go(navigation.screen);},[navigation.revision]);
  const short=(day:string)=>`${Number(day.slice(5,7))}/${Number(day.slice(8))}`;
  const rects=state?partition(state.capacity,random(state.seed)):[];
- return <div className="app"><header className="header"><button className="brand" aria-label="Schiild" onClick={onAccount}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></header>
+ return <div className={screen==='archive'?'app archive-app':'app'}><header className="header"><button className="brand" aria-label="Schiild" onClick={onAccount}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></header>
   <main>{error&&<div className="shared-error" role="alert"><p>{error}</p><button className="text-button" onClick={()=>void refresh()}>{t('demo.shared.refresh')}</button></div>}
   {!state?<p>{t('common.loading')}</p>:<>
    {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{state.name}</h1></div><p className="shared-note">{t('demo.shared.members',{n:state.members,cap:state.capacity})}</p>
@@ -83,7 +85,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
    {screen==='camera'&&<Camera shared day={cameraDay??state.day} atelier={state.name} onBack={()=>go('home')} onSubmit={post}/>}
    {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={state.name} onClose={()=>{setDraft(null);go('home');}}/>}
    {screen==='work'&&work&&<Reveal shared key={work.day} atelier={state.name} work={work} onOpened={()=>{try{localStorage.setItem(`schiild.shared.opened.${entry.code}.${work.day}`,'true');}catch{/* Viewing remains possible when local storage is full. */}}} onNext={()=>onGlobal(work.day)}/>}
-   {screen==='archive'&&<section><h1>{t('archive.title')}</h1><div className="stats"><div><span>{t('archive.total')}</span><b>{state.works.length}</b></div></div><p className="archive-note">{t('archive.note')}</p>{state.works.map(item=><article className="archive-row" key={item.day}><button className="atelier-select" disabled={busy} onClick={()=>void open(item.day)}><span className="mono">{item.day}</span><span className="mono">{t('schiild.label',{index:item.index})}</span></button><button className="archive-global text-button" onClick={()=>onGlobal(item.day)}>{t('global.label')}</button></article>)}</section>}
+   {screen==='archive'&&<ArchiveCalendar items={state.works} currentDay={state.day} atelier={state.name} busy={busy} loadImage={loadArchiveImage} onOpen={item=>void open(item.day)} onGlobal={item=>onGlobal(item.day)}/>}
   </>}
   </main>
   {confirm&&state&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="generate-title"><h2 id="generate-title">{t('demo.shared.generate_confirm')}</h2><p>{t('demo.shared.generate_body',{n:state.postedSlots.length})}</p>{error&&<p className="shared-error" role="alert">{error}</p>}<button className="button" disabled={busy} onClick={()=>void generate()}>{t(busy?'common.loading':'demo.shared.generate')}</button><button className="button secondary" disabled={busy} onClick={()=>setConfirm(false)}>{t('delete.cancel')}</button></section></div>}

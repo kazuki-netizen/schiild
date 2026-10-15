@@ -1,5 +1,14 @@
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
+ // Demo archive design requested by the user; production copy stays unchanged.
+ 'demo.calendar.previous':'前の月',
+ 'demo.calendar.next':'次の月',
+ 'demo.calendar.density':'カレンダーの表示密度',
+ 'demo.calendar.compact':'Compact',
+ 'demo.calendar.full':'Full',
+ 'demo.calendar.open':'シールトを開く',
+ 'demo.calendar.sample':'S',
+ 'demo.calendar.sample_note':'S はサンプル作品です。',
  // User-selected label override for the demo's GLOBAL statistics.
  'global.stat.posts':'総投稿数',
  'onboarding.1.title':'このアトリエに1日1枚',
