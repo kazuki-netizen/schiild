@@ -41,19 +41,21 @@ export function resample(source:Pixels,w:number,h:number):Float32Array {
  }
  return out;
 }
-export function render(rects:Rect[],sources:(Pixels|null)[],seed:number):Pixels{
- const rng=random(seed),out=new Uint8ClampedArray(128*128*4);
- for(const rect of rects){
+export function render(rects:Rect[],sources:(Pixels|null)[],seed:number,outputSize=128):Pixels{
+ if(outputSize!==128&&outputSize!==256)throw Error('unsupported_work_size');
+ const scale=outputSize/128,rng=random(seed),out=new Uint8ClampedArray(outputSize*outputSize*4);
+ for(const logical of rects){
+  const rect={...logical,x:logical.x*scale,y:logical.y*scale,w:logical.w*scale,h:logical.h*scale};
   const source=sources[rect.slot],sample=source?resample(source,rect.w,rect.h):null;
   for(let y=0;y<rect.h;y++)for(let x=0;x<rect.w;x++){
-   const index=(y*rect.w+x)*3,input:RGB=sample?[sample[index],sample[index+1],sample[index+2]]:colors[rng()<.12?1:0],color=nearest(input),target=((y+rect.y)*128+x+rect.x)*4;
+   const index=(y*rect.w+x)*3,input:RGB=sample?[sample[index],sample[index+1],sample[index+2]]:colors[rng()<.12?1:0],color=nearest(input),target=((y+rect.y)*outputSize+x+rect.x)*4;
    out.set([...color,255],target);
    if(sample){for(const [dx,dy,weight] of [[1,0,7/16],[-1,1,3/16],[0,1,5/16],[1,1,1/16]])if(x+dx>=0&&x+dx<rect.w&&y+dy<rect.h){const next=((y+dy)*rect.w+x+dx)*3;for(let c=0;c<3;c++)sample[next+c]+=(input[c]-color[c])*weight*.65;}}
   }
  }
  // Demo signature only; intentionally not a production algorithm version.
- for(const [x,y] of [[0,0],[124,0],[0,127],[124,127]])for(let n=0;n<4;n++)out.set([...colors[n%2?5:0],255],(y*128+x+n)*4);
- return {width:128,height:128,data:out};
+ for(const [x,y] of [[0,0],[outputSize-4,0],[0,outputSize-1],[outputSize-4,outputSize-1]])for(let n=0;n<4;n++)out.set([...colors[n%2?5:0],255],(y*outputSize+x+n)*4);
+ return {width:outputSize,height:outputSize,data:out};
 }
 export function synthetic(seed:number):Pixels{
  const rng=random(seed),data=new Uint8ClampedArray(128*128*4),sky=colors[6+Math.floor(rng()*5)],land=colors[11+Math.floor(rng()*5)],sun=colors[23+Math.floor(rng()*3)],horizon=40+rng()*40,cx=rng()*128,cy=rng()*60;

@@ -1,10 +1,11 @@
 // DEMO ONLY. Area means allocated image pixels, never a financial or legal right.
 import {partition,random} from '../src/engine.ts';
 import {participants} from './membership.mjs';
+import {workSize} from '../src/resolution.ts';
 export function dayArea(room,day,member){
- const total=128*128,slot=day?participants(room,day).indexOf(member):-1;
+ const size=workSize(day),total=size*size,scale=size/128,slot=day?participants(room,day).indexOf(member):-1;
  const rect=slot>=0&&day?.posts[slot]?partition(room.capacity,random(day.seed)).find(value=>value.slot===slot):undefined;
- const pixels=rect?rect.w*rect.h:0;
+ const pixels=rect?rect.w*rect.h*scale*scale:0;
  return {pixels,total,percent:pixels/total*100,...(rect?{rect}:{})};
 }
 export function areaSummary(rooms,globals,member){

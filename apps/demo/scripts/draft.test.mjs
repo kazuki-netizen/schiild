@@ -14,7 +14,7 @@ test('temporary drafts are available to participants, write nothing and preserve
  const records=await store.listJSON(''),initialState=await execute({action:'state',code},second);
  const draft=await execute({action:'draft',code,day},second);assert.equal(draft.provisional,true);assert.equal(draft.count,1);assert.equal(draft.custody,undefined);assert.equal(draft.index,undefined);
  assert.deepEqual(await store.listJSON(''),records);assert.deepEqual(await execute({action:'state',code},second),initialState);
- assert.equal((await sharp(Buffer.from(draft.image.split(',')[1],'base64')).metadata()).width,128);
+ assert.equal((await sharp(Buffer.from(draft.image.split(',')[1],'base64')).metadata()).width,256);
  assert.equal((await execute({action:'draft',code,day},first)).image,draft.image);
  await execute({action:'post',code,day,photo:blue},second);
  const next=await execute({action:'draft',code,day},first);assert.equal(next.count,2);assert.notEqual(next.image,draft.image);

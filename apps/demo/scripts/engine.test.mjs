@@ -13,3 +13,14 @@ test('area average and personal global pixel retain the supplied photograph colo
  const source={width:2,height:2,data:new Uint8ClampedArray([255,0,0,255,0,255,0,255,0,0,255,255,255,255,255,255])};assert.deepEqual([...resample(source,1,1)],[127.5,127.5,127.5]);
  const a=globalPixels(synthetic(10),29);assert(a.x>=0&&a.x<256&&a.y>=0&&a.y<256);assert.equal(a.pixels.data.length,256*256*4);
 });
+test('256px rendering retains photo details that 128px area sampling cannot retain',()=>{
+ const source={width:256,height:256,data:new Uint8ClampedArray(256*256*4)};for(let y=0;y<256;y++)for(let x=0;x<256;x++)source.data.set([...colors[x%2?0:5],255],(y*256+x)*4);
+ const rects=partition(1,random(29)),low=render(rects,[source],29),high=render(rects,[source],29,256);assert.equal(high.width,256);assert.equal(high.height,256);assert.equal(high.data.length,low.data.length*4);
+ for(const x of [96,97])assert.deepEqual([...high.data.subarray((90*256+x)*4,(90*256+x)*4+3)],colors[x%2?0:5]);
+ assert.notDeepEqual(high.data.subarray((90*256+96)*4,(90*256+98)*4),new Uint8ClampedArray([...low.data.subarray((45*128+48)*4,(45*128+49)*4),...low.data.subarray((45*128+48)*4,(45*128+49)*4)]));
+});
+test('256px rendering keeps palette, opacity and isolation between BSP regions',()=>{
+ const rects=partition(20,random(31)),sources=rects.map((_,n)=>synthetic(n+32)),a=render(rects,sources,31,256),b=render(rects,[synthetic(600),...sources.slice(1)],31,256),allowed=new Set(colors.map(color=>color.join(',')));
+ for(let n=0;n<a.data.length;n+=4){assert(allowed.has([...a.data.subarray(n,n+3)].join(',')));assert.equal(a.data[n+3],255);}
+ for(const rect of rects.slice(1))for(let y=rect.y*2;y<(rect.y+rect.h)*2;y++)for(let x=rect.x*2;x<(rect.x+rect.w)*2;x++){const offset=(y*256+x)*4;assert.deepEqual(a.data.subarray(offset,offset+4),b.data.subarray(offset,offset+4));}
+});

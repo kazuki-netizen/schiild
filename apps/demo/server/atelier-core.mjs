@@ -4,6 +4,7 @@ import {globalService} from './global-service.mjs';
 import {participants,memberCount,snapshotDays} from './membership.mjs';
 import {listRecords} from './accounts.mjs';
 import {dayArea,areaSummary} from './personal-area.mjs';
+import {WORK_SIZE,workSize} from '../src/resolution.ts';
 
 export class ApiError extends Error {
  constructor(status, code){super(code);this.status=status;this.code=code;}
@@ -29,7 +30,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   fail(409,'retry');
  }
  function daySeed(room,day){return parseInt(digest(`${room.code}/${day}/${room.seed}`).slice(0,7),16);}
- function current(room){const day=utcDay(now());return room.days[day]??{day,seed:daySeed(room,day),members:[...room.members],posts:{},status:'open'};}
+ function current(room){const day=utcDay(now()),saved=room.days[day];return saved?{...saved,outputSize:workSize(saved)}:{day,seed:daySeed(room,day),members:[...room.members],posts:{},status:'open',outputSize:WORK_SIZE};}
  function authorize(room,member){const slot=room.members.indexOf(member);if(slot<0)fail(403,'forbidden');return slot;}
  async function ownPost(sourceCode,day,member){
   if(!codePattern.test(sourceCode))fail(404,'not_found');
@@ -42,7 +43,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    const key=today.posts[rect.slot];if(!key)return null;
    const photo=await store.get(key,{type:'arrayBuffer'});if(!photo)fail(503,'generation_failed');
    return photo;
-  },today.seed);
+  },today.seed,workSize(today));
  }
  function summary(room,member){
   const day=utcDay(now()),today=room.days[day],slot=authorize(room,member);
@@ -123,7 +124,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    const today=current(room);if(today.status!=='open')fail(409,'window_closed');
    const count=Object.keys(today.posts).length;if(!count)fail(409,'no_photos');
    const png=await composeDay(room,today);
-   return {day,image:`data:image/png;base64,${Buffer.from(png).toString('base64')}`,count,area:dayArea(room,today,member),provisional:true};
+   return {day,outputSize:workSize(today),image:`data:image/png;base64,${Buffer.from(png).toString('base64')}`,count,area:dayArea(room,today,member),provisional:true};
   }
   if(action==='post'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
@@ -181,7 +182,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   if(action==='work'){
    const work=room.days[String(body.day)];if(!work||work.status!=='ready')fail(404,'not_found');
    const bytes=await store.get(`works/${code}/${work.day}`,{type:'arrayBuffer'});if(!bytes)fail(503,'generation_failed');
-   return {day:work.day,image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,rects:partition(room.capacity,random(work.seed)),order:shuffle(Array.from({length:room.capacity},(_,n)=>n),random(work.seed+31)),count:Object.keys(work.posts).length,index:work.index,custody:work.custodian===member?'self':'other',area:dayArea(room,work,member),opened:false};
+   return {day:work.day,outputSize:workSize(work),image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,rects:partition(room.capacity,random(work.seed)),order:shuffle(Array.from({length:room.capacity},(_,n)=>n),random(work.seed+31)),count:Object.keys(work.posts).length,index:work.index,custody:work.custodian===member?'self':'other',area:dayArea(room,work,member),opened:false};
   }
   fail(400,'invalid');
  };

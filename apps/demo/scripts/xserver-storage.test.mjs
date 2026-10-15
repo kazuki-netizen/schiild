@@ -30,5 +30,7 @@ test('PHP storage rejects unsigned/expired/path requests and atomically keeps fi
   assert(Buffer.from(await store.get(distinct)).equals(blue));
   assert(Buffer.from(await store.get(key)).equals(red));
   await assert.rejects(store.set(`works/ABCDEFGH/2026-10-08`,red));
+  for(const [n,size] of [128,256].entries()){const png=await sharp({create:{width:size,height:size,channels:3,background:'#87a6b0'}}).png().toBuffer(),workKey=`works/ABCDEFGH/2026-10-${String(9+n).padStart(2,'0')}`;assert.deepEqual(await store.set(workKey,png),{modified:true});assert(Buffer.from(await store.get(workKey)).equals(png));}
+  await assert.rejects(store.set('works/ABCDEFGH/2026-10-11',await sharp({create:{width:512,height:512,channels:3,background:'#87a6b0'}}).png().toBuffer()));
  }finally{child.kill();await new Promise(resolve=>child.once('exit',resolve));await rm(root,{recursive:true,force:true});}
 });

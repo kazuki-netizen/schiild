@@ -34,8 +34,8 @@ if ($method === 'GET') {
 }
 $size = @getimagesizefromstring($body);
 $photo = str_starts_with($key, 'photos/');
-$dimension = $photo ? 1080 : (str_starts_with($key, 'global/') ? 256 : 128);
-if (!$size || $size[0] !== $dimension || $size[1] !== $dimension || $size[2] !== ($photo ? IMAGETYPE_JPEG : IMAGETYPE_PNG)) fail(400);
+$dimensions = $photo ? [1080] : (str_starts_with($key, 'global/') ? [256] : [128, 256]);
+if (!$size || !in_array($size[0], $dimensions, true) || $size[1] !== $size[0] || $size[2] !== ($photo ? IMAGETYPE_JPEG : IMAGETYPE_PNG)) fail(400);
 $lock = fopen($file . '.lock', 'c');
 if (!$lock || !flock($lock, LOCK_EX)) fail(503);
 if (is_file($file)) { flock($lock, LOCK_UN); fclose($lock); http_response_code(200); exit; }

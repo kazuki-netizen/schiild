@@ -21,7 +21,7 @@ test('two independent members post, generate and receive the same persisted imag
  await execute({action:'generate',code,day},first);
  const made=await execute({action:'work',code,day},first),guest=await execute({action:'work',code,day},second);
  assert.equal(made.image,guest.image);assert.equal(made.count,2);assert.equal(made.custody===guest.custody,false);
- const bytes=Buffer.from(made.image.split(',')[1],'base64');const metadata=await sharp(bytes).metadata();assert.equal(metadata.width,128);assert.equal(metadata.height,128);
+ const bytes=Buffer.from(made.image.split(',')[1],'base64');const metadata=await sharp(bytes).metadata();assert.equal(metadata.width,256);assert.equal(metadata.height,256);
  const {data}=await sharp(bytes).raw().toBuffer({resolveWithObject:true});const colors=new Set();for(let n=0;n<data.length;n+=4)colors.add(data.subarray(n,n+3).join(','));assert(colors.has('195,149,130'));assert(colors.has('135,166,176'));
  await execute({action:'generate',code,day},first);assert.equal((await execute({action:'work',code,day},first)).image,made.image);
  await assert.rejects(execute({action:'post',code,day,photo:blue},first),error=>error.code==='window_closed');
