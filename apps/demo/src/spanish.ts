@@ -253,6 +253,7 @@ export const spanish={
  'demo.posts.already':'La foto de hoy de este atelier ya está registrada y no se puede sustituir.',
  'demo.posts.source_forbidden':'No se pudo verificar tu foto de esta fecha. Elige una registrada hoy.',
  'demo.posts.target_forbidden':'Comprueba que participas en el atelier de destino.',
+ 'demo.posts.concept_restricted':'Solo puedes añadir esta foto a ateliers de tema libre.',
  'demo.posts.retry':'La participación ha cambiado. Recarga la página e inténtalo de nuevo.',
  'demo.area.mine':'Tu superficie',
  'demo.area.ratio':'{percent}% de {total} px',

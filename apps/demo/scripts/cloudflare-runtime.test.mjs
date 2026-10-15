@@ -73,8 +73,11 @@ test('workerd and durable SQLite run complete shared generation against the actu
   const blue=await sharp({create:{width:1080,height:1080,channels:3,background:'#87a6b0'}}).jpeg().toBuffer();
   await call('post',{code:different.code,day:room.day,photo:'data:image/jpeg;base64,'+blue.toString('base64')},login.token);
   assert.notEqual((await call('post.photo',{sourceCode:different.code,day:room.day},login.token)).photo,(await call('post.photo',{sourceCode:room.code,day:room.day},login.token)).photo);
-  const copied=await call('reuse',{sourceCode:room.code,day:room.day,codes:[reused.code,different.code]},login.token);
-  assert.deepEqual(copied.results.map(value=>[value.done,value.error]),[[true,undefined],[false,'already_recorded']]);
+  const restrictedTarget=await call('create',{name:'テーマのある追加先',capacity:2,concept:'朝の光'},login.token);
+  const eligiblePosts=await call('posts',{},login.token);assert.equal(eligiblePosts.freeConceptOnly,true);assert.equal(eligiblePosts.targets.find(target=>target.code===restrictedTarget.code).concept,'朝の光');
+  const copied=await call('reuse',{sourceCode:room.code,day:room.day,codes:[reused.code,different.code,restrictedTarget.code]},login.token);
+  assert.deepEqual(copied.results.map(value=>[value.done,value.error]),[[true,undefined],[false,'already_recorded'],[false,'concept_restricted']]);
+  assert.equal((await call('state',{code:restrictedTarget.code},login.token)).hasPhoto,false);
   const reusedDraft=await call('draft',{code:reused.code,day:room.day},login.token);assert(reusedDraft.area.pixels>0);
   assert.equal((await call('global',{day:room.day},login.token)).area.pixels,1);
   const area=await call('area',{},login.token);assert.equal(area.global.pixels,1);assert.equal(area.atelier.days,3);assert.equal(area.atelier.pixels,made.area.pixels+reusedDraft.area.pixels+(await call('state',{code:different.code},login.token)).area.pixels);

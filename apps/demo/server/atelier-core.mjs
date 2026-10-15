@@ -5,7 +5,7 @@ import {participants,memberCount,snapshotDays} from './membership.mjs';
 import {listRecords} from './accounts.mjs';
 import {dayArea,areaSummary} from './personal-area.mjs';
 import {WORK_SIZE,workSize} from '../src/resolution.ts';
-import {normalizeConcept} from '../src/concept.ts';
+import {normalizeConcept,isFreeConcept} from '../src/concept.ts';
 
 export class ApiError extends Error {
  constructor(status, code){super(code);this.status=status;this.code=code;}
@@ -72,8 +72,8 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   if(action==='posts'){
    const day=utcDay(now()),rows=await listRecords(store,'rooms/');
    const sources=rows.flatMap(({data:source})=>{const record=source.days[day],sourceSlot=record?participants(source,record).indexOf(member):-1;return sourceSlot>=0&&record.posts[sourceSlot]?[{code:source.code,name:source.name,day}]:[];});
-   const targets=rows.filter(({data:target})=>target.members.includes(member)).map(({data:target})=>{const status=summary(target,member);return {code:target.code,name:target.name,posted:status.hasPhoto,status:status.status};});
-   return {day,sources,targets};
+   const targets=rows.filter(({data:target})=>target.members.includes(member)).map(({data:target})=>{const status=summary(target,member);return {code:target.code,name:target.name,concept:status.concept,posted:status.hasPhoto,status:status.status};});
+   return {day,sources,targets,freeConceptOnly:true};
   }
   if(action==='post.photo'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
@@ -159,6 +159,8 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   if(action==='post'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
    if(room.days[day]?.status&&room.days[day].status!=='open')fail(409,'window_closed');
+   const reusing=body.sourceCode!==undefined||body.reuse===true;
+   if(reusing&&!isFreeConcept(dayConcept(room,room.days[day])))fail(409,'concept_restricted');
    // DEMO ONLY: one immutable photo per atelier/day. Reuse is always explicit.
    let key;
    if(body.sourceCode!==undefined)key=await ownPost(String(body.sourceCode),day,member);
@@ -176,6 +178,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    room=await mutate(code,room=>{
     if(utcDay(now())!==day)fail(409,'window_closed');
     const today=current(room);if(today.status!=='open')fail(409,'window_closed');
+    if(reusing&&!isFreeConcept(today.concept))fail(409,'concept_restricted');
     const targetSlot=authorize(room,member);
     if(today.posts[targetSlot]&&today.posts[targetSlot]!==key)fail(409,'already_recorded');
     today.posts[targetSlot]=key;room.days[day]=today;return room;

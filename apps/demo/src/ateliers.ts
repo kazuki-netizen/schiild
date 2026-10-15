@@ -1,6 +1,7 @@
 // DEMO ONLY: local identity and invitation snapshots; no authentication or synchronization.
 import {initial,dayAfter} from './model';
 import type {State} from './model';
+import {isFreeConcept} from './concept';
 export type Invitation={concept?:string;code:string;name:string;capacity:number;online?:boolean};
 export type Atelier=Invitation&{creator:string|null;activeFrom:string;state:State};
 export type Collection={version:3;device:string;selected:string;ateliers:Atelier[];departed?:Atelier[]};
@@ -38,7 +39,7 @@ export function removeAtelier(collection:Collection,code:string):Collection{
 export function reuseLocal(collection:Collection,day:string,photo:string,codes:string[]){
  const results=codes.map(code=>{
   const target=collection.ateliers.find(entry=>entry.code===code&&!entry.online);
-  const error=!target?'forbidden':target.state.day!==day||target.activeFrom>day||target.state.ready?'window_closed':target.state.photo?'already_recorded':undefined;
+  const error=!target?'forbidden':target.state.day!==day||target.activeFrom>day||target.state.ready?'window_closed':target.state.photo?'already_recorded':!isFreeConcept(target.concept)?'concept_restricted':undefined;
   return {code,name:target?.name,done:!error,...(error?{error}:{})};
  });
  const next={...collection,ateliers:collection.ateliers.map(entry=>results.some(result=>result.code===entry.code&&result.done)?{...entry,state:{...entry.state,photo,count:entry.state.count+1}}:entry)};

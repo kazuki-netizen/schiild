@@ -69,6 +69,7 @@ export const demoCopy={
  'demo.posts.already':'このアトリエの今日の1枚は記録済みです。差し替えはできません。',
  'demo.posts.source_forbidden':'この日の自分の投稿を確認できませんでした。今日の投稿を選び直してください。',
  'demo.posts.target_forbidden':'追加先のアトリエに参加しているか確認してください。',
+ 'demo.posts.concept_restricted':'自由なコンセプトのアトリエだけに追加できます。',
  'demo.posts.retry':'参加状況が更新されました。読み込み直して、もう一度試してください。',
  'demo.area.mine':'あなたの専有面積',
  'demo.area.ratio':'全{total} pxの{percent}%',

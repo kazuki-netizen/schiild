@@ -9,7 +9,7 @@ const page=await first.newPage(),guest=await second.newPage();
 for(const p of [page,guest])p.on('pageerror',e=>errors.push(e.message));
 async function record(p){
  await p.getByRole('button',{name:'今日の1枚を撮る',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();
- await p.getByText('このアトリエの今日のシールは一度きりです',{exact:true}).waitFor();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByText('今日の1枚を記録しました。',{exact:true}).waitFor();
+ await p.getByText('このアトリエの今日のシールは一度きりです',{exact:true}).waitFor();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByText('今日の1枚を記録しました。',{exact:true}).waitFor();
 }
 try{
  await page.goto(origin);await page.getByRole('button',{name:'アトリエ ＋',exact:true}).click();await page.getByRole('button',{name:'アトリエをつくる',exact:true}).click();

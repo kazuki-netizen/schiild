@@ -21,6 +21,7 @@ import {workSize} from './src/resolution';
 import HelpDetails from './src/HelpDetails';
 import AtelierConcept from './src/AtelierConcept';
 import ActionIconButton from './src/ActionIconButton';
+import type {PostSelection} from './src/DailyPostsPage';
 export {default} from './src/AtelierApp';
 
 
@@ -87,7 +88,7 @@ export function Reveal({work,atelier,onOpened,onNext,shared=false}:{work:Work;at
  </section>;
 }
 
-export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,navigation,onScreenChange}:{entry:Atelier;onChange:(state:State)=>void;onManage:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string,sample?:Work)=>void;navigation:Navigation;onScreenChange:(screen:string)=>void}){
+export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,navigation,onScreenChange}:{entry:Atelier;onChange:(state:State)=>void;onManage:()=>void;onAccount:()=>void;onPosts:(source:PostSelection)=>void;onGlobal:(day:string,sample?:Work)=>void;navigation:Navigation;onScreenChange:(screen:string)=>void}){
  const atelier=entry.name,cap=entry.capacity;
  const [state,setState]=useState<State|null>(entry.state),[screen,setScreen]=useState<'home'|'camera'|'work'|'archive'|'draft'>('home'),[selected,setSelected]=useState<string|null>(null),[panel,setPanel]=useState(false),[busy,setBusy]=useState(false),[storageError,setStorageError]=useState(false);
  const [draft,setDraft]=useState<Draft|null>(null),[draftError,setDraftError]=useState(''),draftSequence=useRef(0);
@@ -122,13 +123,13 @@ export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,n
  {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="atelier-heading"><div className="title-row"><h1>{atelier}</h1><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></div><AtelierConcept/></div>
   <div className="artboard today-board" data-testid="today-board">{state.rects.map(rect=>{const filled=rect.slot===0?Boolean(state.photo):rect.slot<=(state.photo?state.count-1:state.count);return <div key={rect.slot} className={`today-tile ${filled?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:filled?['#b5b7a5','#c39582','#87a6b0','#d7c49a','#61777a'][rect.slot%5]:undefined}}/>;})}</div>
   <div className="today-details"><div><span className="wall-label">{t('atelier.closes_in')}</span><p className="countdown">{state.ready?'00:00:00':'00:15:00'}</p></div><div className="recorded"><span className="mono">{t('atelier.recorded',{n:state.count,cap})}</span><div className="members">{Array.from({length:cap},(_,n)=><i key={n} className={n<state.count?'recorded':''}/>)}</div></div></div><p className="window">{windowText(state.day)}</p>
-  <AreaDisplay area={rectArea(state.photo?state.rects.find(rect=>rect.slot===0):undefined,workSize(state))}/><ActionIconButton kind="forward" label={t(state.photo?'demo.posts.reuse':'demo.posts.use')} onClick={onPosts}/>
+  <AreaDisplay area={rectArea(state.photo?state.rects.find(rect=>rect.slot===0):undefined,workSize(state))}/>
   {state.day<entry.activeFrom?<p>{t('join.tomorrow')}</p>:state.ready?<ActionIconButton kind="open" label={t('reveal.open')} onClick={()=>{setSelected(state.ready);navigate('work');}}/>:state.photo?<div className="posted"><p>{t('posted.title')}<br/>{t('posted.title2')}</p>{state.count>=Math.max(1,cap-2)&&<span className="muted">{t('atelier.almost',{n:cap-state.count})}</span>}</div>:<Button onClick={()=>navigate('camera')}><Icon kind="camera"/>{t('onboarding.1.title')}</Button>}
   {!state.ready&&state.day>=entry.activeFrom&&<div className="draft-actions"><p className="wall-label">{t('demo.draft.label')}</p><Button secondary disabled={busy||state.count===0} onClick={()=>void preview()}>{t(busy?'demo.draft.loading':'demo.draft.generate')}</Button>{draftError&&<p className="error" role="alert">{draftError}</p>}</div>}
   <div className="section-heading"><h2>{t('atelier.past')}</h2><button className="text-button" onClick={()=>navigate('archive')}><Icon kind="arrow"/></button></div><div className="recent">{state.works.filter(w=>w.opened).slice(0,3).map(w=><button key={w.day} onClick={()=>{setSelected(w.day);navigate('work');}}><img src={w.image} alt={t('schiild.label',{index:w.index})}/><span className="mono">{short(w.day)}</span></button>)}</div>
   <HelpDetails><p>{t('demo.posts.rule')}</p><p>{t('demo.draft.empty')}</p></HelpDetails>
  </section>}
- {screen==='camera'&&<Camera atelier={atelier} day={state.day} onBack={()=>navigate('home')} onSubmit={url=>{const next={...state,photo:url,count:state.count+1};onChange(next);setState(next);navigate('home');}}/>}
+ {screen==='camera'&&<Camera atelier={atelier} day={state.day} onBack={()=>navigate('home')} onSubmit={url=>{const next={...state,photo:url,count:state.count+1};onChange(next);setState(next);onPosts({code:entry.code,day:next.day,online:false});}}/>}
  {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={atelier} local onClose={()=>{setDraft(null);navigate('home');}}/>}
  {screen==='work'&&work&&<Reveal atelier={atelier} key={work.day} work={work} onOpened={()=>setState(old=>old?{...old,works:old.works.map(w=>w.day===work.day?{...w,opened:true}:w)}:old)} onNext={()=>onGlobal(work.day,work)}/>}
  {screen==='archive'&&<ArchiveCalendar items={state.works.filter(w=>w.opened).map(w=>({...w,sample:!w.global}))} currentDay={state.day} atelier={atelier} onOpen={item=>{setSelected(item.day);navigate('work');}} onGlobal={item=>onGlobal(item.day,state.works.find(work=>work.day===item.day))}/>}

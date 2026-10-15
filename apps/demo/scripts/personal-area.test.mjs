@@ -42,6 +42,25 @@ test('reuse selects only own current-day photos, returns partial results and kee
  nextDay();await assert.rejects(call('reuse',{sourceCode:source.code,day,codes:[untouched.code]}),error=>error.code==='window_closed');assert.equal((await call('posts')).sources.length,0);
 });
 
+test('photo reuse only allows free-theme targets while camera recording remains available for specific themes',async()=>{
+ const {call}=fixture(),source=await call('create',{name:'Source',capacity:2,concept:'Blue'}),day=source.day;
+ const free=await call('create',{name:'Free',capacity:2}),literal=await call('create',{name:'Favourite',capacity:2,concept:'あなたのお気に入りの一枚'}),themed=await call('create',{name:'Theme',capacity:2,concept:'Morning light'});
+ await call('post',{code:source.code,day,photo:red});
+ const posts=await call('posts');assert.equal(posts.freeConceptOnly,true);const listed=posts.targets;assert.equal(listed.find(row=>row.code===themed.code).concept,'Morning light');assert.equal(listed.find(row=>row.code===free.code).concept,'');
+ const copied=await call('reuse',{sourceCode:source.code,day,codes:[free.code,literal.code,themed.code]});assert.deepEqual(copied.results.map(row=>row.done),[true,true,false]);assert.equal(copied.results[2].error,'concept_restricted');assert.equal((await call('state',{code:themed.code})).hasPhoto,false);
+ await assert.rejects(call('post',{code:themed.code,day,photo:red,reuse:true}),error=>error.code==='concept_restricted');
+ await assert.rejects(call('post',{code:themed.code,day,sourceCode:source.code}),error=>error.code==='concept_restricted');
+ await call('post',{code:themed.code,day,photo:blue});assert.equal((await call('state',{code:themed.code})).hasPhoto,true);
+});
+
+test('a theme change during photo normalization cannot bypass the reuse restriction',async()=>{
+ const store=memoryStore(),now=()=>Date.parse('2026-10-08T03:00:00Z');let code;
+ const service=core(store,{now,images:{async normalize(bytes){const {data}=await store.getWithMetadata('rooms/'+code);data.concept='New theme';await store.setJSON('rooms/'+code,data);return bytes;}}});
+ const room=await service({action:'create',name:'Changed during upload',capacity:2},first);code=room.code;
+ await assert.rejects(service({action:'post',code,day:room.day,photo:red,reuse:true},first),error=>error.code==='concept_restricted');
+ assert.equal((await service({action:'state',code},first)).hasPhoto,false);
+});
+
 test('day rectangles, drafts, works and totals use historical participants, including departed users and login restoration',async()=>{
  const {store,auth,call,nextDay}=fixture(),a=await call('create',{name:'大きな窓',capacity:2}),b=await call('create',{name:'小さな窓',capacity:5}),day=a.day;
  assert.equal((await call('area')).atelier.pixels,0);assert.equal(a.area.pixels,0);

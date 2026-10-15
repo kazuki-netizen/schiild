@@ -7,7 +7,7 @@ const contexts=await Promise.all([0,1].map(()=>browser.newContext({viewport:{wid
 const [page,guest]=await Promise.all(contexts.map(context=>context.newPage())),errors=[];
 for(const current of [page,guest])current.on('pageerror',error=>errors.push(error.message));
 const nav=p=>p.locator('.nav');
-async function record(p){await p.getByRole('button',{name:'今日の1枚を撮る',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.locator('.posted').waitFor();}
+async function record(p){await p.getByRole('button',{name:'今日の1枚を撮る',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.locator('.posted').waitFor();}
 async function preview(p,n){await p.getByRole('button',{name:'仮生成する',exact:true}).click();await p.getByTestId('draft-preview').waitFor();await p.getByText(`仮生成時の投稿 ${n}枚`,{exact:false}).waitFor();return p.locator('.draft-art').getAttribute('src');}
 async function back(p){await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByTestId('today-board').waitFor();}
 try{
