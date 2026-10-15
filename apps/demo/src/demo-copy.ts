@@ -1,5 +1,7 @@
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
+ 'demo.settings.language':'言語 / Language',
+ 'demo.sample.custodian':'ゆき',
  // Optional explanations are collapsed in the demo at the user's request.
  'demo.help.rules':'ルールを確認',
  'demo.help.gestures':'操作のヒント',

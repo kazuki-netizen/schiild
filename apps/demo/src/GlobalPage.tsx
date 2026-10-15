@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {Icon} from '../App';
 import {t} from './copy';
+import {shortDate} from './language';
 import {sharedRequest} from './shared-api';
 import {dataUrl,globalPixels,synthetic} from './engine';
 import {dayAfter} from './model';
@@ -20,7 +21,7 @@ export default function GlobalPage({selection,revision}:{selection:GlobalSelecti
   void refresh();const timer=setInterval(()=>{if(document.visibilityState==='visible'&&selection.day===new Date().toISOString().slice(0,10))void refresh();},5000);
   return()=>{controller.abort();clearInterval(timer);};
  },[selection.day,selection.sample,revision]);
- const day=selection.day,short=(value:string)=>`${Number(value.slice(5,7))}/${Number(value.slice(8))}`,mine=work?.x!==undefined&&work?.y!==undefined,x=work?.x??0,y=work?.y??0;
+ const day=selection.day,short=shortDate,mine=work?.x!==undefined&&work?.y!==undefined,x=work?.x??0,y=work?.y??0;
  return <section className="global-page" data-testid="global-page" data-day={day} style={{'--global-pixel-size':`${PIXEL_SIZE}px`} as React.CSSProperties}>
   <div className="wall-label">{t('global.label')}</div><h1>{day.replaceAll('-',' / ')}</h1><p className="window">{t('atelier.window',{start:short(day)+' 09:00',end:short(dayAfter(day))+' 09:00'})}</p>
   {selection.sample&&<p className="sample-note">{t('demo.global.sample')}</p>}

@@ -1,5 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {t} from './src/copy';
+import {currentLanguage,shortDate} from './src/language';
 import {dataUrl,decode,globalPixels,partition,random,render,shuffle,synthetic} from './src/engine';
 import {dayAfter,initial,REVEAL,revealTimes} from './src/model';
 import type {State,Work} from './src/model';
@@ -22,7 +23,7 @@ export {default} from './src/AtelierApp';
 
 
 const date=(day:string)=>day.replaceAll('-',' / ');
-const short=(day:string)=>`${Number(day.slice(5,7))}/${Number(day.slice(8))}`;
+const short=shortDate;
 const windowText=(day:string)=>t('atelier.window',{start:short(day)+' 09:00',end:short(dayAfter(day))+' 09:00'});
 export function Icon({kind}:{kind:'camera'|'grid'|'global'|'archive'|'arrow'}){return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true">{kind==='camera'?<><path d="M3 7h5l2-3h4l2 3h5v14H3Z"/><rect x="9" y="11" width="6" height="6"/></>:kind==='grid'?<><rect x="3" y="3" width="18" height="18"/><path d="M3 12h18M13 3v9M9 12v9"/></>:kind==='global'?<><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></>:kind==='archive'?<><path d="M4 5h16v16H4ZM2 2h20M8 10h8"/></>:<path d="m9 5 7 7-7 7"/>}</svg>;}
 function Button({children,onClick,secondary=false,disabled=false}:{children:React.ReactNode;onClick:()=>void;secondary?:boolean;disabled?:boolean}){return <button className={secondary?'button secondary':'button'} onClick={onClick} disabled={disabled}>{children}</button>;}
@@ -59,7 +60,7 @@ export function Camera({day,atelier,onBack,onSubmit,shared=false}:{day:string;at
   {!preview&&help&&status==='denied'&&<Button onClick={()=>{void start();document.querySelector('.camera-page')?.scrollIntoView({block:'start'});}}>{t('demo.camera.retry')}</Button>}
   {!preview&&<button className="shutter" disabled={status!=='ready'} aria-label={t('onboarding.1.title')} onClick={capture}><span/></button>}
   {failed&&<p role="alert">{t('camera.capture_failed')}</p>}
-  {preview&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><img className="confirm-photo" src={preview} alt={t('camera.date',{date:date(day)})}/><h2 id="confirm-title">{t('camera.confirm.title')}</h2><p>{t('camera.confirm.body',{ateliers:`「${atelier}」`})}</p>{sendError&&<p className="error" role="alert">{sendError}</p>}<Button disabled={sending} onClick={()=>void submit()}>{t(sending?'common.loading':'camera.confirm.submit')}</Button><Button secondary disabled={sending} onClick={()=>{setPreview(null);setStatus('idle');}}>{t('camera.confirm.back')}</Button></section></div>}
+  {preview&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><img className="confirm-photo" src={preview} alt={t('camera.date',{date:date(day)})}/><h2 id="confirm-title">{t('camera.confirm.title')}</h2><p>{t('camera.confirm.body',{ateliers:currentLanguage()==='ja'?`「${atelier}」`:atelier})}</p>{sendError&&<p className="error" role="alert">{sendError}</p>}<Button disabled={sending} onClick={()=>void submit()}>{t(sending?'common.loading':'camera.confirm.submit')}</Button><Button secondary disabled={sending} onClick={()=>{setPreview(null);setStatus('idle');}}>{t('camera.confirm.back')}</Button></section></div>}
  </section>;
 }
 
@@ -76,7 +77,7 @@ export function Reveal({work,atelier,onOpened,onNext,shared=false}:{work:Work;at
   </button>
   {!started?<div className="ready-copy"><p>{t('reveal.ready',{date:short(work.day)})}</p><p className="mono muted">{t('reveal.date',{date:date(work.day)})}</p><Button onClick={()=>setStarted(true)}>{t('reveal.open')}</Button></div>:<>
    <div className="reveal-record" style={{opacity:record?1:0,transitionDuration:`${REVEAL.recordFade}ms`}}><h1>{atelier}</h1><p className="mono">{date(work.day)}　／　{work.count} {t('common.of')} {work.rects.length}</p><p className="window">{windowText(work.day)}</p></div>
-   <div className="custody" style={{opacity:custody?1:0,transitionDuration:`${REVEAL.custodyFade}ms`}}><span className="wall-label">{t('reveal.custody_label')}</span><p>{t(work.custody==='self'?'reveal.custody.self':shared?'demo.shared.custody.other':'reveal.custody.other',{name:'ゆき'})}</p></div>
+   <div className="custody" style={{opacity:custody?1:0,transitionDuration:`${REVEAL.custodyFade}ms`}}><span className="wall-label">{t('reveal.custody_label')}</span><p>{t(work.custody==='self'?'reveal.custody.self':shared?'demo.shared.custody.other':'reveal.custody.other',{name:t('demo.sample.custodian')})}</p></div>
    {complete&&<AreaDisplay area={work.area??rectArea(work.global?work.rects.find(rect=>rect.slot===0):undefined,work.outputSize??128)}/>}
    {complete&&<Button onClick={onNext}>{t('global.label')} <Icon kind="arrow"/></Button>}
   </>}
@@ -88,7 +89,7 @@ export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,n
  const [state,setState]=useState<State|null>(entry.state),[screen,setScreen]=useState<'home'|'camera'|'work'|'archive'|'draft'>('home'),[selected,setSelected]=useState<string|null>(null),[panel,setPanel]=useState(false),[busy,setBusy]=useState(false),[storageError,setStorageError]=useState(false);
  const [draft,setDraft]=useState<Draft|null>(null),[draftError,setDraftError]=useState(''),draftSequence=useRef(0);
  const taps=useRef<number[]>([]);
- useEffect(()=>{document.documentElement.lang='ja';document.title='Schiild';},[]);
+ useEffect(()=>{document.title='Schiild';},[]);
  useEffect(()=>{if(state)try{onChange(state);setStorageError(false);}catch{setStorageError(true);}},[state]);
  useEffect(()=>{if(!state?.photo||state.ready||state.count>=Math.max(1,cap-2))return;const timer=setTimeout(()=>setState(old=>old?{...old,count:Math.min(Math.max(1,cap-2),old.count+1)}:old),2200);return()=>clearTimeout(timer);},[state?.count,state?.photo,state?.ready]);
  useEffect(()=>{if(navigation.openDay){setSelected(navigation.openDay);setScreen('work');}else setScreen(navigation.screen);},[navigation.revision]);
@@ -128,6 +129,6 @@ export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,n
  {screen==='work'&&work&&<Reveal atelier={atelier} key={work.day} work={work} onOpened={()=>setState(old=>old?{...old,works:old.works.map(w=>w.day===work.day?{...w,opened:true}:w)}:old)} onNext={()=>onGlobal(work.day,work)}/>}
  {screen==='archive'&&<ArchiveCalendar items={state.works.filter(w=>w.opened).map(w=>({...w,sample:!w.global}))} currentDay={state.day} atelier={atelier} onOpen={item=>{setSelected(item.day);navigate('work');}} onGlobal={item=>onGlobal(item.day,state.works.find(work=>work.day===item.day))}/>}
  </main>
- {panel&&<div className="modal-shade"><section className="dialog operator" role="dialog" aria-modal="true" aria-label={t('common.today')}><div className="title-row"><h2>{t('common.today')}</h2><button className="text-button" onClick={()=>setPanel(false)}>{t('common.close')}</button></div><p className="mono">{date(state.day)} → {date(dayAfter(state.day))}</p><Button disabled={busy} onClick={()=>state.ready?nextDay():void advance()}>{t(busy?'common.loading':'common.next')} → 00:15 UTC</Button><div className="choice"><button className={state.winner==='self'?'chosen':''} onClick={()=>setState({...state,winner:'self'})}>{t('reveal.custody.self')}</button><button className={state.winner==='other'?'chosen':''} onClick={()=>setState({...state,winner:'other'})}>{t('reveal.custody.other',{name:'ゆき'})}</button></div><Button secondary onClick={()=>{if(!state.ready)return;setState({...state,works:state.works.map(w=>w.day===state.ready?{...w,opened:false,custody:state.winner}:w)});setSelected(state.ready);navigate('work');setScreen('home');setTimeout(()=>navigate('work'),0);setPanel(false);}} disabled={!state.ready}>{t('reveal.open')}</Button><Button secondary onClick={()=>{setState(initial(cap,entry.code==='ASADEMO1'));setSelected(null);setPanel(false);navigate('home');}}>{t('common.retry')}</Button></section></div>}
+ {panel&&<div className="modal-shade"><section className="dialog operator" role="dialog" aria-modal="true" aria-label={t('common.today')}><div className="title-row"><h2>{t('common.today')}</h2><button className="text-button" onClick={()=>setPanel(false)}>{t('common.close')}</button></div><p className="mono">{date(state.day)} → {date(dayAfter(state.day))}</p><Button disabled={busy} onClick={()=>state.ready?nextDay():void advance()}>{t(busy?'common.loading':'common.next')} → 00:15 UTC</Button><div className="choice"><button className={state.winner==='self'?'chosen':''} onClick={()=>setState({...state,winner:'self'})}>{t('reveal.custody.self')}</button><button className={state.winner==='other'?'chosen':''} onClick={()=>setState({...state,winner:'other'})}>{t('reveal.custody.other',{name:t('demo.sample.custodian')})}</button></div><Button secondary onClick={()=>{if(!state.ready)return;setState({...state,works:state.works.map(w=>w.day===state.ready?{...w,opened:false,custody:state.winner}:w)});setSelected(state.ready);navigate('work');setScreen('home');setTimeout(()=>navigate('work'),0);setPanel(false);}} disabled={!state.ready}>{t('reveal.open')}</Button><Button secondary onClick={()=>{setState(initial(cap,entry.code==='ASADEMO1'));setSelected(null);setPanel(false);navigate('home');}}>{t('common.retry')}</Button></section></div>}
  </div>;
 }

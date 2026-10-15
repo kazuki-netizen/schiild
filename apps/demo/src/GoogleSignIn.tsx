@@ -2,6 +2,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {sharedRequest} from './shared-api';
 import {t} from './copy';
+import {currentLanguage} from './language';
 type GoogleIdentity={initialize:(options:Record<string,unknown>)=>void;renderButton:(element:HTMLElement,options:Record<string,unknown>)=>void;cancel:()=>void;disableAutoSelect:()=>void};
 declare global{interface Window{google?:{accounts:{'id':GoogleIdentity}}}}
 let loading:Promise<GoogleIdentity>|undefined;
@@ -33,10 +34,10 @@ export default function GoogleSignIn({linkedEmail,disabled,onAuthenticate}:{link
     try{await authenticate.current(response.credential);}catch(cause){if(!disposed){setError(cause instanceof Error?cause.message:t('demo.google.invalid'));target.current?.replaceChildren();}}
     finally{processing.current=false;if(!disposed)setPending(false);}
    }});
-   target.current.replaceChildren();identity.renderButton(target.current,{type:'standard',theme:'outline',size:'large',text:'continue_with',shape:'rectangular',locale:'ja',width:Math.max(200,Math.min(320,target.current.clientWidth||window.innerWidth-64))});
+   target.current.replaceChildren();identity.renderButton(target.current,{type:'standard',theme:'outline',size:'large',text:'continue_with',shape:'rectangular',locale:currentLanguage(),width:Math.max(200,Math.min(320,target.current.clientWidth||window.innerWidth-64))});
   }catch(cause){if(!disposed){setVisible(true);setError(cause instanceof Error?cause.message:t('demo.google.unavailable'));}}}
   void prepare();return()=>{disposed=true;controller.abort();identity?.cancel();target.current?.replaceChildren();};
- },[attempt,linkedEmail]);
+ },[attempt,linkedEmail,currentLanguage()]);
  if(linkedEmail)return <div className="google-auth"><p>{t('demo.google.linked')}</p><p className="google-email">{linkedEmail}</p></div>;
  return <div className="google-auth" hidden={!visible}>
   <p>{t('demo.google.title')}</p><p className="shared-note">{t('demo.google.note')}</p>

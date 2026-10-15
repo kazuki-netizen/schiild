@@ -1,11 +1,12 @@
 import React from 'react';
 import {t} from './copy';
 import HelpDetails from './HelpDetails';
+import {numberLocale} from './language';
 import type {Area,AreaSummary} from './area';
-const number=(value:number)=>value.toLocaleString('ja-JP');
+const number=(value:number)=>value.toLocaleString(numberLocale());
 export default function AreaDisplay({area,global=false}:{area:Area;global?:boolean}){
  return <div className="personal-area" data-testid={global?'global-area':'atelier-area'} data-pixels={area.pixels}>
-  <span>{t('demo.area.mine')}</span><strong>{number(area.pixels)} px</strong><span className="mono">{t('demo.area.ratio',{total:number(area.total),percent:area.percent.toLocaleString('ja-JP',{maximumFractionDigits:global?4:2})})}</span>
+  <span>{t('demo.area.mine')}</span><strong>{number(area.pixels)} px</strong><span className="mono">{t('demo.area.ratio',{total:number(area.total),percent:area.percent.toLocaleString(numberLocale(),{maximumFractionDigits:global?4:2})})}</span>
  </div>;
 }
 export function AreaTotals({value,local=false}:{value:AreaSummary;local?:boolean}){

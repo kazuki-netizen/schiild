@@ -1,6 +1,7 @@
 // DEMO ONLY. Reuse actual camera posts explicitly; never use dummy participant photos.
 import React,{useEffect,useState} from 'react';
 import {t} from './copy';
+import {shortDate} from './language';
 import HelpDetails from './HelpDetails';
 import {sharedRequest,sharedErrorMessage} from './shared-api';
 import type {Collection} from './ateliers';
@@ -39,7 +40,7 @@ export default function DailyPostsPage({collection,onLocalReuse,onRefresh,onBack
   }catch(cause){setError(cause instanceof Error?cause.message:t('demo.shared.unavailable'));}
   finally{setBusy(false);}
  }
- const short=(day:string)=>`${Number(day.slice(5,7))}/${Number(day.slice(8))}`;
+ const short=shortDate;
  return <section className="daily-posts" data-testid="daily-posts"><div className="subheader"><button className="text-button" disabled={busy} onClick={onBack}>{t('common.back')}</button></div><h1>{t('demo.posts.title')}</h1>
   <label className="field">{t('demo.posts.source')}<select value={selected} disabled={busy} onChange={event=>setSelected(event.target.value)}><option value="">{t('demo.posts.choose')}</option>{sources.map(value=><option key={sourceKey(value)} value={sourceKey(value)}>{value.name} ／ {value.day}{!value.online?` ／ ${t('demo.shared.local')}`:''}</option>)}</select></label>
   {!sources.length&&<p>{t(remote?'demo.posts.empty':'common.loading')}</p>}

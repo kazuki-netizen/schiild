@@ -2,6 +2,7 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {Camera,Reveal} from '../App';
 import type {Navigation} from './DemoNav';
 import {t} from './copy';
+import {shortDate} from './language';
 import {partition,random} from './engine';
 import {dayAfter} from './model';
 import type {Work} from './model';
@@ -25,7 +26,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
   catch(cause){if(mounted.current&&request===sequence.current)setError(cause instanceof Error?cause.message:t('demo.shared.unavailable'));}
  }
  useEffect(()=>{
-  mounted.current=true;document.documentElement.lang='ja';void refresh();
+  mounted.current=true;void refresh();
   const timer=setInterval(()=>{if(document.visibilityState==='visible'&&!lock.current)void refresh();},5000);
   const resume=()=>{if(document.visibilityState==='visible'&&!lock.current)void refresh();};
   document.addEventListener('visibilitychange',resume);
@@ -61,7 +62,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
  }
  useEffect(()=>{if(draft&&state&&(draft.day!==state.day||state.status!=='open')){setDraft(null);go('home');}},[draft,state?.day,state?.status]);
  useEffect(()=>{if(navigation.openDay)void open(navigation.openDay);else go(navigation.screen);},[navigation.revision]);
- const short=(day:string)=>`${Number(day.slice(5,7))}/${Number(day.slice(8))}`;
+ const short=shortDate;
  const rects=state?partition(state.capacity,random(state.seed)):[];
  return <div className={screen==='archive'?'app archive-app':'app'}><header className="header"><button className="brand" aria-label="Schiild" onClick={onAccount}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></header>
   <main>{error&&<div className="shared-error" role="alert"><p>{error}</p><button className="text-button" onClick={()=>void refresh()}>{t('demo.shared.refresh')}</button></div>}

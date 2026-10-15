@@ -1,12 +1,13 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {t} from './copy';
+import {currentLanguage,numberLocale,shortDate} from './language';
 import {calendarCells,shiftMonth} from './calendar';
 import {dayAfter} from './model';
 import './archive-calendar.css';
 export type ArchiveEntry={day:string;index:number;image?:string;sample?:boolean};
 type Props={items:ArchiveEntry[];currentDay:string;atelier:string;busy?:boolean;onOpen:(item:ArchiveEntry)=>void;onGlobal:(item:ArchiveEntry)=>void;loadImage?:(day:string,signal:AbortSignal)=>Promise<string>};
-const displayDate=(day:string)=>new Intl.DateTimeFormat('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short',timeZone:'UTC'}).format(new Date(day+'T00:00:00Z'));
-const short=(day:string)=>`${Number(day.slice(5,7))}/${Number(day.slice(8))}`;
+const displayDate=(day:string)=>new Intl.DateTimeFormat(numberLocale(),{year:'numeric',month:'long',day:'numeric',weekday:'short',timeZone:'UTC'}).format(new Date(day+'T00:00:00Z'));
+const short=shortDate;
 export default function ArchiveCalendar({items,currentDay,atelier,busy=false,onOpen,onGlobal,loadImage}:Props){
  const latest=items.reduce((day,item)=>item.day>day?item.day:day,''),earliest=items.reduce((day,item)=>item.day<day?item.day:day,currentDay).slice(0,7),last=(latest>currentDay?latest:currentDay).slice(0,7);
  const [month,setMonth]=useState((latest||currentDay).slice(0,7)),[compact,setCompact]=useState(false),[selected,setSelected]=useState<string|null>(null),[images,setImages]=useState<Record<string,string>>({}),[failures,setFailures]=useState<string[]>([]),[retry,setRetry]=useState(0);
@@ -20,8 +21,8 @@ export default function ArchiveCalendar({items,currentDay,atelier,busy=false,onO
  },[signature,loadImage,retry]);
  useEffect(()=>{if(!selected)return;const scrollStyles=[document.body,document.documentElement].map(node=>({node,value:node.style.getPropertyValue('overflow-y'),priority:node.style.getPropertyPriority('overflow-y')}));for(const {node} of scrollStyles)node.style.setProperty('overflow-y','hidden','important');close.current?.focus();function keys(event:KeyboardEvent){if(event.key==='Escape')setSelected(null);if(event.key==='Tab'){const nodes=dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');if(!nodes?.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}}document.addEventListener('keydown',keys);return()=>{for(const {node,value,priority} of scrollStyles){if(value)node.style.setProperty('overflow-y',value,priority);else node.style.removeProperty('overflow-y');}document.removeEventListener('keydown',keys);trigger.current?.focus();};},[selected]);
  function move(offset:number){setMonth(value=>shiftMonth(value,offset));setSelected(null);}
- const monthDate=new Date(month+'-01T00:00:00Z'),monthName=new Intl.DateTimeFormat('en',{month:'long',timeZone:'UTC'}).format(monthDate);
- const weekdays=Array.from({length:7},(_,n)=>new Intl.DateTimeFormat('ja',{weekday:'short',timeZone:'UTC'}).format(new Date(Date.UTC(2026,0,4+n))));
+ const monthDate=new Date(month+'-01T00:00:00Z'),monthName=new Intl.DateTimeFormat(currentLanguage()==='ja'?'en':numberLocale(),{month:'long',timeZone:'UTC'}).format(monthDate);
+ const weekdays=Array.from({length:7},(_,n)=>new Intl.DateTimeFormat(numberLocale(),{weekday:'short',timeZone:'UTC'}).format(new Date(Date.UTC(2026,0,4+n))));
  const imageFor=(item:ArchiveEntry)=>item.image||images[item.day];
  return <section className="archive-calendar" data-testid="archive-calendar" data-month={month} data-total={items.length} data-density={compact?'compact':'full'}>
   <div className="calendar-intro"><h1>{t('archive.title')}</h1><span>{atelier}</span></div>
