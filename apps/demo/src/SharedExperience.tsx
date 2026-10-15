@@ -16,6 +16,7 @@ import ArchiveCalendar from './ArchiveCalendar';
 import HelpDetails from './HelpDetails';
 import AtelierConcept from './AtelierConcept';
 import {CONCEPT_LIMIT} from './concept';
+import ActionIconButton from './ActionIconButton';
 
 export default function SharedExperience({entry,onManage,onShare,onAccount,onPosts,onGlobal,navigation,onScreenChange}:{entry:Atelier;onManage:()=>void;onShare:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string)=>void;navigation:Navigation;onScreenChange:(screen:string)=>void}){
  const [state,setState]=useState<SharedState|null>(null),[error,setError]=useState(''),[screen,setScreen]=useState('home'),[work,setWork]=useState<Work|null>(null),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false),[cameraDay,setCameraDay]=useState<string|null>(null);
@@ -78,15 +79,14 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
  return <div className={screen==='archive'?'app archive-app':'app'} data-tab-screen={screen}><header className="header"><button className="brand" aria-label="Schiild" onClick={onAccount}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></header>
   <main>{error&&<div className="shared-error" role="alert"><p>{error}</p><button className="text-button" onClick={()=>void refresh()}>{t('demo.shared.refresh')}</button></div>}
   {!state?<p>{t('common.loading')}</p>:<>
-   {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{state.name}</h1></div><AtelierConcept concept={state.concept} disabled={busy} onEdit={state.canGenerate?()=>{setConceptDraft(state.defaultConcept??state.concept??'');setConceptError('');setEditingConcept(true);}:undefined}/>{state.canGenerate&&state.status!=='open'&&state.defaultConcept!==state.concept&&<p className="concept-upcoming">{t('demo.concept.upcoming',{concept:state.defaultConcept||t('demo.concept.default')})}</p>}<p className="shared-note">{t('demo.shared.members',{n:state.members,cap:state.capacity})}</p>
+   {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="atelier-heading"><div className="title-row"><h1>{state.name}</h1></div><AtelierConcept concept={state.concept} disabled={busy} onEdit={state.canGenerate?()=>{setConceptDraft(state.defaultConcept??state.concept??'');setConceptError('');setEditingConcept(true);}:undefined}/>{state.canGenerate&&state.status!=='open'&&state.defaultConcept!==state.concept&&<p className="concept-upcoming">{t('demo.concept.upcoming',{concept:state.defaultConcept||t('demo.concept.default')})}</p>}</div><div className="atelier-share"><ActionIconButton kind="forward" label={t('created.share')} showLabel onClick={onShare}/></div><p className="shared-note">{t('demo.shared.members',{n:state.members,cap:state.capacity})}</p>
     <div className="artboard today-board" data-testid="today-board">{rects.map(rect=><div key={rect.slot} className={`today-tile ${state.postedSlots.includes(rect.slot)?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:state.postedSlots.includes(rect.slot)?'var(--strong)':undefined}}/>)}</div>
     <div className="today-details"><span className="mono">{state.day.replaceAll('-',' / ')}</span><span className="recorded mono">{t('atelier.recorded',{n:state.postedSlots.length,cap:state.capacity})}</span></div>
     <p className="window">{t('atelier.window',{start:short(state.day)+' 09:00',end:short(dayAfter(state.day))+' 09:00'})}</p>
     <AreaDisplay area={state.area}/>
-    <button className="text-button" onClick={onPosts}>{t(state.hasPhoto?'demo.posts.reuse':'demo.posts.use')}</button>
+    <ActionIconButton kind="forward" label={t(state.hasPhoto?'demo.posts.reuse':'demo.posts.use')} onClick={onPosts}/>
     <div className="shared-actions">
-     <button className="text-button" onClick={onShare}>{t('created.share')}</button>
-     {state.status==='ready'?<button className="button" disabled={busy} onClick={()=>void open(state.day)}>{t('reveal.open')}</button>:<>
+     {state.status==='ready'?<ActionIconButton kind="open" label={t('reveal.open')} disabled={busy} onClick={()=>void open(state.day)}/>:<>
       {state.hasPhoto?<div className="posted"><p>{t('demo.shared.saved')}</p></div>:state.status==='open'&&<button className="button" onClick={()=>go('camera')}>{t('onboarding.1.title')}</button>}
       {state.canGenerate&&state.postedSlots.length>0?<><button className="button secondary" disabled={busy} onClick={()=>setConfirm(true)}>{t(state.status==='generating'?'common.retry':'demo.shared.generate')}</button></>:state.hasPhoto&&<p className="shared-status">{t('demo.shared.wait_short')}</p>}
      </>}
