@@ -7,3 +7,4 @@ test('calendar aligns Sunday columns, adjacent dates and a six-week month withou
  assert.equal(calendarCells('2026-04')[3].day,'2026-04-01');
 });
 test('month navigation crosses years without the device timezone shifting dates',()=>{assert.equal(shiftMonth('2026-12',1),'2027-01');assert.equal(shiftMonth('2026-01',-1),'2025-12');assert.equal(shiftMonth('2028-03',-1),'2028-02');});
+test('month browsing stays valid at four-digit ISO year limits',()=>{assert.equal(shiftMonth('0001-01',-1),'0001-01');assert.equal(shiftMonth('0001-01',1),'0001-02');assert.equal(shiftMonth('9999-12',1),'9999-12');assert.equal(shiftMonth('9999-12',-1),'9999-11');for(const month of ['0001-01','9999-12']){const cells=calendarCells(month);assert.equal(new Set(cells.map(cell=>cell.day)).size,cells.length);assert.equal(cells.filter(cell=>cell.current).length,31);}});

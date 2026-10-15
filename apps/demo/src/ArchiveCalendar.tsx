@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {t} from './copy';
 import {numberLocale,shortDate} from './language';
-import {calendarCells,shiftMonth} from './calendar';
+import {calendarCells,shiftMonth,calendarLimits} from './calendar';
 import {dayAfter} from './model';
 import './archive-calendar.css';
 import AtelierConcept from './AtelierConcept';
@@ -11,7 +11,7 @@ type Props={items:ArchiveEntry[];currentDay:string;atelier:string;busy?:boolean;
 const displayDate=(day:string)=>new Intl.DateTimeFormat(numberLocale(),{year:'numeric',month:'long',day:'numeric',weekday:'short',timeZone:'UTC'}).format(new Date(day+'T00:00:00Z'));
 const short=shortDate;
 export default function ArchiveCalendar({items,currentDay,atelier,busy=false,onOpen,onGlobal,loadImage}:Props){
- const latest=items.reduce((day,item)=>item.day>day?item.day:day,''),earliest=items.reduce((day,item)=>item.day<day?item.day:day,currentDay).slice(0,7),last=(latest>currentDay?latest:currentDay).slice(0,7);
+ const latest=items.reduce((day,item)=>item.day>day?item.day:day,'');
  const [month,setMonth]=useState((latest||currentDay).slice(0,7)),[compact,setCompact]=useState(false),[selected,setSelected]=useState<string|null>(null),[images,setImages]=useState<Record<string,string>>({}),[failures,setFailures]=useState<string[]>([]),[retry,setRetry]=useState(0);
  const cache=useRef<Record<string,string>>({}),close=useRef<HTMLButtonElement>(null),trigger=useRef<HTMLElement|null>(null),dialog=useRef<HTMLElement|null>(null);
  const visible=items.filter(item=>item.day.startsWith(month)),signature=visible.map(item=>item.day).join(','),chosen=items.find(item=>item.day===selected),cells=calendarCells(month),lookup=new Map(items.map(item=>[item.day,item]));
@@ -22,14 +22,14 @@ export default function ArchiveCalendar({items,currentDay,atelier,busy=false,onO
   void Promise.all([worker(),worker(),worker()]);return()=>controller.abort();
  },[signature,loadImage,retry]);
  useEffect(()=>{if(!selected)return;const scrollStyles=[document.body,document.documentElement].map(node=>({node,value:node.style.getPropertyValue('overflow-y'),priority:node.style.getPropertyPriority('overflow-y')}));for(const {node} of scrollStyles)node.style.setProperty('overflow-y','hidden','important');close.current?.focus();function keys(event:KeyboardEvent){if(event.key==='Escape')setSelected(null);if(event.key==='Tab'){const nodes=dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');if(!nodes?.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}}document.addEventListener('keydown',keys);return()=>{for(const {node,value,priority} of scrollStyles){if(value)node.style.setProperty('overflow-y',value,priority);else node.style.removeProperty('overflow-y');}document.removeEventListener('keydown',keys);trigger.current?.focus();};},[selected]);
- function move(offset:number){setMonth(value=>{const next=shiftMonth(value,offset);return next<earliest?earliest:next>last?last:next;});setSelected(null);}
+ function move(offset:number){setMonth(value=>shiftMonth(value,offset));setSelected(null);}
  const monthSwipe=useSwipe({onSwipe:move,canStart:target=>!target.closest('button:not(.archive-work),input,select,textarea,a,summary,.modal-shade')});
  const monthDate=new Date(month+'-01T00:00:00Z'),monthName=new Intl.DateTimeFormat(numberLocale(),{year:'numeric',month:'long',timeZone:'UTC'}).format(monthDate);
  const weekdays=Array.from({length:7},(_,n)=>new Intl.DateTimeFormat(numberLocale(),{weekday:'short',timeZone:'UTC'}).format(new Date(Date.UTC(2026,0,4+n))));
  const imageFor=(item:ArchiveEntry)=>item.image||images[item.day];
  return <section className="archive-calendar" data-swipe-scope="calendar" {...monthSwipe} data-testid="archive-calendar" data-month={month} data-total={items.length} data-density={compact?'compact':'full'}>
   <div className="calendar-intro"><h1>{t('archive.title')}</h1><span>{atelier}</span></div>
-  <header className="calendar-month"><h2 aria-live="polite">{monthName}</h2><div className="calendar-paging"><button aria-label={t('demo.calendar.previous')} disabled={month<=earliest} onClick={()=>move(-1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4-8 8 8 8"/></svg></button><button aria-label={t('demo.calendar.next')} disabled={month>=last} onClick={()=>move(1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button></div></header>
+  <header className="calendar-month"><h2 aria-live="polite">{monthName}</h2><div className="calendar-paging"><button aria-label={t('demo.calendar.previous')} disabled={month<=calendarLimits.first} onClick={()=>move(-1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4-8 8 8 8"/></svg></button><button aria-label={t('demo.calendar.next')} disabled={month>=calendarLimits.last} onClick={()=>move(1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button></div></header>
   <div className="calendar-density" aria-label={t('demo.calendar.density')}><button aria-pressed={compact} onClick={()=>setCompact(true)}>{t('demo.calendar.compact')}</button><button aria-pressed={!compact} onClick={()=>setCompact(false)}>{t('demo.calendar.full')}</button></div>
   <div className="calendar-weekdays" aria-hidden="true">{weekdays.map(day=><span key={day}>{day}</span>)}</div>
   <div className="calendar-grid archive-grid" role="group" aria-label={month+' '+t('archive.title')}>{cells.map(cell=>{const item=cell.current?lookup.get(cell.day):undefined;return <div key={cell.day} className={`calendar-cell ${cell.current?'':'outside'} ${item?'has-work':''}`} data-day={cell.day}>

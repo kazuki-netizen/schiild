@@ -1,6 +1,7 @@
 import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
+import {shiftMonth} from '../src/calendar.ts';
 const origin='http://localhost:8085';
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{})});
 const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];
@@ -28,10 +29,12 @@ try{
  const font=await page.locator('.calendar-month h2').evaluate(node=>({font:getComputedStyle(node).fontFamily,style:getComputedStyle(node).fontStyle}));assert(!font.font.includes('Georgia'));assert.equal(font.style,'normal');
  await swipe('.calendar-grid',170);assert((await month())<latest);assert.equal(await active(),'アーカイブ');assert.equal(await page.getByRole('dialog').count(),0);
  await swipe('.calendar-grid',-170);assert.equal(await month(),latest);assert.equal(await page.getByRole('dialog').count(),0);
- await swipe('.calendar-grid',-170);assert.equal(await month(),latest);assert.equal(await active(),'アーカイブ');
- while(!await calendar.getByRole('button',{name:'前の月',exact:true}).isDisabled())await calendar.getByRole('button',{name:'前の月',exact:true}).click();
- const earliest=await month();await swipe('.calendar-grid',170);assert.equal(await month(),earliest);assert.equal(await active(),'アーカイブ');
- while(!await calendar.getByRole('button',{name:'次の月',exact:true}).isDisabled())await calendar.getByRole('button',{name:'次の月',exact:true}).click();
+ await swipe('.calendar-grid',-170);assert.equal(await month(),shiftMonth(latest,1));assert.equal(await active(),'アーカイブ');assert.equal(await calendar.locator('.archive-work').count(),0);
+ await swipe('.calendar-grid',170);assert.equal(await month(),latest);
+ // Continue beyond the earliest record instead of silently clamping to its month.
+ for(let n=0;n<3;n++)await swipe('.calendar-grid',170);
+ assert.equal(await month(),shiftMonth(latest,-3));assert.equal(await calendar.locator('.archive-work').count(),0);assert.equal(await active(),'アーカイブ');
+ for(let n=0;n<3;n++)await swipe('.calendar-grid',-170);
  await swipe('.calendar-grid',25);assert.equal(await month(),latest);assert.equal(await page.getByRole('dialog').count(),0);
  await swipe('.calendar-grid',170,0,true);assert.equal(await month(),latest);
  await calendar.locator('.archive-work').first().tap();await page.getByRole('dialog').waitFor();await swipe('.calendar-detail-heading',-160);assert.equal(await month(),latest);assert.equal(await page.getByRole('dialog').count(),1);
@@ -52,5 +55,5 @@ try{
  await swipe('.calendar-grid',0,-170);await page.waitForFunction(()=>scrollY>20);assert.equal(await month(),latest);await page.evaluate(()=>scrollTo(0,0));
  for(const width of [320,390,768]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/calendar-swipe-phone.png',fullPage:true});
- assert.deepEqual(errors,[]);console.log('Native touch and mouse tab swipes, nested month priority/bounds, taps, modal/camera/reveal protection, cancel/multiple fingers, vertical scrolling and calendar typography: passed');
+ assert.deepEqual(errors,[]);console.log('Native touch and mouse tab swipes, nested month priority and empty months, taps, modal/camera/reveal protection, cancel/multiple fingers, vertical scrolling and calendar typography: passed');
 }catch(error){await page.screenshot({path:'test-results/swipe-failure.png',fullPage:true});throw error;}finally{await browser.close();}
