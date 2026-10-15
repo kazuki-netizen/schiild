@@ -8,7 +8,7 @@ const second=await browser.newContext({viewport:{width:390,height:844},permissio
 const page=await first.newPage(),guest=await second.newPage();
 for(const p of [page,guest])p.on('pageerror',e=>errors.push(e.message));
 async function record(p){
- await p.getByRole('button',{name:'今日の1枚を撮る',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();
+ await p.getByRole('button',{name:'今日のシールを記録',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();
  await p.getByText('このアトリエの今日のシールは一度きりです',{exact:true}).waitFor();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByText('今日の1枚を記録しました。',{exact:true}).waitFor();
 }
 try{
@@ -21,7 +21,7 @@ try{
  const url=await page.locator('textarea').inputValue();assert(url.includes('#atelier='));assert(!url.includes('credential'));
  await page.getByRole('button',{name:'戻る',exact:true}).click();await page.getByText('参加 1人 ／ 定員 2人',{exact:true}).waitFor();
  await guest.goto(url);await guest.getByRole('heading',{name:'ふたりの窓',exact:true}).waitFor();await guest.getByRole('button',{name:'参加する',exact:true}).click();
- await guest.getByText('参加 2人 ／ 定員 2人',{exact:true}).waitFor();await guest.getByRole('button',{name:'今日の1枚を撮る',exact:true}).waitFor();
+ await guest.getByText('参加 2人 ／ 定員 2人',{exact:true}).waitFor();await guest.getByRole('button',{name:'今日のシールを記録',exact:true}).waitFor();
  assert.equal(await guest.getByRole('button',{name:'シールトを生成する',exact:true}).count(),0);
  await record(page);await record(guest);await page.getByText('2 of 2 が今日を記録',{exact:true}).waitFor({timeout:15000});
  assert.equal(await page.locator('.today-tile.filled').count(),2);

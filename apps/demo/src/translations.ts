@@ -38,7 +38,7 @@ export const translations={
  'common.of':["of","/","sur","van"],
  'common.people_count':["{n} people","{n}명","{n} personnes","{n} personen"],
  'common.days_count':["{n} days","{n}일","{n} jours","{n} dagen"],
- 'onboarding.1.title':["Take today’s photo","오늘의 한 장 촬영","Prendre la photo du jour","Maak de foto van vandaag"],
+ 'onboarding.1.title':["Record today’s Schiil","오늘의 Schiil 기록","Enregistrer le Schiil du jour","Leg de Schiil van vandaag vast"],
  'onboarding.1.body':["One photo a day. It cannot be retaken or replaced later.","하루 한 장만 촬영할 수 있습니다. 다시 찍거나 나중에 바꿀 수 없습니다.","Une photo par jour. Impossible de la reprendre ou de la remplacer ensuite.","Eén foto per dag. Je kunt die later niet opnieuw maken of vervangen."],
  'onboarding.2.title':["One shared work","하나의 작품으로","Une œuvre commune","Eén gezamenlijk werk"],
  'onboarding.2.body':["Each morning, the photos from your atelier become one picture.","같은 아틀리에의 사진이 모여 매일 아침 하나의 그림이 됩니다.","Chaque matin, les photos de votre atelier forment une seule image.","Elke ochtend vormen de foto’s van je atelier samen één beeld."],

@@ -47,7 +47,7 @@ export const demoCopy={
  'demo.calendar.sample_note':'S はサンプル作品です。',
  // User-selected label override for the demo's GLOBAL statistics.
  'global.stat.posts':'総投稿数',
- 'onboarding.1.title':'今日の1枚を撮る',
+ 'onboarding.1.title':'今日のシールを記録',
  'camera.confirm.title':'このアトリエの今日のシールは一度きりです',
  'demo.posts.title':'今日の自分の投稿',
  'demo.posts.rule':'アトリエごとに1日1枚を記録できます。確定した写真の取り消し・差し替えはできません。ほかのアトリエには自動で投稿されません。',

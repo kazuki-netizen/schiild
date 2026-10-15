@@ -37,7 +37,7 @@ export const spanish={
  'common.of':'de',
  'common.people_count':'{n} personas',
  'common.days_count':'{n} días',
- 'onboarding.1.title':'Tomar la foto de hoy',
+ 'onboarding.1.title':'Registrar el Schiil de hoy',
  'onboarding.1.body':'Una foto al día. No se puede repetir ni sustituir después.',
  'onboarding.2.title':'Una obra compartida',
  'onboarding.2.body':'Cada mañana, las fotos de tu atelier forman una sola imagen.',

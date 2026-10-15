@@ -44,7 +44,7 @@ try{
  await swipe('.nav',170);await page.getByTestId('global-page').waitFor();await swipe('.nav',170);await page.getByTestId('today-board').waitFor();
  // Internally opened archive pages must also use the real current screen.
  await page.locator('.section-heading button').tap();await calendar.waitFor();await page.waitForFunction(()=>document.querySelector('.nav .active')?.textContent==='アーカイブ');await swipe('.nav',170);await page.getByTestId('global-page').waitFor();
- await nav.getByRole('button',{name:'アトリエ',exact:true}).tap();await page.getByRole('button',{name:'今日の1枚を撮る',exact:true}).tap();await page.locator('.camera-page').waitFor();await swipe('.nav',-170);assert.equal(await page.locator('.camera-page').count(),1);
+ await nav.getByRole('button',{name:'アトリエ',exact:true}).tap();await page.getByRole('button',{name:'今日のシールを記録',exact:true}).tap();await page.locator('.camera-page').waitFor();await swipe('.nav',-170);assert.equal(await page.locator('.camera-page').count(),1);
  await page.locator('.camera-page').getByRole('button',{name:'戻る',exact:true}).tap();await page.getByTestId('today-board').waitFor();
  // Two fingers must never switch a page.
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:260,y:270,'id':41},{x:300,y:270,'id':42}]});
