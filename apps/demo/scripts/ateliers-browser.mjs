@@ -1,4 +1,4 @@
-import {fixtureChromium as chromium} from './browser-fixture.mjs';
+import {fixtureChromium as chromium,optInGlobal} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{}),args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
 const origin=process.env.DEMO_URL||'http://localhost:8085';
@@ -9,7 +9,7 @@ const page=await first.newPage(),guest=await second.newPage();
 for(const p of [page,guest])p.on('pageerror',e=>errors.push(e.message));
 async function record(p){
  await p.getByRole('button',{name:'今日のシールを記録',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();
- await p.getByText('このアトリエの今日のシールは一度きりです',{exact:true}).waitFor();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByText('今日のシールを記録しました。',{exact:true}).waitFor();
+ await p.getByText('このアトリエの今日のシールは一度きりです',{exact:true}).waitFor();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await optInGlobal(p);await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByText('今日のシールを記録しました。',{exact:true}).waitFor();
 }
 try{
  await page.goto(origin);await page.getByRole('button',{name:'アトリエ ＋',exact:true}).click();await page.getByRole('button',{name:'アトリエをつくる',exact:true}).click();

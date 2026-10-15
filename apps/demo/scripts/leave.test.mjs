@@ -36,7 +36,7 @@ test('unposted slots are freed immediately, all participants may leave and first
 test('leaving is excluded from account restoration without deleting the account or the daily contribution',async()=>{
  const {auth,call}=fixture(),room=await call('create',{name:'復元しない窓',capacity:2}),code=room.code;
  const registered=await auth.execute({action:'account.register',username:'leaving_user',password:'leave-test-password-29'},first);
- await call('post',{code,day:room.day,photo},registered.token);await call('leave',{code},registered.token);
+ await call('post',{code,day:room.day,photo},registered.token);await call('global.record',{sourceCode:code,day:room.day},registered.token);await call('leave',{code},registered.token);
  const login=await auth.execute({action:'account.login',username:'leaving_user',password:'leave-test-password-29'},second);assert.equal(login.account.ateliers.length,0);
  assert.equal((await call('global',{day:room.day},login.token)).count,1);assert.notEqual((await call('global',{day:room.day},login.token)).x,undefined);
  assert.equal((await call('join',{code},login.token)).hasPhoto,true);

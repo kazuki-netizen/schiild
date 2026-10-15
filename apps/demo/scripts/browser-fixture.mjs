@@ -8,3 +8,8 @@ export async function seedDemo(context){
  await context.addInitScript(({day,seed,works,resetKey,resetVersion})=>{if(localStorage.getItem('__schiild_fixture_ready'))return;localStorage.setItem('__schiild_fixture_ready','1');localStorage.setItem(resetKey,resetVersion);localStorage.setItem('schiild.demo.ateliers.v3',JSON.stringify({version:3,device:crypto.randomUUID(),selected:'ASADEMO1',ateliers:[{code:'ASADEMO1',name:'あさ',capacity:12,creator:null,activeFrom:day,state:{version:1,day,seed,rects:works[0].rects,photo:null,count:2,works,winner:'self',ready:null}}]}));},{day,seed,works,resetKey:RESET_KEY,resetVersion:RESET_VERSION});
 }
 export const fixtureChromium={async launch(options){const browser=await chromium.launch(options),create=browser.newContext.bind(browser);browser.newContext=async options=>{const context=await create(options);await seedDemo(context);return context;};return browser;}};
+// Explicitly exercise GLOBAL selection where existing end-to-end scenarios need it.
+export async function optInGlobal(page){
+ await page.locator('.reuse-photo').waitFor();const checkbox=page.locator('.global-target input');
+ if(await checkbox.isEnabled()){await checkbox.check();await page.locator('.daily-posts>.button:not(.secondary)').click();await page.getByRole('dialog').locator('.button').first().click();await page.waitForFunction(()=>document.querySelector('.global-target input')?.disabled===true&&document.querySelector('.reuse-results'));}
+}

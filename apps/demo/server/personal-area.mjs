@@ -12,7 +12,7 @@ export function areaSummary(rooms,globals,member){
  const dates=new Set(globals.filter(row=>row.data.pixels[member]).map(row=>row.data.day));
  const ateliers=rooms.map(({data:room})=>{
   let pixels=0,days=0;
-  for(const day of Object.values(room.days)){const area=dayArea(room,day,member);if(area.pixels){pixels+=area.pixels;days++;dates.add(day.day);}}
+  for(const day of Object.values(room.days)){const area=dayArea(room,day,member);if(area.pixels){pixels+=area.pixels;days++;}}
   return {code:room.code,name:room.name,pixels,days,joined:room.members.includes(member)};
  }).filter(room=>room.days>0);
  return {global:{pixels:dates.size,days:dates.size},atelier:{pixels:ateliers.reduce((n,room)=>n+room.pixels,0),days:ateliers.reduce((n,room)=>n+room.days,0)},ateliers};

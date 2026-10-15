@@ -19,6 +19,7 @@ for(const sqlite of [false,true])test(`permanent deletion removes personal data 
  const {store,db,auth,call,nextDay}=fixture(sqlite);
  try{
   const room=await call('create',{name:'残す作品',capacity:2}),solo=await call('create',{name:'残す区画',capacity:5}),day=room.day;await call('join',{code:room.code},second);await call('post',{code:room.code,day,photo});await call('post',{code:room.code,day,photo},second);await call('post',{code:solo.code,day,photo});await call('generate',{code:room.code,day});
+  await call('global.record',{sourceCode:room.code,day});await call('global.record',{sourceCode:room.code,day},second);
   const art=await call('work',{code:room.code,day}),global=await call('global',{day});
   const registration=await auth.execute({action:'account.register',username:'erase_user',name:'消す表示名',password},first),login=await auth.execute({action:'account.login',username:'erase_user',password},third);
   const account=(await store.getWithMetadata('accounts/erase_user')).data;

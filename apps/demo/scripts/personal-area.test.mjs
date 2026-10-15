@@ -34,8 +34,8 @@ test('reuse selects only own current-day photos, returns partial results and kee
  const sourceKey=(await store.getWithMetadata('rooms/'+source.code)).data.days[day].posts[0];
  assert.equal((await store.getWithMetadata('rooms/'+target.code)).data.days[day].posts[0],sourceKey);
  assert.equal((await call('reuse',{sourceCode:source.code,day,codes:[target.code]})).results[0].done,true);
- const global=await call('global',{day});assert.equal(global.area.pixels,1);assert.equal(global.count,2);
- const pixels=await sharp(Buffer.from(global.image.split(',')[1],'base64')).ensureAlpha().raw().toBuffer();assert.deepEqual([...pixels.subarray((global.y*256+global.x)*4,(global.y*256+global.x)*4+3)],[195,149,130]);
+ await call('global.record',{sourceCode:source.code,day});await call('global.record',{sourceCode:foreign.code,day},second);const global=await call('global',{day});assert.equal(global.area.pixels,1);assert.equal(global.count,2);
+ const pixels=await sharp(Buffer.from(global.image.split(',')[1],'base64')).ensureAlpha().raw().toBuffer();assert.deepEqual([...pixels.subarray((global.y*global.outputSize+global.x)*4,(global.y*global.outputSize+global.x)*4+3)],[195,149,130]);
  const totals=await call('area');assert.equal(totals.global.pixels,1);assert.equal(totals.atelier.days,4);
  await call('leave',{code:source.code});assert.equal((await call('post.photo',{sourceCode:source.code,day})).photo,original.photo);
  assert.equal((await call('reuse',{sourceCode:source.code,day,codes:[untouched.code]})).results[0].done,true);
@@ -65,7 +65,7 @@ test('day rectangles, drafts, works and totals use historical participants, incl
  const {store,auth,call,nextDay}=fixture(),a=await call('create',{name:'大きな窓',capacity:2}),b=await call('create',{name:'小さな窓',capacity:5}),day=a.day;
  assert.equal((await call('area')).atelier.pixels,0);assert.equal(a.area.pixels,0);
  await call('join',{code:a.code},second);await call('post',{code:a.code,day,photo:red});await call('post',{code:b.code,day,photo:blue});
- const areaA=rectPixels(a),areaB=rectPixels(b);assert.equal((await call('state',{code:a.code})).area.pixels,areaA);assert.equal((await call('state',{code:a.code},second)).area.pixels,0);
+ await call('global.record',{sourceCode:a.code,day});const areaA=rectPixels(a),areaB=rectPixels(b);assert.equal((await call('state',{code:a.code})).area.pixels,areaA);assert.equal((await call('state',{code:a.code},second)).area.pixels,0);
  assert.equal((await call('draft',{code:a.code,day})).area.pixels,areaA);await call('generate',{code:a.code,day});assert.equal((await call('work',{code:a.code,day})).area.pixels,areaA);
  assert.equal((await call('state',{code:a.code})).works[0].area.pixels,areaA);
  // Existing metadata and photos written before this feature still work.
@@ -75,7 +75,7 @@ test('day rectangles, drafts, works and totals use historical participants, incl
  await call('leave',{code:a.code});let totals=await call('area');assert.equal(totals.atelier.pixels,areaA+areaB);assert.equal(totals.global.pixels,1);assert.equal(totals.ateliers.find(row=>row.code===a.code).joined,false);
  nextDay();await call('join',{code:a.code},third);assert.equal((await call('work',{code:a.code,day},third)).area.pixels,0);
  assert.equal((await call('area',{},third)).atelier.pixels,0);assert.equal((await call('area')).atelier.pixels,areaA+areaB);
- const today=await call('state',{code:b.code});await call('post',{code:b.code,day:today.day,photo:red});totals=await call('area');assert.equal(totals.atelier.pixels,areaA+areaB+rectPixels(today));assert.equal(totals.global.pixels,2);assert.equal(totals.atelier.days,3);
+ const today=await call('state',{code:b.code});await call('post',{code:b.code,day:today.day,photo:red});await call('global.record',{sourceCode:b.code,day:today.day});totals=await call('area');assert.equal(totals.atelier.pixels,areaA+areaB+rectPixels(today));assert.equal(totals.global.pixels,2);assert.equal(totals.atelier.days,3);
  const registration=await auth.execute({action:'account.register',username:'area_user',password:'area-test-password-29'},first);
  const login=await auth.execute({action:'account.login',username:'area_user',password:'area-test-password-29'},third);assert.deepEqual(await call('area',{},registration.token),totals);assert.deepEqual(await call('area',{},login.token),totals);
  assert.equal((await call('global',{day},login.token)).area.pixels,1);

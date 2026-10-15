@@ -12,3 +12,6 @@ test('selected pixels round-trip at multiple zoom levels, corners and phone size
 test('panning beyond every corner stays inside the picture and selects valid coordinates',()=>{
  for(const x of [-1e5,1e5])for(const y of [-1e5,1e5]){const size=342,view=boundView({scale:4,x,y},size);assert(Math.abs(view.x)<=513&&Math.abs(view.y)<=513);const pixel=pixelAt(view,{x:-171,y:-171},size);assert(pixel.x>=0&&pixel.x<=255&&pixel.y>=0&&pixel.y<=255);}
 });
+test('compact and growing image resolutions preserve exact square pixel selection',()=>{
+ for(const resolution of [1,2,3,5,17,257])for(const size of [272,342,600])for(const scale of [1,4,64])for(const pixel of [{x:0,y:0},{x:resolution-1,y:resolution-1}]){const view=boundView({scale,x:33,y:-33},size),screen=pixelPosition(view,pixel,size,resolution);assert.deepEqual(pixelAt(view,{x:screen.x-size/2,y:screen.y-size/2},size,resolution),pixel);}
+});

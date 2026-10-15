@@ -45,19 +45,19 @@ test('GLOBAL is shared across ateliers/custodians, deduplicates daily participan
  const photo=async color=>`data:image/jpeg;base64,${(await sharp({create:{width:1080,height:1080,channels:3,background:color}}).jpeg().toBuffer()).toString('base64')}`;
  const red=await photo('#c39582'),blue=await photo('#87a6b0');
  await call('join',{code:room.code},second);await call('post',{code:room.code,day,photo:red});
- const before=await call('global',{day},third);assert.equal(before.count,1);assert.equal(before.x,undefined);
+ assert.equal((await call('global',{day},third)).count,0);await call('global.record',{sourceCode:room.code,day});const before=await call('global',{day},third);assert.equal(before.count,1);assert.equal(before.x,undefined);
  const other=await call('create',{name:'もうひとつ',capacity:2});await call('post',{code:other.code,day,photo:blue});
- const same=await call('global',{day});assert.equal(same.count,1);assert.equal(same.ateliers,2);assert.equal(same.x,(await call('global',{day})).x);
- await call('post',{code:room.code,day,photo:blue},second);await call('generate',{code:room.code,day});
+ const same=await call('global',{day});assert.equal(same.count,1);assert.equal(same.ateliers,1);assert.equal(same.x,(await call('global',{day})).x);
+ await call('post',{code:room.code,day,photo:blue},second);await call('global.record',{sourceCode:room.code,day},second);await call('generate',{code:room.code,day});
  const mine=await call('global',{day}),guest=await call('global',{day},second),viewer=await call('global',{day},third);
  assert.equal(mine.count,2);assert.equal(mine.image,guest.image);assert.equal(mine.image,viewer.image);assert.notEqual(mine.image,before.image);assert.equal(viewer.x,undefined);
- assert.notEqual(mine.y*256+mine.x,guest.y*256+guest.x);
- const bytes=Buffer.from(mine.image.split(',')[1],'base64'),decoded=await sharp(bytes).ensureAlpha().raw().toBuffer({resolveWithObject:true});assert.equal(decoded.info.width,256);
- const pixel=decoded.data.subarray((mine.y*256+mine.x)*4,(mine.y*256+mine.x)*4+3);assert.deepEqual([...pixel],[195,149,130]);
- // Existing days from before the feature are lazily reconstructed from real photos.
- const original=await store.getWithMetadata('globals/'+day);await store.setJSON('globals/'+day,{day,pixels:{},ateliers:[]},{onlyIfMatch:original.etag});assert.equal((await call('global',{day})).image,mine.image);
+ assert.notEqual(mine.y*mine.outputSize+mine.x,guest.y*guest.outputSize+guest.x);
+ const bytes=Buffer.from(mine.image.split(',')[1],'base64'),decoded=await sharp(bytes).ensureAlpha().raw().toBuffer({resolveWithObject:true});assert.equal(decoded.info.width,2);
+ const pixel=decoded.data.subarray((mine.y*mine.outputSize+mine.x)*4,(mine.y*mine.outputSize+mine.x)*4+3);assert.deepEqual([...pixel],[195,149,130]);
+ // Unselected atelier photos must never be reconstructed into GLOBAL.
+ const original=await store.getWithMetadata('globals/'+day);await store.setJSON('globals/'+day,{day,pixels:{},ateliers:[]},{onlyIfMatch:original.etag});assert.equal((await call('global',{day})).image,null);await store.setJSON('globals/'+day,original.data);assert.equal((await call('global',{day})).image,mine.image);
  advance(86400000);const frozen=await call('global',{day},third);assert.equal(frozen.final,true);assert.equal(frozen.image,mine.image);
- const tomorrow='2026-10-09';await call('post',{code:room.code,day:tomorrow,photo:blue});assert.equal((await call('global',{day})).image,mine.image);
+ const tomorrow='2026-10-09';await call('post',{code:room.code,day:tomorrow,photo:blue});await call('global.record',{sourceCode:room.code,day:tomorrow});assert.equal((await call('global',{day})).image,mine.image);
  assert.equal((await call('global',{day:tomorrow})).count,1);
  await assert.rejects(call('global',{day:'2026-02-30'}),error=>error.code==='invalid');await assert.rejects(call('global',{day:'2099-01-01'}),error=>error.code==='invalid');
  assert(!JSON.stringify(await store.listJSON('globals/')).includes(first));assert((await store.getWithMetadata('globals/'+day)).data.pixels[hash(first)]);

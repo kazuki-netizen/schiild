@@ -1,4 +1,4 @@
-import {fixtureChromium as chromium} from './browser-fixture.mjs';
+import {fixtureChromium as chromium,optInGlobal} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 const origin=process.env.DEMO_URL||'http://localhost:8085';
@@ -7,7 +7,7 @@ const contexts=await Promise.all([0,1].map(()=>browser.newContext({viewport:{wid
 const [page,guest]=await Promise.all(contexts.map(context=>context.newPage())),errors=[];
 for(const current of [page,guest])current.on('pageerror',error=>errors.push(error.message));
 const nav=p=>p.locator('.nav');
-async function record(p){await p.getByRole('button',{name:'今日のシールを記録',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.locator('.posted').waitFor();}
+async function record(p){await p.getByRole('button',{name:'今日のシールを記録',exact:true}).click();await p.getByRole('button',{name:'次へ',exact:true}).click();await p.locator('.shutter:not([disabled])').waitFor();await p.locator('.shutter').click();await p.getByRole('button',{name:'確定する',exact:true}).click();await p.getByTestId('daily-posts').waitFor();await optInGlobal(p);await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.locator('.posted').waitFor();}
 async function preview(p,n){await p.getByRole('button',{name:'仮生成する',exact:true}).click();await p.getByTestId('draft-preview').waitFor();await p.getByText(`仮生成時の投稿 ${n}枚`,{exact:false}).waitFor();return p.locator('.draft-art').getAttribute('src');}
 async function back(p){await p.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await p.getByTestId('today-board').waitFor();}
 try{

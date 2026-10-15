@@ -68,12 +68,22 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    return {ateliers:page.map(room=>({code:room.code,name:room.name,capacity:room.capacity,concept:dayConcept(room,room.days[day]),members:memberCount(room),total:Object.values(room.days).filter(day=>day.status==='ready').length})),nextCursor:matches.length>24?page.at(-1).code:null};
   }
   if(action==='global')return global.view(String(body.day??utcDay(now())),member);
+  if(action==='global.record'){
+   const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
+   let photo;
+   if(body.sourceCode!==undefined){const key=await ownPost(String(body.sourceCode),day,member);photo=await store.get(key,{type:'arrayBuffer'});if(!photo)fail(503,'unavailable');}
+   else{
+    if(typeof body.photo!=='string'||body.photo.length>4000000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(body.photo))fail(400,'image_invalid');
+    try{photo=await images.normalize(Buffer.from(body.photo.slice(body.photo.indexOf(',')+1),'base64'));}catch{fail(400,'image_invalid');}
+   }
+   await global.record(day,member,body.sourceCode??'local',photo);return {done:true,day};
+  }
   if(action==='area')return areaSummary(await listRecords(store,'rooms/'),await listRecords(store,'globals/'),member);
   if(action==='posts'){
    const day=utcDay(now()),rows=await listRecords(store,'rooms/');
    const sources=rows.flatMap(({data:source})=>{const record=source.days[day],sourceSlot=record?participants(source,record).indexOf(member):-1;return sourceSlot>=0&&record.posts[sourceSlot]?[{code:source.code,name:source.name,day}]:[];});
    const targets=rows.filter(({data:target})=>target.members.includes(member)).map(({data:target})=>{const status=summary(target,member);return {code:target.code,name:target.name,concept:status.concept,posted:status.hasPhoto,status:status.status};});
-   return {day,sources,targets,freeConceptOnly:true};
+   return {day,sources,targets,freeConceptOnly:true,globalRecorded:await global.has(day,member)};
   }
   if(action==='post.photo'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
@@ -183,8 +193,6 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
     if(today.posts[targetSlot]&&today.posts[targetSlot]!==key)fail(409,'already_recorded');
     today.posts[targetSlot]=key;room.days[day]=today;return room;
    });
-   const photo=await store.get(key,{type:'arrayBuffer'});if(!photo)fail(503,'unavailable');
-   await global.record(day,member,code,photo);
    return summary(room,member);
   }
   if(action==='generate'){

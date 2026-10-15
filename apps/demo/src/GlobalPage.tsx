@@ -9,7 +9,7 @@ import type {Work} from './model';
 import AreaDisplay from './AreaDisplay';
 import GlobalExplorer from './GlobalExplorer';
 export type GlobalSelection={day:string;sample?:Work};
-type GlobalWork={day:string;image:string|null;count:number;ateliers:number;final:boolean;x?:number;y?:number;positions?:number[]};
+type GlobalWork={day:string;image:string|null;count:number;ateliers:number;final:boolean;x?:number;y?:number;positions?:number[];outputSize?:number};
 const PIXEL_SIZE=18;
 export default function GlobalPage({selection,revision}:{selection:GlobalSelection;revision:number}){
  const [work,setWork]=useState<GlobalWork|null>(null),[error,setError]=useState(''),[zoom,setZoom]=useState(false);
@@ -21,7 +21,7 @@ export default function GlobalPage({selection,revision}:{selection:GlobalSelecti
   void refresh();const timer=setInterval(()=>{if(document.visibilityState==='visible'&&selection.day===new Date().toISOString().slice(0,10))void refresh();},5000);
   return()=>{controller.abort();clearInterval(timer);};
  },[selection.day,selection.sample,revision]);
- const day=selection.day,short=shortDate,mine=work?.x!==undefined&&work?.y!==undefined,x=work?.x??0,y=work?.y??0;
+ const day=selection.day,short=shortDate,mine=work?.x!==undefined&&work?.y!==undefined,x=work?.x??0,y=work?.y??0,resolution=work?.outputSize||256,total=resolution*resolution,pixelZoom=Math.max(1,resolution*PIXEL_SIZE/288);
  return <section className="global-page" data-testid="global-page" data-day={day} style={{'--global-pixel-size':`${PIXEL_SIZE}px`} as React.CSSProperties}>
   <div className="wall-label">{t('global.label')}</div><h1>{day.replaceAll('-',' / ')}</h1><p className="window">{t('atelier.window',{start:short(day)+' 09:00',end:short(dayAfter(day))+' 09:00'})}</p>
   {selection.sample&&<p className="sample-note">{t('demo.global.sample')}</p>}
@@ -29,10 +29,10 @@ export default function GlobalPage({selection,revision}:{selection:GlobalSelecti
   {!work&&!error&&<p>{t('common.loading')}</p>}
   {work&&!work.image&&<p>{t('demo.global.empty')}</p>}
   {work?.image&&<>
-   <GlobalExplorer key={day} image={work.image} positions={work.positions} mine={mine?{x,y}:undefined} sample={Boolean(selection.sample)}/>
-   {mine?<><button className="pixel-link" onClick={()=>setZoom(!zoom)}><span>{t('global.your_pixel',{n:y*256+x+1})}</span><Icon kind="arrow"/></button><div className="zoom-stage" data-testid="global-zoom" data-zoom={zoom}><img src={work.image} alt={t('schiild.regions.mine')} style={{transformOrigin:`${(x+.5)/256*100}% ${(y+.5)/256*100}%`,transform:zoom?`translate(${(128-x-.5)/256*100}%, ${(128-y-.5)/256*100}%) scale(${PIXEL_SIZE})`:'scale(1)'}}/><span className={zoom?'zoom-target visible':'zoom-target'}/></div><div className="loupe-row"><div className="loupe"><img src={work.image} alt={t('schiild.regions.mine')} style={{left:-(x-4)*PIXEL_SIZE,top:-(y-4)*PIXEL_SIZE}}/><span/></div><div><p className="mono">{t('global.coords',{x,y})}</p><p className="muted">{t('schiild.regions.mine')}</p></div></div></>:<p>{t('demo.global.no_pixel')}</p>}
+   <GlobalExplorer key={day} image={work.image} positions={work.positions} mine={mine?{x,y}:undefined} sample={Boolean(selection.sample)} resolution={resolution}/>
+   {mine?<><button className="pixel-link" onClick={()=>setZoom(!zoom)}><span>{t('global.your_pixel',{n:y*resolution+x+1})}</span><Icon kind="arrow"/></button><div className="zoom-stage" data-testid="global-zoom" data-zoom={zoom}><img src={work.image} alt={t('schiild.regions.mine')} style={{transformOrigin:`${(x+.5)/resolution*100}% ${(y+.5)/resolution*100}%`,transform:zoom?`translate(${(resolution/2-x-.5)/resolution*100}%, ${(resolution/2-y-.5)/resolution*100}%) scale(${pixelZoom})`:'scale(1)'}}/><span className={zoom?'zoom-target visible':'zoom-target'}/></div><div className="loupe-row"><div className="loupe"><img src={work.image} alt={t('schiild.regions.mine')} style={{width:resolution*PIXEL_SIZE,height:resolution*PIXEL_SIZE,left:-(x-4)*PIXEL_SIZE,top:-(y-4)*PIXEL_SIZE}}/><span/></div><div><p className="mono">{t('global.coords',{x,y})}</p><p className="muted">{t('schiild.regions.mine')}</p></div></div></>:<p>{t('demo.global.no_pixel')}</p>}
    <div className="stats"><div><span>{t('global.stat.posts')}</span><b>{work.count}</b></div><div><span>{t('global.stat.ateliers')}</span><b>{work.ateliers}</b></div></div>
-   <AreaDisplay global area={{pixels:mine?1:0,total:65536,percent:(mine?1:0)/65536*100}}/>
+   <AreaDisplay global area={{pixels:mine?1:0,total,percent:(mine?1:0)/total*100}}/>
    {!work.final&&!selection.sample&&<p className="shared-note">{t('demo.global.live')}</p>}
   </>}
  </section>;

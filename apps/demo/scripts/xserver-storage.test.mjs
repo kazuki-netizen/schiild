@@ -32,5 +32,8 @@ test('PHP storage rejects unsigned/expired/path requests and atomically keeps fi
   await assert.rejects(store.set(`works/ABCDEFGH/2026-10-08`,red));
   for(const [n,size] of [128,256].entries()){const png=await sharp({create:{width:size,height:size,channels:3,background:'#87a6b0'}}).png().toBuffer(),workKey=`works/ABCDEFGH/2026-10-${String(9+n).padStart(2,'0')}`;assert.deepEqual(await store.set(workKey,png),{modified:true});assert(Buffer.from(await store.get(workKey)).equals(png));}
   await assert.rejects(store.set('works/ABCDEFGH/2026-10-11',await sharp({create:{width:512,height:512,channels:3,background:'#87a6b0'}}).png().toBuffer()));
+  for(const size of [1,2,3,17,256]){const png=await sharp({create:{width:size,height:size,channels:3,background:'#87a6b0'}}).png().toBuffer(),globalKey=`global/2026-10-15/${size.toString(16).padStart(64,'0')}`;assert.deepEqual(await store.set(globalKey,png),{modified:true});assert(Buffer.from(await store.get(globalKey)).equals(png));}
+  await assert.rejects(store.set(`global/2026-10-15/${'c'.repeat(64)}`,await sharp({create:{width:3,height:2,channels:3,background:'#87a6b0'}}).png().toBuffer()));
+  await assert.rejects(store.set(`global/2026-10-15/${'d'.repeat(64)}`,await sharp({create:{width:4097,height:4097,channels:3,background:'#87a6b0'}}).png().toBuffer()));
  }finally{child.kill();await new Promise(resolve=>child.once('exit',resolve));await rm(root,{recursive:true,force:true});}
 });

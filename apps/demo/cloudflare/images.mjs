@@ -17,7 +17,7 @@ function png(pixels){
 }
 export const workerImages={
  async mean(bytes){const image=decode(bytes),sum=[0,0,0];for(let n=0;n<image.data.length;n+=4)for(let channel=0;channel<3;channel++)sum[channel]+=image.data[n+channel];return nearest(sum.map(n=>n/(image.width*image.height)));},
- async global(pixels){const data=new Uint8ClampedArray(256*256*4);for(let n=0;n<65536;n++)data.set([...colors[1],255],n*4);for(const pixel of pixels)data.set([...pixel.color,255],pixel.position*4);return png({width:256,height:256,data});},
+ async global(pixels,outputSize=256){const data=new Uint8ClampedArray(outputSize*outputSize*4);for(let n=0;n<outputSize*outputSize;n++)data.set([...colors[1],255],n*4);for(const pixel of pixels)data.set([...pixel.color,255],pixel.position*4);return png({width:outputSize,height:outputSize,data});},
  async normalize(bytes){const image=decode(bytes);return Buffer.from(jpeg.encode({width:image.width,height:image.height,data:Buffer.from(image.data)},85).data);},
  async compose(rects,load,seed,outputSize=128){
   // Process photos sequentially to stay below Workers' memory ceiling at 20 slots.

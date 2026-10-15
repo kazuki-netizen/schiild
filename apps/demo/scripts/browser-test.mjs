@@ -1,4 +1,4 @@
-import {fixtureChromium as chromium} from './browser-fixture.mjs';
+import {fixtureChromium as chromium,optInGlobal} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{}),args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
@@ -12,7 +12,7 @@ try{
  await page.getByRole('button',{name:'アーカイブ',exact:true}).click();await page.locator('.archive-grid .archive-work').first().waitFor();assert.equal(Number(await page.getByTestId('archive-calendar').getAttribute('data-total')),30);await page.mouse.wheel(0,3000);await page.waitForFunction(()=>window.scrollY>0);await page.screenshot({path:'test-results/archive.png',fullPage:true,animations:'disabled'});
  await page.getByRole('button',{name:'アトリエ',exact:true}).click();await page.screenshot({path:'test-results/home.png',fullPage:true,animations:'disabled'});
  await page.getByRole('button',{name:'今日のシールを記録',exact:true}).click();await page.getByRole('button',{name:'次へ',exact:true}).click();await page.locator('.shutter:not([disabled])').waitFor();await page.locator('.shutter').click();await page.getByText('このアトリエの今日のシールは一度きりです',{exact:true}).waitFor();
- await page.screenshot({path:'test-results/confirm.png',fullPage:true,animations:'disabled'});await page.getByRole('button',{name:'確定する',exact:true}).click();await page.getByTestId('daily-posts').waitFor();await page.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await page.locator('.posted').waitFor();await page.reload();await page.locator('.posted').waitFor();
+ await page.screenshot({path:'test-results/confirm.png',fullPage:true,animations:'disabled'});await page.getByRole('button',{name:'確定する',exact:true}).click();await page.getByTestId('daily-posts').waitFor();await optInGlobal(page);await page.getByRole('button',{name:'アトリエに戻る',exact:true}).click();await page.locator('.posted').waitFor();await page.reload();await page.locator('.posted').waitFor();
  assert.equal(await page.locator('input[type=file]').count(),0);
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('schiild.demo.ateliers.v3')).ateliers[0].state.count===10);await panel();await page.getByRole('button',{name:/次へ.*00:15 UTC/}).click();await page.getByTestId('reveal').waitFor();assert.equal(await page.locator('.reveal-board img').count(),0);
  await page.clock.install({time:new Date('2030-01-01T00:00:00Z')});await page.clock.pauseAt(new Date('2030-01-01T00:00:01Z'));await page.getByRole('button',{name:'ひらく',exact:true}).last().click();
