@@ -14,9 +14,12 @@ import type {Draft} from './draft';
 import AreaDisplay from './AreaDisplay';
 import ArchiveCalendar from './ArchiveCalendar';
 import HelpDetails from './HelpDetails';
+import AtelierConcept from './AtelierConcept';
+import {CONCEPT_LIMIT} from './concept';
 
 export default function SharedExperience({entry,onManage,onShare,onAccount,onPosts,onGlobal,navigation}:{entry:Atelier;onManage:()=>void;onShare:()=>void;onAccount:()=>void;onPosts:()=>void;onGlobal:(day:string)=>void;navigation:Navigation}){
  const [state,setState]=useState<SharedState|null>(null),[error,setError]=useState(''),[screen,setScreen]=useState('home'),[work,setWork]=useState<Work|null>(null),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false),[cameraDay,setCameraDay]=useState<string|null>(null);
+ const [editingConcept,setEditingConcept]=useState(false),[conceptDraft,setConceptDraft]=useState(''),[conceptError,setConceptError]=useState('');
  const sequence=useRef(0),mounted=useRef(true),lock=useRef(false);
  const loadArchiveImage=useCallback(async(day:string,signal:AbortSignal)=>(await sharedRequest<Work>('work',{code:entry.code,day},signal)).image,[entry.code]);
  const [draft,setDraft]=useState<Draft|null>(null),draftController=useRef<AbortController|null>(null);
@@ -53,6 +56,13 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
   }catch(cause){setError(cause instanceof Error?cause.message:t('demo.shared.unavailable'));}
   finally{lock.current=false;setBusy(false);}
  }
+ function closeConcept(){setEditingConcept(false);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('[data-testid=concept-edit]')?.focus());}
+ async function saveConcept(){
+  if(!state||lock.current)return;lock.current=true;setBusy(true);setConceptError('');sequence.current++;
+  try{const next=await sharedRequest('concept.update',{code:entry.code,day:state.day,concept:conceptDraft});setState(next);closeConcept();}
+  catch(cause){setConceptError(cause instanceof Error?cause.message:t('demo.shared.unavailable'));}
+  finally{lock.current=false;setBusy(false);}
+ }
  async function preview(){
   if(!state||lock.current)return;lock.current=true;setBusy(true);setError('');sequence.current++;
   const controller=new AbortController();draftController.current=controller;
@@ -67,7 +77,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
  return <div className={screen==='archive'?'app archive-app':'app'}><header className="header"><button className="brand" aria-label="Schiild" onClick={onAccount}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></header>
   <main>{error&&<div className="shared-error" role="alert"><p>{error}</p><button className="text-button" onClick={()=>void refresh()}>{t('demo.shared.refresh')}</button></div>}
   {!state?<p>{t('common.loading')}</p>:<>
-   {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{state.name}</h1></div><p className="shared-note">{t('demo.shared.members',{n:state.members,cap:state.capacity})}</p>
+   {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{state.name}</h1></div><AtelierConcept concept={state.concept} disabled={busy} onEdit={state.canGenerate?()=>{setConceptDraft(state.defaultConcept??state.concept??'');setConceptError('');setEditingConcept(true);}:undefined}/>{state.canGenerate&&state.status!=='open'&&state.defaultConcept!==state.concept&&<p className="concept-upcoming">{t('demo.concept.upcoming',{concept:state.defaultConcept||t('demo.concept.default')})}</p>}<p className="shared-note">{t('demo.shared.members',{n:state.members,cap:state.capacity})}</p>
     <div className="artboard today-board" data-testid="today-board">{rects.map(rect=><div key={rect.slot} className={`today-tile ${state.postedSlots.includes(rect.slot)?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:state.postedSlots.includes(rect.slot)?'var(--strong)':undefined}}/>)}</div>
     <div className="today-details"><span className="mono">{state.day.replaceAll('-',' / ')}</span><span className="recorded mono">{t('atelier.recorded',{n:state.postedSlots.length,cap:state.capacity})}</span></div>
     <p className="window">{t('atelier.window',{start:short(state.day)+' 09:00',end:short(dayAfter(state.day))+' 09:00'})}</p>
@@ -85,12 +95,13 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
     <div className="atelier-list">{state.works.slice(0,3).map(item=><button className="atelier-select" key={item.day} disabled={busy} onClick={()=>void open(item.day)}><span className="mono">{item.day}</span><span className="mono">{t('schiild.label',{index:item.index})}</span></button>)}</div>
     <HelpDetails><p>{t('demo.posts.rule')}</p><p>{t('demo.shared.generate_note')}</p>{state.hasPhoto&&!state.canGenerate&&<p>{t('demo.shared.wait')}</p>}<p>{t('demo.draft.empty')}</p></HelpDetails>
    </section>}
-   {screen==='camera'&&<Camera shared day={cameraDay??state.day} atelier={state.name} onBack={()=>go('home')} onSubmit={post}/>}
+   {screen==='camera'&&<Camera shared day={cameraDay??state.day} atelier={state.name} concept={state.concept} onBack={()=>go('home')} onSubmit={post}/>}
    {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={state.name} onClose={()=>{setDraft(null);go('home');}}/>}
    {screen==='work'&&work&&<Reveal shared key={work.day} atelier={state.name} work={work} onOpened={()=>{try{localStorage.setItem(`schiild.shared.opened.${entry.code}.${work.day}`,'true');}catch{/* Viewing remains possible when local storage is full. */}}} onNext={()=>onGlobal(work.day)}/>}
    {screen==='archive'&&<ArchiveCalendar items={state.works} currentDay={state.day} atelier={state.name} busy={busy} loadImage={loadArchiveImage} onOpen={item=>void open(item.day)} onGlobal={item=>onGlobal(item.day)}/>}
   </>}
   </main>
+  {editingConcept&&state&&<div className="modal-shade"><section className="dialog concept-dialog" role="dialog" aria-modal="true" aria-labelledby="concept-title" onKeyDown={event=>{if(event.key==='Escape'&&!busy)closeConcept();}}><h2 id="concept-title">{t('demo.concept.edit')}</h2><form onSubmit={event=>{event.preventDefault();void saveConcept();}}><label className="field">{t('demo.concept.input')}<input autoFocus maxLength={CONCEPT_LIMIT} value={conceptDraft} disabled={busy} placeholder={t('demo.concept.default')} onChange={event=>setConceptDraft(event.target.value)}/></label>{state.status!=='open'&&<p>{t('demo.concept.next_day')}</p>}{conceptError&&<p className="error" role="alert">{conceptError}</p>}<button type="submit" className="button" disabled={busy}>{t(busy?'common.loading':'common.done')}</button><button type="button" className="button secondary" disabled={busy} onClick={closeConcept}>{t('common.cancel')}</button></form></section></div>}
   {confirm&&state&&<div className="modal-shade"><section className="dialog" role="dialog" aria-modal="true" aria-labelledby="generate-title"><h2 id="generate-title">{t('demo.shared.generate_confirm')}</h2><p>{t('demo.shared.generate_body',{n:state.postedSlots.length})}</p>{error&&<p className="shared-error" role="alert">{error}</p>}<button className="button" disabled={busy} onClick={()=>void generate()}>{t(busy?'common.loading':'demo.shared.generate')}</button><button className="button secondary" disabled={busy} onClick={()=>setConfirm(false)}>{t('delete.cancel')}</button></section></div>}
  </div>;
 }

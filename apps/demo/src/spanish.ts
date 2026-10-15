@@ -1,6 +1,15 @@
 // DEMO ONLY. Spanish copy uses the same keys and restrictions as the other languages.
 import type {CopyKey} from './copy';
 export const spanish={
+ 'demo.concept.label':'Tema de hoy (opcional)',
+ 'demo.concept.input':'Tema (opcional)',
+ 'demo.concept.title':'Tema',
+ 'demo.concept.default':'Tu foto favorita',
+ 'demo.concept.edit':'Cambiar tema',
+ 'demo.concept.next_day':'La obra de hoy no cambia. La modificación se aplica a partir de mañana.',
+ 'demo.concept.upcoming':'Próximo: {concept}',
+ 'demo.concept.invalid':'El tema debe tener un máximo de 80 caracteres.',
+ 'demo.concept.forbidden':'Solo quien creó el atelier puede cambiar el tema.',
  'common.ok':'OK',
  'common.cancel':'Cancelar',
  'common.back':'Volver',

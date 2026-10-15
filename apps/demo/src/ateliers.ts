@@ -1,7 +1,7 @@
 // DEMO ONLY: local identity and invitation snapshots; no authentication or synchronization.
 import {initial,dayAfter} from './model';
 import type {State} from './model';
-export type Invitation={code:string;name:string;capacity:number;online?:boolean};
+export type Invitation={concept?:string;code:string;name:string;capacity:number;online?:boolean};
 export type Atelier=Invitation&{creator:string|null;activeFrom:string;state:State};
 export type Collection={version:3;device:string;selected:string;ateliers:Atelier[];departed?:Atelier[]};
 export const COLLECTION='schiild.demo.ateliers.v3';

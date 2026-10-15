@@ -19,6 +19,7 @@ import {rectArea} from './src/area';
 import ArchiveCalendar from './src/ArchiveCalendar';
 import {workSize} from './src/resolution';
 import HelpDetails from './src/HelpDetails';
+import AtelierConcept from './src/AtelierConcept';
 export {default} from './src/AtelierApp';
 
 
@@ -28,7 +29,7 @@ const windowText=(day:string)=>t('atelier.window',{start:short(day)+' 09:00',end
 export function Icon({kind}:{kind:'camera'|'grid'|'global'|'archive'|'arrow'}){return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true">{kind==='camera'?<><path d="M3 7h5l2-3h4l2 3h5v14H3Z"/><rect x="9" y="11" width="6" height="6"/></>:kind==='grid'?<><rect x="3" y="3" width="18" height="18"/><path d="M3 12h18M13 3v9M9 12v9"/></>:kind==='global'?<><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></>:kind==='archive'?<><path d="M4 5h16v16H4ZM2 2h20M8 10h8"/></>:<path d="m9 5 7 7-7 7"/>}</svg>;}
 function Button({children,onClick,secondary=false,disabled=false}:{children:React.ReactNode;onClick:()=>void;secondary?:boolean;disabled?:boolean}){return <button className={secondary?'button secondary':'button'} onClick={onClick} disabled={disabled}>{children}</button>;}
 
-export function Camera({day,atelier,onBack,onSubmit,shared=false}:{day:string;atelier:string;onBack:()=>void;onSubmit:(url:string)=>void|Promise<void>;shared?:boolean}){
+export function Camera({day,atelier,concept,onBack,onSubmit,shared=false}:{day:string;atelier:string;concept?:string;onBack:()=>void;onSubmit:(url:string)=>void|Promise<void>;shared?:boolean}){
  const video=useRef<HTMLVideoElement>(null),stream=useRef<MediaStream|null>(null);
  const [status,setStatus]=useState<'idle'|'loading'|'ready'|'denied'>('idle'),[preview,setPreview]=useState<string|null>(null),[failed,setFailed]=useState(false),[sending,setSending]=useState(false),[sendError,setSendError]=useState('');
  const submitLock=useRef(false),attempt=useRef(0),startLock=useRef(false);
@@ -55,6 +56,7 @@ export function Camera({day,atelier,onBack,onSubmit,shared=false}:{day:string;at
  function showHelp(){setHelp(true);requestAnimationFrame(()=>{const panel=document.getElementById('camera-help');panel?.focus({preventScroll:true});panel?.scrollIntoView({behavior:'smooth',block:'start'});});}
  function capture(){try{const source=video.current;if(!source?.videoWidth||!source.videoHeight)throw Error('camera_not_ready');const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1080;const side=Math.min(source.videoWidth,source.videoHeight),context=canvas.getContext('2d');if(!context)throw Error('camera_not_ready');context.drawImage(source,(source.videoWidth-side)/2,(source.videoHeight-side)/2,side,side,0,0,1080,1080);setPreview(canvas.toDataURL('image/jpeg',.85));stop();setStatus('idle');}catch{setFailed(true);}}
  return <section className="camera-page"><div className="subheader"><button className="text-button" onClick={onBack}>{t('common.back')}</button><span className="mono">{t('camera.date',{date:date(day)})}</span></div>
+  <AtelierConcept concept={concept}/>
   <div className="viewfinder" data-camera-state={preview?'preview':status}>{preview?<img src={preview} alt={t('camera.date',{date:date(day)})}/>:<video ref={video} playsInline muted autoPlay/>}{!preview&&status!=='ready'&&<div className="permission"><Icon kind="camera"/><h2>{t(status==='denied'?'camera.permission.denied.title':'camera.permission.title')}</h2><p role={status==='denied'?'alert':undefined}>{t(status==='denied'?(problem==='permission'?'camera.permission.denied.body':`demo.camera.${problem}`):'camera.permission.body')}</p><Button onClick={()=>void start()} disabled={status==='loading'}>{t(status==='loading'?'common.loading':status==='denied'?'demo.camera.retry':'common.next')}</Button>{status==='denied'&&<Button secondary onClick={showHelp}>{t('demo.camera.help')}</Button>}</div>}</div>
   {!preview&&help&&status!=='ready'&&<CameraHelp/>}
   {!preview&&help&&status==='denied'&&<Button onClick={()=>{void start();document.querySelector('.camera-page')?.scrollIntoView({block:'start'});}}>{t('demo.camera.retry')}</Button>}
@@ -76,7 +78,7 @@ export function Reveal({work,atelier,onOpened,onNext,shared=false}:{work:Work;at
    {!started&&<div className="unopened-mark"><span/><span/><span/><span/></div>}
   </button>
   {!started?<div className="ready-copy"><p>{t('reveal.ready',{date:short(work.day)})}</p><p className="mono muted">{t('reveal.date',{date:date(work.day)})}</p><Button onClick={()=>setStarted(true)}>{t('reveal.open')}</Button></div>:<>
-   <div className="reveal-record" style={{opacity:record?1:0,transitionDuration:`${REVEAL.recordFade}ms`}}><h1>{atelier}</h1><p className="mono">{date(work.day)}　／　{work.count} {t('common.of')} {work.rects.length}</p><p className="window">{windowText(work.day)}</p></div>
+   <div className="reveal-record" style={{opacity:record?1:0,transitionDuration:`${REVEAL.recordFade}ms`}}><h1>{atelier}</h1><AtelierConcept concept={work.concept}/><p className="mono">{date(work.day)}　／　{work.count} {t('common.of')} {work.rects.length}</p><p className="window">{windowText(work.day)}</p></div>
    <div className="custody" style={{opacity:custody?1:0,transitionDuration:`${REVEAL.custodyFade}ms`}}><span className="wall-label">{t('reveal.custody_label')}</span><p>{t(work.custody==='self'?'reveal.custody.self':shared?'demo.shared.custody.other':'reveal.custody.other',{name:t('demo.sample.custodian')})}</p></div>
    {complete&&<AreaDisplay area={work.area??rectArea(work.global?work.rects.find(rect=>rect.slot===0):undefined,work.outputSize??128)}/>}
    {complete&&<Button onClick={onNext}>{t('global.label')} <Icon kind="arrow"/></Button>}
@@ -115,7 +117,7 @@ export function Experience({entry,onChange,onManage,onAccount,onPosts,onGlobal,n
  function nextDay(){if(!state)return;const seed=state.seed+131;setState({...state,day:dayAfter(state.day),seed,rects:partition(cap,random(seed)),photo:null,count:0,ready:null});setPanel(false);navigate('home');}
  return <div className={screen==='archive'?'app archive-app':'app'}><header className="header"><button className="brand" onClick={onAccount} aria-label="Schiild"><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="header-date text-button mono" data-testid="operator-trigger" onClick={hidden}>{date(state.day)}</button></header>
  <main>{storageError&&<p className="error" role="alert">{t('error.server.title')}</p>}
- {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{atelier}</h1><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></div>
+ {screen==='home'&&<section><div className="eyebrow">{t('home.title')}</div><div className="title-row"><h1>{atelier}</h1><button className="text-button" onClick={onManage}>{t('home.title')} ＋</button></div><AtelierConcept/>
   <div className="artboard today-board" data-testid="today-board">{state.rects.map(rect=>{const filled=rect.slot===0?Boolean(state.photo):rect.slot<=(state.photo?state.count-1:state.count);return <div key={rect.slot} className={`today-tile ${filled?'filled':''}`} style={{left:`${rect.x/128*100}%`,top:`${rect.y/128*100}%`,width:`${rect.w/128*100}%`,height:`${rect.h/128*100}%`,background:filled?['#b5b7a5','#c39582','#87a6b0','#d7c49a','#61777a'][rect.slot%5]:undefined}}/>;})}</div>
   <div className="today-details"><div><span className="wall-label">{t('atelier.closes_in')}</span><p className="countdown">{state.ready?'00:00:00':'00:15:00'}</p></div><div className="recorded"><span className="mono">{t('atelier.recorded',{n:state.count,cap})}</span><div className="members">{Array.from({length:cap},(_,n)=><i key={n} className={n<state.count?'recorded':''}/>)}</div></div></div><p className="window">{windowText(state.day)}</p>
   <AreaDisplay area={rectArea(state.photo?state.rects.find(rect=>rect.slot===0):undefined,workSize(state))}/><button className="text-button" onClick={onPosts}>{t(state.photo?'demo.posts.reuse':'demo.posts.use')}</button>

@@ -1,5 +1,14 @@
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
+ 'demo.concept.label':'今日のコンセプト（任意）',
+ 'demo.concept.input':'コンセプト（任意）',
+ 'demo.concept.title':'コンセプト',
+ 'demo.concept.default':'あなたのお気に入りの一枚',
+ 'demo.concept.edit':'コンセプトを変更',
+ 'demo.concept.next_day':'今日の作品は変わりません。変更は翌日から反映します。',
+ 'demo.concept.upcoming':'次回：{concept}',
+ 'demo.concept.invalid':'コンセプトは80文字以内で入力してください。',
+ 'demo.concept.forbidden':'コンセプトを変更できるのは作成者です。',
  'demo.settings.language':'言語 / Language',
  'demo.sample.custodian':'ゆき',
  // Optional explanations are collapsed in the demo at the user's request.

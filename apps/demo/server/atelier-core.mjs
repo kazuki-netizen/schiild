@@ -5,6 +5,7 @@ import {participants,memberCount,snapshotDays} from './membership.mjs';
 import {listRecords} from './accounts.mjs';
 import {dayArea,areaSummary} from './personal-area.mjs';
 import {WORK_SIZE,workSize} from '../src/resolution.ts';
+import {normalizeConcept} from '../src/concept.ts';
 
 export class ApiError extends Error {
  constructor(status, code){super(code);this.status=status;this.code=code;}
@@ -15,6 +16,8 @@ const utcDay=now=>new Date(now).toISOString().slice(0,10);
 const codePattern=/^[A-Z0-9]{8}$/;
 const roomKey=code=>`rooms/${code}`;
 const photoKey=(member,day,content)=>`photos/${member}/${day}/${content}`;
+// Completed legacy works had no theme. Never give them a later atelier theme.
+const dayConcept=(room,record)=>record?.concept??(!record||record.status==='open'?room.concept??'':'');
 
 // The store contract uses strong reads and conditional writes. Never overwrite a
 // room revision after another participant has changed it.
@@ -30,7 +33,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   fail(409,'retry');
  }
  function daySeed(room,day){return parseInt(digest(`${room.code}/${day}/${room.seed}`).slice(0,7),16);}
- function current(room){const day=utcDay(now()),saved=room.days[day];return saved?{...saved,outputSize:workSize(saved)}:{day,seed:daySeed(room,day),members:[...room.members],posts:{},status:'open',outputSize:WORK_SIZE};}
+ function current(room){const day=utcDay(now()),saved=room.days[day];return saved?{...saved,concept:dayConcept(room,saved),outputSize:workSize(saved)}:{day,seed:daySeed(room,day),members:[...room.members],posts:{},status:'open',concept:room.concept??'',outputSize:WORK_SIZE};}
  function authorize(room,member){const slot=room.members.indexOf(member);if(slot<0)fail(403,'forbidden');return slot;}
  async function ownPost(sourceCode,day,member){
   if(!codePattern.test(sourceCode))fail(404,'not_found');
@@ -47,10 +50,10 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
  }
  function summary(room,member){
   const day=utcDay(now()),today=room.days[day],slot=authorize(room,member);
-  return {code:room.code,name:room.name,capacity:room.capacity,members:memberCount(room),day,
+  return {code:room.code,name:room.name,capacity:room.capacity,members:memberCount(room),day,concept:dayConcept(room,today),defaultConcept:room.concept??'',
    seed:today?.seed??daySeed(room,day),slot,postedSlots:Object.keys(today?.posts??{}).map(Number),
    hasPhoto:Boolean(today?.posts[slot]),canGenerate:room.creator===member,
-   area:dayArea(room,today,member),status:today?.status??'open',works:Object.values(room.days).filter(d=>d.status==='ready').sort((a,b)=>b.day.localeCompare(a.day)).map(d=>({day:d.day,seed:d.seed,count:Object.keys(d.posts).length,index:d.index,custody:d.custodian===member?'self':'other',area:dayArea(room,d,member)}))};
+   area:dayArea(room,today,member),status:today?.status??'open',works:Object.values(room.days).filter(d=>d.status==='ready').sort((a,b)=>b.day.localeCompare(a.day)).map(d=>({day:d.day,concept:dayConcept(room,d),seed:d.seed,count:Object.keys(d.posts).length,index:d.index,custody:d.custodian===member?'self':'other',area:dayArea(room,d,member)}))};
  }
  return async function execute(body,credential){
   if(!credential||!/^[a-f0-9]{64}$/.test(credential))fail(401,'unauthorized');
@@ -79,10 +82,11 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   }
   if(action==='create'){
    if(typeof body.name!=='string'||!body.name.trim()||body.name.length>40||![2,5,12,20].includes(body.capacity))fail(400,'invalid');
+   const concept=normalizeConcept(body.concept);if(concept===null)fail(400,'concept_invalid');
    for(let attempt=0;attempt<8;attempt++){
     const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const nextCode=Array.from(randomBytes(8),n=>alphabet[n%32]).join('');
-    const room={code:nextCode,name:body.name.trim(),capacity:body.capacity,creator:member,members:[member],seed:randomInt(2147483647),days:{}};
+    const room={code:nextCode,name:body.name.trim(),capacity:body.capacity,concept,creator:member,members:[member],seed:randomInt(2147483647),days:{}};
     const result=await store.setJSON(roomKey(nextCode),room,{onlyIfNew:true});
     if(result.modified)return summary(room,member);
    }
@@ -91,7 +95,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   if(!codePattern.test(code))fail(404,'not_found');
   if(action==='preview'){
    const {data:room}=await read(code);
-   return {code,name:room.name,capacity:room.capacity,members:memberCount(room),total:Object.values(room.days).filter(d=>d.status==='ready').length};
+   return {code,name:room.name,capacity:room.capacity,concept:dayConcept(room,room.days[utcDay(now())]),members:memberCount(room),total:Object.values(room.days).filter(d=>d.status==='ready').length};
   }
   if(action==='join'){
    const room=await mutate(code,room=>{
@@ -118,13 +122,24 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   }
   let {data:room}=await read(code);const slot=authorize(room,member);
   if(action==='state')return summary(room,member);
+  if(action==='concept.update'){
+   const concept=normalizeConcept(body.concept);if(concept===null)fail(400,'concept_invalid');
+   const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
+   room=await mutate(code,room=>{
+    if(room.creator!==member)fail(403,'concept_forbidden');
+    if(utcDay(now())!==day)fail(409,'window_closed');
+    room.concept=concept;
+    if(room.days[day]?.status==='open')room.days[day].concept=concept;
+    return room;
+   });return summary(room,member);
+  }
   // DEMO ONLY: render a read-only snapshot, without sealing the day or saving it.
   if(action==='draft'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
    const today=current(room);if(today.status!=='open')fail(409,'window_closed');
    const count=Object.keys(today.posts).length;if(!count)fail(409,'no_photos');
    const png=await composeDay(room,today);
-   return {day,outputSize:workSize(today),image:`data:image/png;base64,${Buffer.from(png).toString('base64')}`,count,area:dayArea(room,today,member),provisional:true};
+   return {day,concept:dayConcept(room,today),outputSize:workSize(today),image:`data:image/png;base64,${Buffer.from(png).toString('base64')}`,count,area:dayArea(room,today,member),provisional:true};
   }
   if(action==='post'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');
@@ -182,7 +197,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
   if(action==='work'){
    const work=room.days[String(body.day)];if(!work||work.status!=='ready')fail(404,'not_found');
    const bytes=await store.get(`works/${code}/${work.day}`,{type:'arrayBuffer'});if(!bytes)fail(503,'generation_failed');
-   return {day:work.day,outputSize:workSize(work),image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,rects:partition(room.capacity,random(work.seed)),order:shuffle(Array.from({length:room.capacity},(_,n)=>n),random(work.seed+31)),count:Object.keys(work.posts).length,index:work.index,custody:work.custodian===member?'self':'other',area:dayArea(room,work,member),opened:false};
+   return {day:work.day,concept:dayConcept(room,work),outputSize:workSize(work),image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,rects:partition(room.capacity,random(work.seed)),order:shuffle(Array.from({length:room.capacity},(_,n)=>n),random(work.seed+31)),count:Object.keys(work.posts).length,index:work.index,custody:work.custodian===member?'self':'other',area:dayArea(room,work,member),opened:false};
   }
   fail(400,'invalid');
  };

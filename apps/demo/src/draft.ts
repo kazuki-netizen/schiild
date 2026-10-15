@@ -4,7 +4,7 @@ import type {State} from './model';
 import {rectArea} from './area';
 import type {Area} from './area';
 import {workSize} from './resolution';
-export type Draft={day:string;image:string;count:number;provisional:true;area?:Area};
+export type Draft={day:string;concept?:string;image:string;count:number;provisional:true;area?:Area};
 export async function localDraft(state:State):Promise<Draft>{
  const photo=state.photo?await decode(state.photo):null;
  const last=state.photo?state.count-1:state.count;

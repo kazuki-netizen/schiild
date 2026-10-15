@@ -2,6 +2,15 @@
 // Product names stay Schiil / Schiild; custody never implies a financial right.
 import type {CopyKey} from './copy';
 export const translations={
+ 'demo.concept.label':["Today’s theme (optional)","오늘의 주제 (선택)","Thème du jour (facultatif)","Thema van vandaag (optioneel)"],
+ 'demo.concept.input':["Theme (optional)","주제 (선택)","Thème (facultatif)","Thema (optioneel)"],
+ 'demo.concept.title':["Theme","주제","Thème","Thema"],
+ 'demo.concept.default':["Your favourite photo","좋아하는 사진 한 장","Votre photo préférée","Jouw favoriete foto"],
+ 'demo.concept.edit':["Change theme","주제 변경","Modifier le thème","Thema wijzigen"],
+ 'demo.concept.next_day':["Today’s work stays unchanged. This change applies from tomorrow.","오늘의 작품은 바뀌지 않습니다. 변경은 내일부터 반영됩니다.","L’œuvre du jour ne change pas. La modification s’appliquera dès demain.","Het werk van vandaag blijft ongewijzigd. De wijziging geldt vanaf morgen."],
+ 'demo.concept.upcoming':["Next: {concept}","다음: {concept}","À venir : {concept}","Volgende: {concept}"],
+ 'demo.concept.invalid':["Use no more than 80 characters for the theme.","주제는 80자 이내로 입력해 주세요.","Le thème doit comporter au maximum 80 caractères.","Gebruik maximaal 80 tekens voor het thema."],
+ 'demo.concept.forbidden':["Only the atelier creator can change the theme.","아틀리에를 만든 사람만 주제를 바꿀 수 있습니다.","Seule la personne qui a créé l’atelier peut modifier le thème.","Alleen de maker van het atelier kan het thema wijzigen."],
  'common.ok':["OK","확인","OK","OK"],
  'common.cancel':["Cancel","취소","Annuler","Annuleren"],
  'common.back':["Back","뒤로","Retour","Terug"],
