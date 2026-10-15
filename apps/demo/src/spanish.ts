@@ -8,7 +8,7 @@ export const spanish={
  "demo.discover.empty":"Todavía no hay ateliers públicos.",
  "demo.discover.no_results":"No se han encontrado ateliers.",
  "demo.discover.more":"Mostrar más",
- "demo.discover.open":"Abrir atelier",
+ "demo.discover.open":"Unirse al atelier",
  "demo.visibility.title":"Visibilidad",
  "demo.visibility.public":"Público",
  "demo.visibility.private":"Privado",

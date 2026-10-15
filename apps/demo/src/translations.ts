@@ -9,7 +9,7 @@ export const translations={
  "demo.discover.empty":["No public ateliers yet.", "아직 공개 아틀리에가 없습니다.", "Aucun atelier public pour le moment.", "Er zijn nog geen openbare ateliers."],
  "demo.discover.no_results":["No ateliers found.", "아틀리에를 찾지 못했습니다.", "Aucun atelier trouvé.", "Geen ateliers gevonden."],
  "demo.discover.more":["Show more", "더 보기", "Afficher la suite", "Meer tonen"],
- "demo.discover.open":["Open atelier", "아틀리에 열기", "Ouvrir l’atelier", "Atelier openen"],
+ "demo.discover.open":["Join atelier", "아틀리에 참여", "Rejoindre l’atelier", "Deelnemen aan atelier"],
  "demo.visibility.title":["Visibility", "공개 범위", "Visibilité", "Zichtbaarheid"],
  "demo.visibility.public":["Public", "공개", "Public", "Openbaar"],
  "demo.visibility.private":["Private", "비공개", "Privé", "Privé"],

@@ -7,7 +7,7 @@ export const demoCopy={
  "demo.discover.empty":"公開アトリエはまだありません。",
  "demo.discover.no_results":"見つかりませんでした。",
  "demo.discover.more":"さらに表示",
- "demo.discover.open":"アトリエを開く",
+ "demo.discover.open":"アトリエに参加",
  "demo.visibility.title":"公開範囲",
  "demo.visibility.public":"公開",
  "demo.visibility.private":"非公開",
