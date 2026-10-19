@@ -16,10 +16,12 @@ test('GLOBAL archive lists recorded days only; linked atelier art requires membe
  now+=86400000;await run({action:'global.record',day:'2026-10-19',photo},other);assert.deepEqual((await run({action:'global.archive'},first)).days.map(entry=>entry.day),['2026-10-19','2026-10-18']);
 });
 
-test('native and Worker codecs keep empty GLOBAL cells and unposted atelier regions white',async()=>{
+test('native and Worker codecs keep GLOBAL padding white and share the same quiet void mosaic',async()=>{
+ const versions=[];
  for(const codec of [images,workerImages]){
   const png=await codec.global([{position:0,color:[20,30,40]},{position:1,color:[50,60,70]}],2),pixels=await sharp(png).ensureAlpha().raw().toBuffer();
   assert.deepEqual([...pixels.subarray(8)],[255,255,255,255,255,255,255,255]);
-  const empty=await codec.compose([{x:0,y:0,w:128,h:128,slot:0}],async()=>null,3,256),raw=await sharp(empty).ensureAlpha().raw().toBuffer();assert(raw.every(value=>value===255));
+  const empty=await codec.compose([{x:0,y:0,w:128,h:128,slot:0}],async()=>null,3,256),raw=await sharp(empty).ensureAlpha().raw().toBuffer();assert(raw.every(value=>value>=246));versions.push(raw);
  }
+ assert.deepEqual(versions[0],versions[1]);
 });

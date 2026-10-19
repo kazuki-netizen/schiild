@@ -1,17 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {partition,random,render,resample,synthetic,colors,globalPixels,VOID_COLOR} from '../src/engine.ts';
+import {partition,random,render,resample,synthetic,colors,globalPixels,VOID_PALETTE,voidColor} from '../src/engine.ts';
 test('BSP covers the complete integer grid without gaps or overlap',()=>{
  for(const count of [1,2,5,12,20,200]){const grid=new Uint16Array(128*128),rects=partition(count,random(count));assert.equal(rects.length,count);for(const r of rects){assert(r.w>0&&r.h>0);for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++)grid[y*128+x]++;}assert(grid.every(n=>n===1));}
 });
 test('photo content affects its region and output uses only the temporary palette',()=>{
  const rects=partition(12,random(29)),sources=rects.map((_,n)=>n<9?synthetic(31+n):null),a=render(rects,sources,12),b=render(rects,[synthetic(400),...sources.slice(1)],12);assert.notDeepEqual(a.data,b.data);
- const allowed=new Set([...colors,VOID_COLOR].map(c=>c.join(',')));for(let n=0;n<a.data.length;n+=4){assert(allowed.has(Array.from(a.data.slice(n,n+3)).join(',')));assert.equal(a.data[n+3],255);}
+ const allowed=new Set([...colors,...VOID_PALETTE].map(c=>c.join(',')));for(let n=0;n<a.data.length;n+=4){assert(allowed.has(Array.from(a.data.slice(n,n+3)).join(',')));assert.equal(a.data[n+3],255);}
  for(const r of rects.slice(1)){for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++){const p=(y*128+x)*4;assert.deepEqual(a.data.slice(p,p+4),b.data.slice(p,p+4));}}
 });
-test('unposted regions including corners remain opaque pure white',()=>{
+test('unposted regions use stable white-dominant low-contrast mosaic without touching posted regions',()=>{
  const rects=partition(12,random(29)),sources=rects.map((_,slot)=>slot===4?synthetic(80):null),pixels=render(rects,sources,29,256);
- for(const rect of rects.filter(rect=>rect.slot!==4))for(let y=rect.y*2;y<(rect.y+rect.h)*2;y++)for(let x=rect.x*2;x<(rect.x+rect.w)*2;x++)assert.deepEqual([...pixels.data.subarray((y*256+x)*4,(y*256+x)*4+4)],[255,255,255,255]);
+ let white=0,total=0;for(const rect of rects.filter(rect=>rect.slot!==4))for(let y=rect.y*2;y<(rect.y+rect.h)*2;y++)for(let x=rect.x*2;x<(rect.x+rect.w)*2;x++){const expected=voidColor(x/2,y/2,29);assert.deepEqual([...pixels.data.subarray((y*256+x)*4,(y*256+x)*4+4)],[...expected,255]);assert(Math.min(...expected)>=246);if(expected.every(value=>value===255))white++;total++;}assert(white/total>.55);assert(white<total);
  assert(render([],[],1).data.every(value=>value===255));
 });
 test('area average and personal global pixel retain the supplied photograph color',()=>{

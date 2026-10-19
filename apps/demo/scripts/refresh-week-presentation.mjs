@@ -1,0 +1,19 @@
+// DEMO ONLY. Refresh fictional static assets, never real accounts or stored artworks.
+import {readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import sharp from 'sharp';
+import {voidColor} from '../src/engine.ts';
+const root=new URL('../public/week/',import.meta.url),read=async path=>JSON.parse(await readFile(new URL(path.replace('/week/',''),root),'utf8')),digest=value=>createHash('sha256').update(value).digest('hex'),chance=(...parts)=>parseInt(digest(parts.join('/')).slice(0,8),16)/0xffffffff;
+const world=await read('/week/world.json'),people=await Promise.all(world.people.map(person=>read(person.file))),seeds=new Map(),replacements=new Map();
+for(const person of people)for(const [code,state] of Object.entries(person.states)){for(const work of state.works){const image=person.works[code+'/'+work.day]?.image;if(image)seeds.set(image,work.seed);}if(person.drafts[code])seeds.set(person.drafts[code].image,state.seed);}
+for(const [image,seed] of seeds){const original=await readFile(new URL(image.replace('/week/',''),root)),{data,info}=await sharp(original).ensureAlpha().raw().toBuffer({resolveWithObject:true}),scale=info.width/128;for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++){const offset=(y*info.width+x)*4;if(data[offset]===255&&data[offset+1]===255&&data[offset+2]===255)data.set(voidColor(x/scale,y/scale,seed),offset);}const png=await sharp(data,{raw:{width:info.width,height:info.height,channels:4}}).png().toBuffer(),file='art/'+digest(png).slice(0,24)+'.png';await writeFile(new URL(file,root),png);replacements.set(image,'/week/'+file);}
+const credits=await read('/week/photos/credits.json'),numbers=credits.map(value=>value.imageNumber),desk=numbers.filter(n=>n<10||[20,23,24,30,42,48,60,63].includes(n)),outside=numbers.filter(n=>n>=10&&n<=19||[25,27,28,29,33].includes(n)),thumbnails=new Map(),cellSize=64;
+for(const number of numbers)thumbnails.set('/week/photos/'+number+'.jpg',await sharp(await readFile(new URL('photos/'+number+'.jpg',root))).resize(cellSize,cellSize,{fit:'cover'}).png().toBuffer());
+for(const [day,file] of Object.entries(world.globals)){
+ const global=await read(file),d=world.metadata.days.indexOf(day);global.schiils=[];
+ for(let person=0;person<people.length;person++){const pixel=people[person].globals[day];if(pixel?.x===undefined)continue;const position=pixel.y*global.outputSize+pixel.x,artwork=global.artworks.find(art=>art.positions.includes(position));if(!artwork)throw Error('missing_source_atelier');const r=Number(artwork.code.slice(2))-1,pool=r%10===3?desk:[2,8].includes(r%10)?outside:numbers,number=pool[Math.floor(chance('photo',person,d,r)*pool.length)%pool.length];global.schiils.push({position,image:'/week/photos/'+number+'.jpg'});}
+ global.schiils.sort((a,b)=>a.position-b.position);const atlas=await sharp({create:{width:global.outputSize*cellSize,height:global.outputSize*cellSize,channels:4,background:'#fff'}}).composite(global.schiils.map(tile=>({input:thumbnails.get(tile.image),left:tile.position%global.outputSize*cellSize,top:Math.floor(tile.position/global.outputSize)*cellSize}))).png().toBuffer(),atlasFile='art/'+digest(atlas).slice(0,24)+'.png';await writeFile(new URL(atlasFile,root),atlas);global.schiilImage='/week/'+atlasFile;global.schiilCellSize=cellSize;
+ for(const art of global.artworks)art.image=replacements.get(art.image)??art.image;await writeFile(new URL(file.replace('/week/',''),root),JSON.stringify(global));
+}
+for(let n=0;n<people.length;n++){const person=people[n];for(const work of [...Object.values(person.works),...Object.values(person.drafts)])work.image=replacements.get(work.image)??work.image;await writeFile(new URL(world.people[n].file.replace('/week/',''),root),JSON.stringify(person));}
+console.log(JSON.stringify({fictional:true,refreshedArtworks:seeds.size,globalDays:Object.keys(world.globals).length,people:people.length,recordedPhotos:true}));

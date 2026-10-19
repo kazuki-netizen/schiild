@@ -1,4 +1,4 @@
-// DEMO ONLY. One average-color pixel per participant and UTC day. No production generator.
+// DEMO ONLY. One logical pixel per participant/day, with the recorded Schiil on zoom.
 import {createHash} from 'node:crypto';
 import {ApiError} from './atelier-core.mjs';
 import {listRecords} from './accounts.mjs';
@@ -12,9 +12,13 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
    const row=await store.getWithMetadata(key,{type:'json'}),data=row?.data??{day,pixels:{},ateliers:[]};
    if(day!==new Date(now()).toISOString().slice(0,10))throw new ApiError(409,'window_closed');
    if(data.pixels[member]){if(data.pixels[member].source===source)return;throw new ApiError(409,'global_already_recorded');}
+   // Keep only the explicitly selected GLOBAL photo, independently of atelier membership.
+   // The opaque storage key is never sent to the browser and survives anonymization.
+   const photoKey=`photos/${digest('global-schiil/'+source)}/${day}/${source}`;
+   if(!await store.get(photoKey,{type:'arrayBuffer'}))await store.set(photoKey,photo,{onlyIfNew:true});
    if(!data.pixels[member]){
     const position=Object.values(data.pixels).reduce((last,pixel)=>Math.max(last,pixel.position),-1)+1;
-    data.pixels[member]={position,color,source,code};
+    data.pixels[member]={position,color,source,code,photoKey};
    }
    if(!data.ateliers.includes(code))data.ateliers.push(code);
    const result=await store.setJSON(key,data,row?{onlyIfMatch:row.etag}:{onlyIfNew:true});if(result.modified)return;
@@ -40,5 +44,24 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
   }
   return {day,image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,count:layout.pixels.length,outputSize,positions:layout.pixels.map(pixel=>pixel.position),ateliers:data.ateliers.length,cumulative:all.reduce((n,row)=>n+Object.keys(row.data.pixels).length,0),layout:'compact-v1',explicitRecording:true,area:{pixels:mine?1:0,total,percent:(mine?1:0)/total*100},final:day<today,artworks,...(mine?{x:mine.position%outputSize,y:Math.floor(mine.position/outputSize)}:{})};
  }
- return {record,view,async has(day,member){return Boolean((await store.getWithMetadata(dayKey(day),{type:'json'}))?.data.pixels[member]);}};
+ async function schiils(day,positions){
+  const today=new Date(now()).toISOString().slice(0,10);
+  if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(Date.parse(day+'T00:00:00Z'))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day||day>today||!Array.isArray(positions)||!positions.length||positions.length>9||new Set(positions).size!==positions.length||positions.some(position=>!Number.isInteger(position)||position<0||position>=4096*4096))throw new ApiError(400,'invalid');
+  const row=await store.getWithMetadata(dayKey(day),{type:'json'});if(!row)return {schiils:positions.map(position=>({position,image:null}))};
+  const data=row.data,layout=compactGlobal(data.pixels),rooms=[];
+  // Older explicit GLOBAL records can reuse their exact retained source photo.
+  // Never infer GLOBAL membership from unrelated atelier submissions.
+  let loadedRooms=false;const result=[];
+  for(const position of positions){
+   const pixel=layout.pixels[position],original=pixel?data.pixels[pixel.member]:null;if(!original){result.push({position,image:null});continue;}
+   const thumbnailKey=`global/${day}/${digest('schiil-thumb-v1/'+original.source)}`;let bytes=await store.get(thumbnailKey,{type:'arrayBuffer'});
+   if(!bytes){let photo=original.photoKey?await store.get(original.photoKey,{type:'arrayBuffer'}):null;
+    if(!photo){if(!loadedRooms){rooms.push(...await listRecords(store,'rooms/'));loadedRooms=true;}for(const {data:room} of rooms){if(original.code&&original.code!==room.code)continue;const key=Object.values(room.days[day]?.posts??{}).find(key=>key.endsWith('/'+original.source));if(key){const candidate=await store.get(key,{type:'arrayBuffer'});if(candidate&&digest(Buffer.from(candidate))===original.source){photo=candidate;break;}}}}
+    if(photo){bytes=await images.thumbnail(photo);await store.set(thumbnailKey,bytes,{onlyIfNew:true});}
+   }
+   result.push({position,image:bytes?`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`:null});
+  }
+  return {schiils:result};
+ }
+ return {record,view,schiils,async has(day,member){return Boolean((await store.getWithMetadata(dayKey(day),{type:'json'}))?.data.pixels[member]);}};
 }

@@ -35,6 +35,10 @@ body { -webkit-font-smoothing: antialiased; }
 .global-related-work { margin:28px 0; }
 .global-related-work h2 { font-size:16px; font-weight:500; margin:12px 0; }
 .global-related-work>img { display:block; width:min(100%,256px); aspect-ratio:1; object-fit:contain; image-rendering:pixelated; }
+.explorer-schiil { position:absolute; overflow:hidden; background:#fff; pointer-events:none; }
+.explorer-stage .explorer-schiil img { image-rendering:auto; object-fit:cover; }
+.global-selected-schiil>img { display:block; width:min(100%,320px); aspect-ratio:1; object-fit:contain; image-rendering:auto; margin:20px auto; }
+.explorer-photo-status { font-size:12px; color:var(--ink2); }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea { outline-color: var(--orange); }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,

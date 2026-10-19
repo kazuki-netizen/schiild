@@ -1,7 +1,7 @@
 // DEMO ONLY. Portable image codec for Workers; never import into M1–M4.
 import jpeg from 'jpeg-js';
 import {deflateSync} from 'node:zlib';
-import {render,nearest,VOID_COLOR} from '../src/engine.ts';
+import {render,nearest,resample,VOID_COLOR} from '../src/engine.ts';
 
 function decode(bytes){
  const image=jpeg.decode(Buffer.from(bytes),{useTArray:true,maxResolutionInMP:1.2,maxMemoryUsageInMB:32,tolerantDecoding:false});
@@ -16,6 +16,7 @@ function png(pixels){
  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',deflateSync(scan)),chunk('IEND',Buffer.alloc(0))]);
 }
 export const workerImages={
+ async thumbnail(bytes){const width=256,height=256,rgb=resample(decode(bytes),width,height),data=new Uint8ClampedArray(width*height*4);for(let n=0;n<width*height;n++)data.set([rgb[n*3],rgb[n*3+1],rgb[n*3+2],255],n*4);return png({width,height,data});},
  async mean(bytes){const image=decode(bytes),sum=[0,0,0];for(let n=0;n<image.data.length;n+=4)for(let channel=0;channel<3;channel++)sum[channel]+=image.data[n+channel];return nearest(sum.map(n=>n/(image.width*image.height)));},
  async global(pixels,outputSize=256){const data=new Uint8ClampedArray(outputSize*outputSize*4);for(let n=0;n<outputSize*outputSize;n++)data.set([...VOID_COLOR,255],n*4);for(const pixel of pixels)data.set([...pixel.color,255],pixel.position*4);return png({width:outputSize,height:outputSize,data});},
  async normalize(bytes){const image=decode(bytes);return Buffer.from(jpeg.encode({width:image.width,height:image.height,data:Buffer.from(image.data)},85).data);},

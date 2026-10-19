@@ -27,6 +27,7 @@ export async function weekRequest<T>(action:string,values:Record<string,unknown>
  else if(action==='draft')result=data.drafts[code];
  else if(action==='global')result=snapshot.globals[day]?{...await load<object>(snapshot.globals[day]),...data.globals[day] as object}:{day,image:null,count:0,ateliers:0,final:true};
  else if(action==='global.archive')result={days:Object.keys(snapshot.globals).sort().reverse().map((day,index)=>({day,index:index+1}))};
+ else if(action==='global.schiils'){const global=snapshot.globals[day]?await load<{schiils?:{position:number;image:string}[]}>(snapshot.globals[day]):null;result={schiils:(values.positions as number[]).map(position=>({position,image:global?.schiils?.find(item=>item.position===position)?.image??null}))};}
  else if(action==='preview'){const room=snapshot.allRooms.find(room=>room.code===code);if(room)result={...room,online:true};}
  else if(action==='directory'){
   const query=String(values.query??'').normalize('NFKC').trim().toLowerCase();

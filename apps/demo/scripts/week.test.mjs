@@ -33,3 +33,13 @@ test('static replay exports no credentials and retains photo attribution',async(
  for(const file of ['/week/world.json',...world.people.map(person=>person.file),...Object.values(world.globals)]){const value=await read(file),text=JSON.stringify(value);for(const key of ['passwordHash','passwordSalt','token','lineSubject','googleSubject','expires','sessionKey'])assert(!text.includes('"'+key+'"'),key);}
  assert(world.people.every(person=>/^example_\d{4}$/.test(person.username)));const credits=await read('/week/photos/credits.json');assert(credits.length>=24);for(const credit of credits){assert(credit.author&&credit.source.startsWith('https://unsplash.com/'));assert.equal(credit.license,'https://unsplash.com/license');assert((await stat(new URL('photos/'+credit.imageNumber+'.jpg',root))).size>0);}
 });
+
+test('every GLOBAL image is assembled from one real Schiil at each participant coordinate',async()=>{
+ const thumbnailCache=new Map(),current=await read(world.globals[world.lastDay]);
+ for(const [day,file] of Object.entries(world.globals)){
+  const global=await read(file);assert.equal(global.schiils.length,global.count);assert.equal(new Set(global.schiils.map(tile=>tile.position)).size,global.count);
+  const atlas=await sharp(await readFile(new URL(global.schiilImage.replace('/week/',''),root))).ensureAlpha().raw().toBuffer({resolveWithObject:true}),cell=global.schiilCellSize;assert.equal(atlas.info.width,global.outputSize*cell);assert.equal(atlas.info.height,atlas.info.width);
+  for(const tile of global.schiils){if(!thumbnailCache.has(tile.image))thumbnailCache.set(tile.image,await sharp(await readFile(new URL(tile.image.replace('/week/',''),root))).resize(cell,cell,{fit:'cover'}).ensureAlpha().raw().toBuffer());const expected=thumbnailCache.get(tile.image),x=tile.position%global.outputSize*cell,y=Math.floor(tile.position/global.outputSize)*cell;for(let row=0;row<cell;row++){const offset=((y+row)*atlas.info.width+x)*4;assert(atlas.data.subarray(offset,offset+cell*4).equals(expected.subarray(row*cell*4,(row+1)*cell*4)));}}
+ }
+ for(const descriptor of world.people){const person=await read(descriptor.file),pixel=person.globals[world.lastDay];if(pixel.x===undefined)continue;const position=pixel.y*current.outputSize+pixel.x,source=current.artworks.find(art=>art.positions.includes(position));assert.equal(current.schiils.find(tile=>tile.position===position).image,person.photos[source.code]);}
+});

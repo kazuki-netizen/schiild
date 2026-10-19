@@ -64,3 +64,4 @@ for(let person=0;person<population;person++){
 }
 const metadata={fictional:true,people:population,ateliers:roomCount,days,firstDay:days[0],lastDay,posts,completedWorks:allRooms.reduce((sum,room)=>sum+room.total,0),daily,publicAteliers:directory.length};
 await writeFile(new URL('world.json',root),JSON.stringify({version:2,lastDay,metadata,rooms:directory,allRooms,people:descriptors,globals:commonGlobals}));await writeFile(new URL('scenario.json',root),JSON.stringify({metadata,credits:'photos/credits.json'},null,2)+'\n');console.log(JSON.stringify(metadata));
+await import('./refresh-week-presentation.mjs');
