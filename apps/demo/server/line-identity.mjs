@@ -1,7 +1,8 @@
 // DEMO ONLY. LINE secrets and authorization-code exchange stay on Cloudflare.
 import {ApiError} from './atelier-core.mjs';
 export function validLineConfig(config){
- try{const url=new URL(config.redirectUri);return typeof config.channelId==='string'&&/^\d{5,20}$/.test(config.channelId)&&typeof config.channelSecret==='string'&&/^[\x21-\x7e]{16,256}$/.test(config.channelSecret)&&url.protocol==='https:'&&url.search==='?auth=line'&&!url.hash&&!url.username&&!url.password;}catch{return false;}
+ // Pausing preserves the connection settings while refusing discovery and new OAuth requests.
+ try{const url=new URL(config.redirectUri);return config.paused!==true&&typeof config.channelId==='string'&&/^\d{5,20}$/.test(config.channelId)&&typeof config.channelSecret==='string'&&/^[\x21-\x7e]{16,256}$/.test(config.channelSecret)&&url.protocol==='https:'&&url.search==='?auth=line'&&!url.hash&&!url.username&&!url.password;}catch{return false;}
 }
 export function readLineConfig(value){try{const config=JSON.parse(value);return validLineConfig(config)?config:null;}catch{return null;}}
 export function lineVerifier(config,{fetcher=fetch,now=()=>Date.now()}={}){

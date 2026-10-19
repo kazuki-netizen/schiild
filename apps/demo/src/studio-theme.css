@@ -1,0 +1,200 @@
+/* DEMO ONLY. A reversible presentation layer; artwork pixels and production tokens stay unchanged.
+   White surfaces are solid #fff. Gradients belong exclusively to the small sky accents. */
+:root {
+  color-scheme: light;
+  --bg: #fff;
+  --surface: #fff;
+  --sunken: #f4f5f4;
+  --ink: #272c2b;
+  --ink2: #5c6260;
+  --ink3: #6e7472;
+  --line: #e8ebe8;
+  --strong: #c9d0cc;
+  --orange: #bd4825;
+  --orange-bright: #df5c35;
+  --orange-wash: #fff3ed;
+  --sky: #4e8fa6;
+  --sky-light: #d9edf3;
+  --sky-gradient: linear-gradient(145deg, #d9edf3 0%, #94c2d1 58%, #4e8fa6 100%);
+  background: #fff;
+}
+body, .demo-shell, .app { background: #fff; }
+body { -webkit-font-smoothing: antialiased; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, a, input, select, textarea { outline-color: var(--orange); }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, .help-details>summary:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 5px;
+}
+.app { max-width: 720px; padding: 0 48px calc(132px + env(safe-area-inset-bottom)); }
+.header { height: 112px; margin-bottom: 48px; border-bottom-color: var(--line); }
+.brand { font-size: 25px; letter-spacing: -.055em; gap: 13px; }
+.brand-symbol { transform: rotate(-4deg); }
+.brand-symbol i { background: var(--orange-bright); border-radius: 2px; }
+.header .text-button { font-size: 12px; }
+h1 { font-size: 32px; font-weight: 500; letter-spacing: -.035em; line-height: 1.5; }
+h2 { letter-spacing: -.02em; }
+p { color: var(--ink2); }
+.wall-label, .eyebrow { font-family: inherit; font-size: 11px; letter-spacing: .12em; color: var(--orange); }
+.window { font-family: inherit; font-size: 11px; line-height: 1.9; }
+.section-heading { margin-top: 40px; }
+.button, .action-icon-open {
+  min-height: 58px; border-radius: 14px; background: var(--orange); color: #fff;
+  font-size: 14px; font-weight: 500; letter-spacing: .015em;
+  transition: background-color 160ms, box-shadow 160ms;
+}
+.button.secondary { background: #fff; border-color: var(--line); color: var(--ink); font-weight: 400; }
+.text-button { color: var(--ink2); }
+.atelier-app .button { margin-top: 14px; }
+.atelier-home>h1 { margin-bottom: 28px; }
+.atelier-home>p { max-width: 28em; font-size: 14px; line-height: 2; }
+/* Enlarged brand geometry, purely decorative rather than a fabricated work. */
+.studio-vignette { height: 172px; position: relative; margin: 0 0 36px; border-bottom: 1px solid var(--line); }
+.studio-vignette::after { content: ''; position: absolute; left: 0; bottom: 24px; width: 48px; height: 3px; background: var(--orange-bright); }
+.studio-vignette .brand-symbol { position: absolute; left: 16px; bottom: 25px; width: 108px; height: 108px; grid-template-columns: 47px 55px; grid-template-rows: 55px 47px; gap: 6px; transform: rotate(-5deg); }
+.studio-vignette .brand-symbol i { border-radius: 5px; }
+.studio-sky { position: absolute; right: 26px; top: 8px; width: 68px; height: 108px; border-radius: 40px 40px 4px 4px; background: var(--sky-gradient); }
+.atelier-list { margin: 28px 0 32px; }
+.atelier-list:empty { display: none; }
+.atelier-row { padding: 22px 0; border-bottom-color: var(--line); }
+.atelier-row[data-selected=true] { border-left: 3px solid var(--orange-bright); padding-left: 20px; }
+.atelier-select { padding: 12px 0; }
+.atelier-select strong { font-size: 18px; font-weight: 500; letter-spacing: -.02em; }
+.atelier-select>.mono { color: var(--ink3); font-size: 11px; }
+.atelier-actions { gap: 24px; }
+.atelier-actions button { color: var(--ink2); }
+.atelier-heading { margin-top: 12px; }
+.atelier-heading .title-row { margin-bottom: 10px; }
+.atelier-concept { color: var(--ink2); line-height: 1.9; }
+.atelier-share { margin-top: 22px; margin-bottom: 28px; }
+.atelier-share .action-icon { color: var(--orange); }
+.today-board { background: #f5f6f4; outline: 1px solid var(--line); outline-offset: 7px; margin-top: 28px; }
+.today-tile { border-color: #dce2de; }
+.today-details { margin-top: 28px; }
+.countdown { font-size: 25px; letter-spacing: -.035em; }
+.posted { border: 1px solid var(--line); padding: 22px; border-radius: 14px; }
+.recent { gap: 18px; }
+.recent img { outline: 1px solid var(--line); outline-offset: 4px; }
+.ready-copy { padding-top: 32px; }
+.unopened-mark span { border-color: var(--orange-bright); }
+.reveal-record { margin-top: 32px; }
+.custody { padding-top: 32px; }
+.nav.nav-four {
+  max-width: 720px; background: #fff; border-top: 1px solid var(--line);
+  padding: 13px 0 calc(12px + env(safe-area-inset-bottom));
+  grid-template-columns: repeat(4,minmax(0,1fr));
+}
+.nav-four button { min-height: 60px; color: var(--ink3); gap: 7px; padding: 7px 3px 15px; }
+.nav-four button span { font-size: 10px; font-weight: 400; }
+.nav-four button svg { width: 23px; height: 23px; }
+.nav-four button.active { color: var(--orange); }
+.nav-four button.active:after { width: 14px; height: 3px; border-radius: 2px; background: var(--orange-bright); }
+.field { margin: 28px 0; color: var(--ink2); font-size: 12px; }
+.field input, .atelier-app textarea {
+  background: #fff; padding: 17px 16px; border: 1px solid var(--strong); border-radius: 12px;
+  color: var(--ink); margin-top: 10px;
+}
+.field input::placeholder, .atelier-app textarea::placeholder { color: #777f7a; opacity: 1; }
+.field select { padding: 16px 0; }
+.choice { gap: 6px; padding: 5px; border-radius: 15px; background: var(--sunken); }
+.choice button { border: 1px solid transparent; padding: 14px 8px; border-radius: 11px; color: var(--ink2); }
+.choice .chosen, .account-page .choice [aria-pressed=true] { background: #fff; border-color: var(--line); color: var(--orange); }
+.capacities button { border-color: var(--line); border-radius: 12px; }
+.capacities [aria-pressed=true] { background: var(--orange-wash); border-color: var(--orange); color: var(--orange); }
+.visibility-field button { border-color: var(--line); border-radius: 12px; }
+.visibility-field button[aria-pressed=true] { background: var(--orange-wash); border-color: var(--orange); color: var(--orange); }
+.join-preview { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+.invite-code { padding: 32px 0; }
+.invite-code strong { color: var(--orange); font-weight: 500; }
+.shared-note, .field-hint, .help-details { color: var(--ink2); }
+.help-details>summary { font-size: 11px; }
+.auth-page>h1 { margin-bottom: 32px; }
+.auth-page form { margin-top: 32px; }
+.account-page .stats, .global-page .stats { padding: 28px 0; }
+.stats b { font-family: Inter,'Noto Sans JP',sans-serif; font-size: 28px; letter-spacing: -.04em; }
+.setting-toggle input, input[type=range] { accent-color: var(--orange); }
+.global-page { position: relative; }
+.global-page::before { content: ''; display: block; width: 48px; height: 5px; background: var(--sky-gradient); border-radius: 2px; margin-bottom: 28px; }
+.global-page h1 { font-size: 28px; letter-spacing: -.035em; margin-top: 12px; }
+.global-page>.window { margin-bottom: 32px; }
+.global-explorer { margin-top: 32px; }
+.explorer-stage { outline: 1px solid var(--line); outline-offset: 8px; }
+.explorer-controls { margin-top: 28px; gap: 12px; }
+.explorer-controls>button:not(.text-button) { border-radius: 12px; color: var(--orange); }
+.pixel-link { color: var(--orange); }
+.pixel-inspection { border-radius: 14px; border-color: var(--line); background: #fff; }
+.discover-invite { margin-top: 32px; padding-bottom: 36px; }
+.discover-list { gap: 20px; }
+.discover-card { border-color: var(--line); border-radius: 16px; padding: 28px; }
+.discover-card-footer { border-top: 1px solid var(--line); padding-top: 18px; }
+.discover-card-footer>span:last-child { color: var(--orange); }
+.discover-page .section-heading { margin-top: 40px; }
+.discover-page .section-heading h2 { display: flex; align-items: center; gap: 12px; }
+.discover-page .section-heading h2::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--sky); flex-shrink: 0; }
+.modal-shade, .archive-calendar .calendar-shade { background: #2736323d; backdrop-filter: blur(8px); }
+.dialog, .archive-calendar .calendar-detail { background: #fff; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 24px 96px #22332b12; }
+.dialog h2 { font-size: 22px; }
+.dialog p { color: var(--ink2); }
+.permission { background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+.shutter { background: var(--orange); border-radius: 50%; padding: 7px; }
+.shutter span { border-radius: 50%; border-width: 2px; }
+.camera-help select { border-radius: 10px; }
+.app.archive-app { max-width: 760px; }
+.archive-app>.header { margin-bottom: 48px; }
+.archive-calendar { --paper: #fff; --calendar-muted: var(--ink3); padding-top: 0; }
+.calendar-intro { position: relative; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.calendar-intro::after { content: ''; position: absolute; left: 0; bottom: -2px; width: 54px; height: 4px; border-radius: 2px; background: var(--sky-gradient); }
+.calendar-intro h1 { font-size: 12px; letter-spacing: .04em; color: var(--ink2); }
+.calendar-month { margin-bottom: 28px; gap: 16px; }
+.calendar-month h2 { font-size: 32px; font-weight: 500; letter-spacing: -.04em; }
+.calendar-paging button { border: 1px solid var(--line); color: var(--ink2); }
+.calendar-paging svg { stroke-width: 1.3; }
+.calendar-density { background: #f4f5f4; border-color: transparent; box-shadow: none; border-radius: 14px; padding: 4px; margin-bottom: 26px; }
+.calendar-density button { border-radius: 10px; color: var(--ink2); }
+.calendar-density button[aria-pressed=true] { background: #fff; color: var(--orange); box-shadow: 0 1px 4px #27363208; }
+.calendar-weekdays { color: var(--ink2); font-size: 10px; margin-bottom: 20px; }
+.calendar-cell { border-radius: 10px; }
+.calendar-cell.has-work { background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.calendar-grid .archive-work { border-radius: 10px; }
+.calendar-day { color: var(--ink2); font-size: 14px; }
+.calendar-cell.outside .calendar-day { color: #a8afab; }
+.calendar-stamp { filter: drop-shadow(0 2px 3px #27363214); }
+.calendar-footer { margin-top: 32px; }
+.calendar-footer b { color: var(--orange); font-size: 18px; }
+.calendar-detail .button { border-radius: 12px; }
+@media(hover:hover) {
+  .button:hover:not(:disabled):not(.secondary), .action-icon-open:hover:not(:disabled) { background: #a53c1d; }
+  .button.secondary:hover:not(:disabled), .calendar-paging button:hover:not(:disabled) { background: var(--sunken); }
+  .discover-card:hover { border-color: var(--strong); }
+  .calendar-grid .archive-work:hover { background: #fff; box-shadow: 0 0 0 1px var(--orange); }
+  .atelier-select:hover strong, .text-button:hover:not(:disabled) { color: var(--orange); }
+}
+@media(max-width:480px) {
+  .app, .app.archive-app { padding-left: 24px; padding-right: 24px; }
+  .header { height: 92px; margin-bottom: 36px; }
+  .brand { font-size: 24px; }
+  h1 { font-size: 28px; }
+  .studio-vignette { height: 152px; margin-bottom: 30px; }
+  .studio-vignette .brand-symbol { width: 92px; height: 92px; grid-template-columns: 40px 46px; grid-template-rows: 46px 40px; }
+  .studio-sky { right: 12px; width: 58px; height: 88px; }
+  .nav-four button span { font-size: 9px; }
+  .nav-four button { gap: 6px; }
+  .button, .action-icon-open { min-height: 56px; border-radius: 12px; }
+  .discover-card { padding: 22px; }
+  .archive-app>.header { margin-bottom: 32px; }
+  .calendar-month h2 { font-size: 25px; }
+  .calendar-month { gap: 10px; }
+  .calendar-paging { gap: 6px; }
+  .calendar-paging button { width: 34px; height: 34px; padding: 7px; }
+  .calendar-paging svg { width: 18px; height: 18px; }
+  .calendar-day { font-size: 12px; }
+  .calendar-intro { margin-bottom: 28px; }
+  .calendar-weekdays { margin-bottom: 16px; }
+}
+@media(max-width:360px) {
+  .app, .app.archive-app { padding-left: 20px; padding-right: 20px; }
+  .calendar-month h2 { font-size: 22px; }
+  .calendar-paging { gap: 4px; }
+  .calendar-paging button { width: 30px; height: 32px; padding: 6px; }
+}

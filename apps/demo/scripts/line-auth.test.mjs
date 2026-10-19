@@ -23,6 +23,17 @@ test('LINE discovery is disabled without complete server configuration and expos
  const f=fixture();assert.deepEqual(await f.auth.execute({action:'account.line.config'},first),{enabled:true});const value=await f.start(),url=new URL(value.url);
  assert.equal(url.origin,'https://access.line.me');assert.equal(url.searchParams.get('scope'),'openid profile');assert.equal(url.searchParams.get('code_challenge_method'),'S256');assert(!JSON.stringify(value).includes(config.channelSecret));assert(!JSON.stringify(value).includes('code_verifier'));
 });
+test('paused LINE configuration hides discovery and refuses authentication without deleting existing accounts',async()=>{
+ const store=memoryStore(),enabled=accounts(store,{lineConfig:config});
+ const signed=await enabled.execute({action:'account.register',username:'paused_line_user',password:'test-password-2026'},first);
+ const auth=accounts(store,{lineConfig:{...config,paused:true}});
+ assert.equal(readLineConfig(JSON.stringify({...config,paused:true})),null);
+ assert.deepEqual(await auth.execute({action:'account.line.config'},first),{enabled:false});
+ for(const action of ['account.line.start','account.line'])await assert.rejects(auth.execute({action},first),error=>error.code==='line_unavailable');
+ assert.equal((await auth.execute({action:'account.me'},signed.token)).account.username,'paused_line_user');
+ const logged=await auth.execute({action:'account.login',username:'paused_line_user',password:'test-password-2026'},second);
+ assert.equal(logged.account.username,'paused_line_user');
+});
 test('LINE code exchange uses server secret, PKCE and nonce and rejects forged/expired/wrong-app claims',async()=>{
  const clock=Date.now(),nonce='n'.repeat(64),requests=[];let overrides={},failure=0;
  const verify=lineVerifier(config,{now:()=>clock,fetcher:async(url,options)=>{const body=new URLSearchParams(options.body);requests.push({url,body});if(failure)return new Response('{}',{status:failure});if(url.endsWith('/token'))return Response.json({id_token:'signed-token',access_token:'never-stored'});return Response.json({iss:'https://access.line.me',aud:config.channelId,sub:subject,nonce,iat:clock/1000-1,exp:clock/1000+3600,auth_time:clock/1000-1,...overrides});}});
