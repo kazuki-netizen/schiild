@@ -14,7 +14,7 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
    if(data.pixels[member]){if(data.pixels[member].source===source)return;throw new ApiError(409,'global_already_recorded');}
    if(!data.pixels[member]){
     const position=Object.values(data.pixels).reduce((last,pixel)=>Math.max(last,pixel.position),-1)+1;
-    data.pixels[member]={position,color,source};
+    data.pixels[member]={position,color,source,code};
    }
    if(!data.ateliers.includes(code))data.ateliers.push(code);
    const result=await store.setJSON(key,data,row?{onlyIfMatch:row.etag}:{onlyIfNew:true});if(result.modified)return;
@@ -25,13 +25,20 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
   const today=new Date(now()).toISOString().slice(0,10);
   if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z'))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day||day>today)throw new ApiError(400,'invalid');
   const row=await store.getWithMetadata(dayKey(day),{type:'json'});if(!row||!Object.keys(row.data.pixels).length)return {day,image:null,count:0,outputSize:0,positions:[],ateliers:0,layout:'compact-v1',explicitRecording:true,area:{pixels:0,total:0,percent:0},final:day<today};
-  const data=row.data,layout=compactGlobal(data.pixels),{outputSize}=layout,revision=digest(JSON.stringify({layout:'compact-v1',outputSize,pixels:layout.pixels.map(({position,color})=>({position,color}))})),key=`global/${day}/${revision}`;
+  const data=row.data,layout=compactGlobal(data.pixels),{outputSize}=layout,revision=digest(JSON.stringify({layout:'compact-v1',background:'white-v2',outputSize,pixels:layout.pixels.map(({position,color})=>({position,color}))})),key=`global/${day}/${revision}`;
   if(outputSize>4096)throw new ApiError(503,'global_full');
   let bytes=await store.get(key,{type:'arrayBuffer'});
   if(!bytes){const made=await images.global(layout.pixels,outputSize);await store.set(key,made,{onlyIfNew:true});bytes=await store.get(key,{type:'arrayBuffer'});}
   if(!bytes)throw new ApiError(503,'unavailable');
-  const mine=layout.pixels.find(pixel=>pixel.member===member),all=await listRecords(store,'globals/'),total=outputSize*outputSize;
-  return {day,image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,count:layout.pixels.length,outputSize,positions:layout.pixels.map(pixel=>pixel.position),ateliers:data.ateliers.length,cumulative:all.reduce((n,row)=>n+Object.keys(row.data.pixels).length,0),layout:'compact-v1',explicitRecording:true,area:{pixels:mine?1:0,total,percent:(mine?1:0)/total*100},final:day<today,...(mine?{x:mine.position%outputSize,y:Math.floor(mine.position/outputSize)}:{})};
+  const mine=layout.pixels.find(pixel=>pixel.member===member),all=await listRecords(store,'globals/'),total=outputSize*outputSize,artworks=[];
+  // A GLOBAL pixel is public; an atelier work still requires current membership.
+  // Source photos and private works from other ateliers must never be serialized.
+  for(const {data:room} of await listRecords(store,'rooms/')){
+   const record=room.days[day];if(!room.members.includes(member)||record?.status!=='ready')continue;
+   const positions=layout.pixels.filter(pixel=>{const original=data.pixels[pixel.member];return original.code?original.code===room.code:Object.values(record.posts).some(key=>key.endsWith('/'+original.source));}).map(pixel=>pixel.position);
+   if(!positions.length)continue;const image=await store.get(`works/${room.code}/${day}`,{type:'arrayBuffer'});if(image)artworks.push({code:room.code,name:room.name,day,image:`data:image/png;base64,${Buffer.from(image).toString('base64')}`,provisional:false,positions});
+  }
+  return {day,image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`,count:layout.pixels.length,outputSize,positions:layout.pixels.map(pixel=>pixel.position),ateliers:data.ateliers.length,cumulative:all.reduce((n,row)=>n+Object.keys(row.data.pixels).length,0),layout:'compact-v1',explicitRecording:true,area:{pixels:mine?1:0,total,percent:(mine?1:0)/total*100},final:day<today,artworks,...(mine?{x:mine.position%outputSize,y:Math.floor(mine.position/outputSize)}:{})};
  }
  return {record,view,async has(day,member){return Boolean((await store.getWithMetadata(dayKey(day),{type:'json'}))?.data.pixels[member]);}};
 }

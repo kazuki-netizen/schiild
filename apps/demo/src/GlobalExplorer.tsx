@@ -9,7 +9,7 @@ type Pointer={x:number;y:number};
 type Gesture={view:View;points:Pointer[]};
 const middle=(a:Pointer,b:Pointer):Point=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
 const distance=(a:Pointer,b:Pointer)=>Math.hypot(a.x-b.x,a.y-b.y);
-export default function GlobalExplorer({image,positions,mine,sample=false,resolution=256}:{image:string;positions?:number[];mine?:Point;sample?:boolean;resolution?:number}){
+export default function GlobalExplorer({image,positions,mine,sample=false,resolution=256,onSelectPixel}:{image:string;positions?:number[];mine?:Point;sample?:boolean;resolution?:number;onSelectPixel?:(position:number)=>void}){
  const stage=useRef<HTMLDivElement>(null),bitmap=useRef<HTMLImageElement>(null),canvas=useRef<HTMLCanvasElement|null>(null),pointers=useRef(new Map<number,Pointer>()),gesture=useRef<Gesture|null>(null);
  const [size,setSize]=useState(0),[view,setView]=useState<View>(fullView),[selected,setSelected]=useState<Point|null>(null),[color,setColor]=useState('');
  const sizeRef=useRef(0),viewRef=useRef(view),tap=useRef<{pointerId:number;point:Point;time:number;moved:boolean}|null>(null),lastTap=useRef<{point:Point;time:number}|null>(null);
@@ -17,7 +17,7 @@ export default function GlobalExplorer({image,positions,mine,sample=false,resolu
  function centered(clientX:number,clientY:number):Point{const box=stage.current!.getBoundingClientRect();return {x:clientX-box.left-box.width/2,y:clientY-box.top-box.height/2};}
  function seed(){gesture.current={view:{...viewRef.current},points:[...pointers.current.values()].map(point=>({...point}))};}
  function read(pixel:Point){const ctx=canvas.current?.getContext('2d');if(!ctx)return;try{const rgb=ctx.getImageData(pixel.x,pixel.y,1,1).data;setColor('#'+[...rgb.slice(0,3)].map(value=>value.toString(16).padStart(2,'0')).join('').toUpperCase());}catch{setColor('');}}
- function choose(pixel:Point){setSelected(pixel);read(pixel);}
+ function choose(pixel:Point){setSelected(pixel);read(pixel);onSelectPixel?.(pixel.y*resolution+pixel.x);}
  function imageReady(){if(!bitmap.current?.complete||!bitmap.current.naturalWidth)return;const next=document.createElement('canvas');next.width=resolution;next.height=resolution;next.getContext('2d')?.drawImage(bitmap.current,0,0,resolution,resolution);canvas.current=next;if(selected)read(selected);}
  useEffect(()=>{const element=stage.current;if(!element)return;const measure=()=>{const width=element.getBoundingClientRect().width,old=sizeRef.current;sizeRef.current=width;setSize(width);const current=viewRef.current;apply({...current,x:old?current.x*width/old:0,y:old?current.y*width/old:0});pointers.current.clear();gesture.current=null;};measure();const observer=new ResizeObserver(measure);observer.observe(element);return()=>observer.disconnect();},[]);
  useEffect(()=>{const element=stage.current;if(!element)return;const wheel=(event:WheelEvent)=>{event.preventDefault();apply(zoomAt(viewRef.current,viewRef.current.scale*Math.exp(-event.deltaY*.002),centered(event.clientX,event.clientY),sizeRef.current));};element.addEventListener('wheel',wheel,{passive:false});return()=>element.removeEventListener('wheel',wheel);},[]);

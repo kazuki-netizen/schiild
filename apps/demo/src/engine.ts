@@ -7,6 +7,7 @@ export type Rect={x:number;y:number;w:number;h:number;slot:number};
 export type Pixels={width:number;height:number;data:Uint8ClampedArray};
 export const PALETTE=['#14130f','#292823','#44453d','#77796b','#b5b7a5','#f3efe1','#26384d','#345673','#4b7895','#87a6b0','#bcc6bd','#334638','#52684c','#798959','#a8a36c','#d7c49a','#442f38','#69474c','#9c6965','#c39582','#e5bbaa','#543e2e','#7b573a','#aa7745','#d4a561','#e9ca7d','#473e59','#726781','#a795aa','#afb6ca','#61777a','#8d9890'];
 export const colors:RGB[]=PALETTE.map(hex=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)]);
+export const VOID_COLOR:RGB=[255,255,255];
 export function random(seed:number){return ()=>{seed|=0;seed=seed+0x6d2b79f5|0;let n=Math.imul(seed^seed>>>15,1|seed);n^=n+Math.imul(n^n>>>7,61|n);return ((n^n>>>14)>>>0)/4294967296;};}
 export function shuffle<T>(items:T[],rng= Math.random){const out=[...items];for(let n=out.length-1;n>0;n--){const k=Math.floor(rng()*(n+1));[out[n],out[k]]=[out[k],out[n]];}return out;}
 export function partition(capacity=12,rng=Math.random):Rect[]{
@@ -43,18 +44,18 @@ export function resample(source:Pixels,w:number,h:number):Float32Array {
 }
 export function render(rects:Rect[],sources:(Pixels|null)[],seed:number,outputSize=128):Pixels{
  if(outputSize!==128&&outputSize!==256)throw Error('unsupported_work_size');
- const scale=outputSize/128,rng=random(seed),out=new Uint8ClampedArray(outputSize*outputSize*4);
+ const scale=outputSize/128,out=new Uint8ClampedArray(outputSize*outputSize*4).fill(255);
  for(const logical of rects){
   const rect={...logical,x:logical.x*scale,y:logical.y*scale,w:logical.w*scale,h:logical.h*scale};
   const source=sources[rect.slot],sample=source?resample(source,rect.w,rect.h):null;
   for(let y=0;y<rect.h;y++)for(let x=0;x<rect.w;x++){
-   const index=(y*rect.w+x)*3,input:RGB=sample?[sample[index],sample[index+1],sample[index+2]]:colors[rng()<.12?1:0],color=nearest(input),target=((y+rect.y)*outputSize+x+rect.x)*4;
+   const index=(y*rect.w+x)*3,input:RGB=sample?[sample[index],sample[index+1],sample[index+2]]:VOID_COLOR,color=sample?nearest(input):VOID_COLOR,target=((y+rect.y)*outputSize+x+rect.x)*4;
    out.set([...color,255],target);
    if(sample){for(const [dx,dy,weight] of [[1,0,7/16],[-1,1,3/16],[0,1,5/16],[1,1,1/16]])if(x+dx>=0&&x+dx<rect.w&&y+dy<rect.h){const next=((y+dy)*rect.w+x+dx)*3;for(let c=0;c<3;c++)sample[next+c]+=(input[c]-color[c])*weight*.65;}}
   }
  }
  // Demo signature only; intentionally not a production algorithm version.
- for(const [x,y] of [[0,0],[outputSize-4,0],[0,outputSize-1],[outputSize-4,outputSize-1]])for(let n=0;n<4;n++)out.set([...colors[n%2?5:0],255],(y*outputSize+x+n)*4);
+ for(const [x,y] of [[0,0],[outputSize-4,0],[0,outputSize-1],[outputSize-4,outputSize-1]])for(let n=0;n<4;n++)if(rects.some(rect=>sources[rect.slot]&&x+n>=rect.x*scale&&x+n<(rect.x+rect.w)*scale&&y>=rect.y*scale&&y<(rect.y+rect.h)*scale))out.set([...colors[n%2?5:0],255],(y*outputSize+x+n)*4);
  return {width:outputSize,height:outputSize,data:out};
 }
 export function synthetic(seed:number):Pixels{

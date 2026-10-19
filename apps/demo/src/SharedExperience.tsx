@@ -9,23 +9,31 @@ import {dayAfter} from './model';
 import type {Work} from './model';
 import type {Atelier} from './ateliers';
 import {fetchWork,sharedRequest} from './shared-api';
-import type {SharedState} from './shared-api';
+import type {Account,SharedState} from './shared-api';
 import DraftPreview from './DraftPreview';
 import type {Draft} from './draft';
 import AreaDisplay from './AreaDisplay';
 import ArchiveCalendar from './ArchiveCalendar';
+import type {ArchiveEntry,DayAtelierWork} from './ArchiveCalendar';
 import HelpDetails from './HelpDetails';
 import AtelierConcept from './AtelierConcept';
 import {CONCEPT_LIMIT} from './concept';
 import ActionIconButton from './ActionIconButton';
 import type {PostSelection} from './DailyPostsPage';
 
-export default function SharedExperience({entry,onManage,onShare,onAccount,onPosts,onGlobal,navigation,onScreenChange}:{entry:Atelier;onManage:()=>void;onShare:()=>void;onAccount:()=>void;onPosts:(source:PostSelection)=>void;onGlobal:(day:string)=>void;navigation:Navigation;onScreenChange:(screen:string)=>void}){
+export default function SharedExperience({entry,onManage,onShare,onAccount,onPosts,onGlobal,onOpenAtelier,navigation,onScreenChange}:{entry:Atelier;onManage:()=>void;onShare:()=>void;onAccount:()=>void;onPosts:(source:PostSelection)=>void;onGlobal:(day:string)=>void;onOpenAtelier:(code:string,day:string)=>void;navigation:Navigation;onScreenChange:(screen:string)=>void}){
  const [state,setState]=useState<SharedState|null>(null),[error,setError]=useState(''),[screen,setScreen]=useState('home'),[work,setWork]=useState<Work|null>(null),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false),[cameraDay,setCameraDay]=useState<string|null>(null);
  const [editingConcept,setEditingConcept]=useState(false),[conceptDraft,setConceptDraft]=useState(''),[conceptError,setConceptError]=useState('');
  useEffect(()=>onScreenChange(screen),[screen,onScreenChange]);
  const sequence=useRef(0),mounted=useRef(true),lock=useRef(false);
- const loadArchiveImage=useCallback(async(day:string,signal:AbortSignal)=>(await sharedRequest<Work>('work',{code:entry.code,day},signal)).image,[entry.code]);
+ const archiveCodes=useRef<Record<string,string>>({}),[archiveItems,setArchiveItems]=useState<ArchiveEntry[]|null>(null);
+ const loadArchiveImage=useCallback(async(day:string,signal:AbortSignal)=>(await sharedRequest<Work>('work',{code:archiveCodes.current[day]??entry.code,day},signal)).image,[entry.code]);
+ useEffect(()=>{if(screen!=='archive')return;const controller=new AbortController();void (async()=>{const {account}=await sharedRequest<{account:Account|null}>('account.me',{},controller.signal);if(!account)return;const states=await Promise.all(account.ateliers.map(room=>sharedRequest<SharedState>('state',{code:room.code},controller.signal))),days=new Map<string,ArchiveEntry>(),codes:Record<string,string>={};for(const room of states.sort((a,b)=>a.code===entry.code?-1:b.code===entry.code?1:a.code.localeCompare(b.code)))for(const work of room.works)if(!days.has(work.day)){days.set(work.day,work);codes[work.day]=room.code;}if(!controller.signal.aborted){archiveCodes.current=codes;setArchiveItems([...days.values()].sort((a,b)=>b.day.localeCompare(a.day)));}})().catch(()=>{});return()=>controller.abort();},[screen,entry.code]);
+ const loadDayWorks=useCallback(async(day:string,signal:AbortSignal):Promise<DayAtelierWork[]>=>{
+  const {account}=await sharedRequest<{account:Account|null}>('account.me',{},signal),rooms=[...(account?.ateliers??[entry])].sort((a,b)=>a.code===entry.code?-1:b.code===entry.code?1:a.code.localeCompare(b.code));
+  const results=await Promise.all(rooms.map(async room=>{const state=await sharedRequest<SharedState>('state',{code:room.code},signal);if(!state.works.some(work=>work.day===day))return null;const work=await sharedRequest<Work>('work',{code:room.code,day},signal);return {...work,code:room.code,name:room.name};}));
+  return results.filter((work):work is NonNullable<typeof work>=>work!==null);
+ },[entry.code]);
  const [draft,setDraft]=useState<Draft|null>(null),draftController=useRef<AbortController|null>(null);
  async function refresh(){
   const request=++sequence.current;
@@ -100,7 +108,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
    {screen==='camera'&&<Camera shared day={cameraDay??state.day} atelier={state.name} concept={state.concept} onBack={()=>go('home')} onSubmit={post}/>}
    {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={state.name} onClose={()=>{setDraft(null);go('home');}}/>}
    {screen==='work'&&work&&<Reveal shared key={work.day} atelier={state.name} work={work} onOpened={()=>{try{browserStorage().setItem(`schiild.shared.opened.${entry.code}.${work.day}`,'true');}catch{/* Viewing remains possible when local storage is full. */}}} onNext={()=>onGlobal(work.day)}/>}
-   {screen==='archive'&&<ArchiveCalendar items={state.works} currentDay={state.day} atelier={state.name} busy={busy} loadImage={loadArchiveImage} onOpen={item=>void open(item.day)} onGlobal={item=>onGlobal(item.day)}/>}
+   {screen==='archive'&&<ArchiveCalendar items={archiveItems??state.works} currentDay={state.day} atelier={state.name} busy={busy} loadImage={loadArchiveImage} loadDayWorks={loadDayWorks} onOpenAtelier={onOpenAtelier} onOpen={item=>void open(item.day)} onGlobal={item=>onGlobal(item.day)}/>}
   </>}
   </main>
   {editingConcept&&state&&<div className="modal-shade"><section className="dialog concept-dialog" role="dialog" aria-modal="true" aria-labelledby="concept-title" onKeyDown={event=>{if(event.key==='Escape'&&!busy)closeConcept();}}><h2 id="concept-title">{t('demo.concept.edit')}</h2><form onSubmit={event=>{event.preventDefault();void saveConcept();}}><label className="field">{t('demo.concept.input')}<input autoFocus maxLength={CONCEPT_LIMIT} value={conceptDraft} disabled={busy} placeholder={t('demo.concept.default')} onChange={event=>setConceptDraft(event.target.value)}/></label>{state.status!=='open'&&<p>{t('demo.concept.next_day')}</p>}{conceptError&&<p className="error" role="alert">{conceptError}</p>}<button type="submit" className="button" disabled={busy}>{t(busy?'common.loading':'common.done')}</button><button type="button" className="button secondary" disabled={busy} onClick={closeConcept}>{t('common.cancel')}</button></form></section></div>}

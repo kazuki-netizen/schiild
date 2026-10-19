@@ -24,6 +24,17 @@ body { -webkit-font-smoothing: antialiased; }
 .week-notice label { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 .week-notice select { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; min-height: 36px; padding: 6px 24px 6px 10px; }
 .week-entry { display: inline-block; margin-top: 32px; font-size: 12px; padding: 12px 0; }
+.calendar-carousel { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior-x:contain; touch-action:pan-x pan-y pinch-zoom; scrollbar-width:none; }
+[data-swipe-scope]:has(.calendar-carousel) { touch-action:auto; }
+.calendar-slide { flex:0 0 100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always; }
+.calendar-slide h2 { text-align:center; font-size:16px; font-weight:500; margin:8px 0 12px; }
+.calendar-slide .atelier-concept { text-align:center; }
+.calendar-detail-art img { width:100%; aspect-ratio:1; object-fit:contain; image-rendering:pixelated; }
+.calendar-carousel-controls { display:flex; align-items:center; justify-content:center; gap:24px; font-size:12px; }
+.calendar-carousel-controls button { width:44px; height:44px; font-size:24px; }
+.global-related-work { margin:28px 0; }
+.global-related-work h2 { font-size:16px; font-weight:500; margin:12px 0; }
+.global-related-work>img { display:block; width:min(100%,256px); aspect-ratio:1; object-fit:contain; image-rendering:pixelated; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea { outline-color: var(--orange); }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
