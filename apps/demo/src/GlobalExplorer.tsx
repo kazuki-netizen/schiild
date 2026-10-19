@@ -2,7 +2,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {t} from './copy';
 import HelpDetails from './HelpDetails';
-import {numberLocale} from './language';
 import {boundView,zoomAt,pixelAt,pixelPosition,fullView,MAX_SCALE} from './global-view';
 import type {View,Point} from './global-view';
 import {visibleSchiils} from './global-schiils';
@@ -16,7 +15,7 @@ export default function GlobalExplorer({image,detailImage,positions,mine,sample=
  const [size,setSize]=useState(0),[view,setView]=useState<View>(fullView),[selected,setSelected]=useState<Point|null>(null),[color,setColor]=useState('');
  const photos=useRef(new Map<number,string|null>()),[photoImages,setPhotoImages]=useState<Record<number,string|null>>({}),[loadingPhotos,setLoadingPhotos]=useState(false),[photoError,setPhotoError]=useState(false),[retry,setRetry]=useState(0);
  const sizeRef=useRef(0),viewRef=useRef(view),tap=useRef<{pointerId:number;point:Point;time:number;moved:boolean}|null>(null),lastTap=useRef<{point:Point;time:number}|null>(null);
- function apply(next:View){const bounded=boundView(next,sizeRef.current);viewRef.current=bounded;setView(bounded);}
+ function apply(next:View){const previous=viewRef.current,bounded=boundView(next,sizeRef.current);viewRef.current=bounded;setView(bounded);if(bounded.scale===1&&previous.scale>1)onReset?.();}
  function centered(clientX:number,clientY:number):Point{const box=stage.current!.getBoundingClientRect();return {x:clientX-box.left-box.width/2,y:clientY-box.top-box.height/2};}
  function seed(){gesture.current={view:{...viewRef.current},points:[...pointers.current.values()].map(point=>({...point}))};}
  function read(pixel:Point){const ctx=canvas.current?.getContext('2d');if(!ctx)return;try{const rgb=ctx.getImageData(pixel.x,pixel.y,1,1).data;setColor('#'+[...rgb.slice(0,3)].map(value=>value.toString(16).padStart(2,'0')).join('').toUpperCase());}catch{setColor('');}}
@@ -51,7 +50,6 @@ export default function GlobalExplorer({image,detailImage,positions,mine,sample=
    {tiles.map(tile=><div key={tile.position} className="explorer-schiil" data-position={tile.position} style={{left:tile.left,top:tile.top,width:tile.size,height:tile.size}}>{photoImages[tile.position]&&<img src={photoImages[tile.position]!} alt="" aria-hidden="true" draggable={false}/>}</div>)}
    {minePosition&&mark(minePosition,'mine')}{selectedPosition&&mark(selectedPosition,'selected')}
   </div>
-  <div className="explorer-controls"><button type="button" disabled={view.scale<=1} aria-label={t('demo.global.smaller')} onClick={()=>apply(zoomAt(viewRef.current,viewRef.current.scale/2,{x:0,y:0},sizeRef.current))}>−</button><label><span className="mono">{t('demo.global.scale',{n:Number(view.scale.toFixed(1)).toLocaleString(numberLocale())})}</span><input aria-label={t('demo.global.scale_control')} type="range" min="1" max={MAX_SCALE} step=".25" value={view.scale} onChange={event=>apply(zoomAt(viewRef.current,Number(event.target.value),{x:0,y:0},sizeRef.current))}/></label><button type="button" disabled={view.scale>=MAX_SCALE} aria-label={t('demo.global.larger')} onClick={()=>apply(zoomAt(viewRef.current,viewRef.current.scale*2,{x:0,y:0},sizeRef.current))}>＋</button><button type="button" className="text-button" onClick={()=>{apply(fullView());setSelected(null);setColor('');onSelectPixel?.(null);onReset?.();lastTap.current=null;}}>{t('demo.global.reset')}</button></div>
   {loadingPhotos&&<p className="explorer-photo-status" role="status">{t('common.loading')}</p>}{photoError&&<button className="text-button" onClick={()=>setRetry(value=>value+1)}>{t('common.retry')}</button>}
   {selected&&<div className="pixel-inspection" data-testid="global-pixel-inspection" data-x={selected.x} data-y={selected.y}><div className="pixel-swatch" style={{background:color||'transparent'}} aria-hidden="true"/><div><p>{t(sample?'demo.global.sample_pixel':self?'schiild.regions.mine':posted?'demo.global.selected_schiil':'demo.global.empty_pixel')}</p><p className="mono">{t('global.coords',selected)}</p>{color&&<p className="mono">{t('demo.global.color',{color})}</p>}</div></div>}
   {selectedNumber!==null&&loadSchiils&&posted&&<div className="global-selected-schiil" data-testid="global-selected-schiil">{photoImages[selectedNumber]?<img src={photoImages[selectedNumber]!} alt={t('demo.global.selected_schiil')}/>:photoImages[selectedNumber]===null?<p>{t('demo.global.photo_unavailable')}</p>:null}</div>}

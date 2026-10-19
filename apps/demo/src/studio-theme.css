@@ -128,8 +128,6 @@ p { color: var(--ink2); }
 .global-page h1 { font-size: 28px; letter-spacing: -.035em; margin-top: 12px; }
 .global-page>.window { margin-bottom: 32px; }
 .global-explorer { margin-top: 32px; }
-.explorer-controls { margin-top: 28px; gap: 12px; }
-.explorer-controls>button:not(.text-button) { border-radius: 12px; color: var(--orange); }
 .pixel-link { color: var(--orange); }
 .pixel-inspection { border-radius: 14px; border-color: var(--line); background: #fff; }
 .discover-invite { margin-top: 32px; padding-bottom: 36px; }

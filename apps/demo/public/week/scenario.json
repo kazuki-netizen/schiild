@@ -19,48 +19,60 @@
     "daily": [
       {
         "day": "2026-10-13",
-        "activePeople": 721,
-        "globalPeople": 593,
-        "posts": 721
+        "activePeople": 906,
+        "globalPeople": 857,
+        "posts": 721,
+        "atelierActivePeople": 721
       },
       {
         "day": "2026-10-14",
-        "activePeople": 725,
-        "globalPeople": 589,
-        "posts": 804
+        "activePeople": 970,
+        "globalPeople": 957,
+        "posts": 804,
+        "atelierActivePeople": 725
       },
       {
         "day": "2026-10-15",
-        "activePeople": 729,
-        "globalPeople": 607,
-        "posts": 903
+        "activePeople": 949,
+        "globalPeople": 929,
+        "posts": 903,
+        "atelierActivePeople": 729
       },
       {
         "day": "2026-10-16",
-        "activePeople": 732,
-        "globalPeople": 610,
-        "posts": 998
+        "activePeople": 859,
+        "globalPeople": 802,
+        "posts": 998,
+        "atelierActivePeople": 732
       },
       {
         "day": "2026-10-17",
-        "activePeople": 816,
-        "globalPeople": 665,
-        "posts": 1094
+        "activePeople": 994,
+        "globalPeople": 987,
+        "posts": 1094,
+        "atelierActivePeople": 816
       },
       {
         "day": "2026-10-18",
-        "activePeople": 807,
-        "globalPeople": 657,
-        "posts": 1076
+        "activePeople": 977,
+        "globalPeople": 964,
+        "posts": 1076,
+        "atelierActivePeople": 807
       },
       {
         "day": "2026-10-19",
-        "activePeople": 720,
-        "globalPeople": 581,
-        "posts": 966
+        "activePeople": 876,
+        "globalPeople": 813,
+        "posts": 966,
+        "atelierActivePeople": 720
       }
     ],
-    "publicAteliers": 140
+    "publicAteliers": 140,
+    "globalRange": [
+      800,
+      1000
+    ],
+    "globalPosts": 6309
   },
   "credits": "photos/credits.json"
 }
