@@ -46,7 +46,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    const key=today.posts[rect.slot];if(!key)return null;
    const photo=await store.get(key,{type:'arrayBuffer'});if(!photo)fail(503,'generation_failed');
    return photo;
-  },today.seed,workSize(today));
+  },today.seed,workSize(today),today.day);
  }
  function summary(room,member){
   const day=utcDay(now()),today=room.days[day],slot=authorize(room,member);

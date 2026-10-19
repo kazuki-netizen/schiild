@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {partition,random,render,resample,synthetic,colors,globalPixels,VOID_PALETTE,voidColor} from '../src/engine.ts';
+import {partition,random,render,resample,synthetic,colors,globalPixels,VOID_PALETTE,voidColor,voidPalette} from '../src/engine.ts';
 test('BSP covers the complete integer grid without gaps or overlap',()=>{
  for(const count of [1,2,5,12,20,200]){const grid=new Uint16Array(128*128),rects=partition(count,random(count));assert.equal(rects.length,count);for(const r of rects){assert(r.w>0&&r.h>0);for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++)grid[y*128+x]++;}assert(grid.every(n=>n===1));}
 });
@@ -28,4 +28,12 @@ test('256px rendering keeps palette, opacity and isolation between BSP regions',
  const rects=partition(20,random(31)),sources=rects.map((_,n)=>synthetic(n+32)),a=render(rects,sources,31,256),b=render(rects,[synthetic(600),...sources.slice(1)],31,256),allowed=new Set(colors.map(color=>color.join(',')));
  for(let n=0;n<a.data.length;n+=4){assert(allowed.has([...a.data.subarray(n,n+3)].join(',')));assert.equal(a.data[n+3],255);}
  for(const rect of rects.slice(1))for(let y=rect.y*2;y<(rect.y+rect.h)*2;y++)for(let x=rect.x*2;x<(rect.x+rect.w)*2;x++){const offset=(y*256+x)*4;assert.deepEqual(a.data.subarray(offset,offset+4),b.data.subarray(offset,offset+4));}
+});
+
+test('UTC day changes only empty regions, keeps the same day stable and varies consecutive days',()=>{
+ const rects=partition(12,random(29)),sources=rects.map((_,slot)=>slot===4?synthetic(80):null),day='2026-10-19',next='2026-10-20',a=render(rects,sources,29,256,day),again=render(rects,sources,29,256,day),b=render(rects,sources,29,256,next);
+ assert.deepEqual(a.data,again.data);assert.notDeepEqual(a.data,b.data);
+ const posted=rects.find(rect=>rect.slot===4);for(let y=posted.y*2;y<(posted.y+posted.h)*2;y++)for(let x=posted.x*2;x<(posted.x+posted.w)*2;x++){const offset=(y*256+x)*4;assert.deepEqual(a.data.subarray(offset,offset+4),b.data.subarray(offset,offset+4));}
+ const blank=rects.find(rect=>rect.slot!==4),offset=(blank.y*2*256+blank.x*2)*4;assert.deepEqual([...a.data.subarray(offset,offset+4)],[...voidColor(blank.x,blank.y,29,day),255]);
+ const first=Date.parse('2026-01-01T00:00:00Z');let previous;for(let n=0;n<366;n++){const palette=voidPalette(new Date(first+n*86400000).toISOString().slice(0,10));assert.notDeepEqual(palette[0],previous);previous=palette[0];}
 });

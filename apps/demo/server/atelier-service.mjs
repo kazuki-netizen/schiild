@@ -1,13 +1,13 @@
 // Netlify/local adapter only. Cloudflare imports atelier-core without native sharp.
 import sharp from 'sharp';
 import {createAtelierService as core} from './atelier-core.mjs';
-import {render,nearest,VOID_COLOR} from '../src/engine.ts';
+import {render,nearest,voidColor} from '../src/engine.ts';
 export {ApiError} from './atelier-core.mjs';
 export const images={
  async thumbnail(bytes){return sharp(Buffer.from(bytes)).resize(256,256,{fit:'cover'}).png().toBuffer();},
  async mean(bytes){const {data,info}=await sharp(Buffer.from(bytes)).removeAlpha().raw().toBuffer({resolveWithObject:true});const sum=[0,0,0];for(let n=0;n<data.length;n+=info.channels)for(let c=0;c<3;c++)sum[c]+=data[n+c];return nearest(sum.map(n=>n/(info.width*info.height)));},
- async global(pixels,outputSize=256){const data=Buffer.alloc(outputSize*outputSize*4);for(let n=0;n<outputSize*outputSize;n++)data.set([...VOID_COLOR,255],n*4);for(const pixel of pixels)data.set([...pixel.color,255],pixel.position*4);return sharp(data,{raw:{width:outputSize,height:outputSize,channels:4}}).png().toBuffer();},
+ async global(pixels,outputSize=256,day=''){const data=Buffer.alloc(outputSize*outputSize*4);for(let n=0;n<outputSize*outputSize;n++)data.set([...(day?voidColor(n%outputSize,Math.floor(n/outputSize),0,day):[255,255,255]),255],n*4);for(const pixel of pixels)data.set([...pixel.color,255],pixel.position*4);return sharp(data,{raw:{width:outputSize,height:outputSize,channels:4}}).png().toBuffer();},
  async normalize(bytes){const image=sharp(bytes,{limitInputPixels:1080*1080}),meta=await image.metadata();if(meta.width!==1080||meta.height!==1080||meta.format!=='jpeg')throw Error('image_invalid');return image.jpeg({quality:85}).toBuffer();},
- async compose(rects,load,seed,outputSize=128){const sources=await Promise.all(rects.map(async rect=>{const photo=await load(rect);if(!photo)return null;const {data,info}=await sharp(Buffer.from(photo)).ensureAlpha().raw().toBuffer({resolveWithObject:true});return {width:info.width,height:info.height,data:new Uint8ClampedArray(data)};}));const pixels=render(rects,sources,seed,outputSize);return sharp(Buffer.from(pixels.data),{raw:{width:outputSize,height:outputSize,channels:4}}).png().toBuffer();},
+ async compose(rects,load,seed,outputSize=128,day=''){const sources=await Promise.all(rects.map(async rect=>{const photo=await load(rect);if(!photo)return null;const {data,info}=await sharp(Buffer.from(photo)).ensureAlpha().raw().toBuffer({resolveWithObject:true});return {width:info.width,height:info.height,data:new Uint8ClampedArray(data)};}));const pixels=render(rects,sources,seed,outputSize,day);return sharp(Buffer.from(pixels.data),{raw:{width:outputSize,height:outputSize,channels:4}}).png().toBuffer();},
 };
 export function createAtelierService(store,options={}){return core(store,{...options,images});}

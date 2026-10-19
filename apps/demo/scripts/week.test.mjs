@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,stat} from 'node:fs/promises';
 import sharp from 'sharp';
+import {voidColor} from '../src/engine.ts';
 const root=new URL('../public/week/',import.meta.url),world=JSON.parse(await readFile(new URL('world.json',root),'utf8'));
 const read=async file=>JSON.parse(await readFile(new URL(file.replace('/week/',''),root),'utf8'));
 
@@ -21,7 +22,7 @@ test('genuine 256px atelier images, linked GLOBAL art, unique pixels and persona
   const work=globals[day]=await read(file);assert.equal(new Set(work.positions).size,work.count);assert.equal(work.outputSize,Math.ceil(Math.sqrt(work.count)));
   const linked=work.artworks.flatMap(art=>art.positions);assert.equal(new Set(linked).size,linked.length);assert(linked.length<=work.count);assert(work.count>=800&&work.count<=1000);
   for(const art of work.artworks){assert(art.name&&art.code);artifacts.add(art.image);}
-  const raw=await sharp(await readFile(new URL(work.image.replace('/week/',''),root))).ensureAlpha().raw().toBuffer();for(let n=work.count*4;n<raw.length;n++)assert.equal(raw[n],255);
+  const raw=await sharp(await readFile(new URL(work.image.replace('/week/',''),root))).ensureAlpha().raw().toBuffer();for(let position=work.count;position<work.outputSize**2;position++)assert.deepEqual([...raw.subarray(position*4,position*4+4)],[...voidColor(position%work.outputSize,Math.floor(position/work.outputSize),0,day),255]);
  }
  for(const descriptor of world.people){const person=await read(descriptor.file);assert(Object.values(person.states).every(room=>!room.canGenerate));assert.equal(person.area.global.days,Object.values(person.globals).filter(work=>work.x!==undefined).length);
   for(const [day,pixel] of Object.entries(person.globals)){assert.equal(pixel.image,undefined);if(pixel.x!==undefined){const position=pixel.y*globals[day].outputSize+pixel.x;assert(globals[day].positions.includes(position));assert(!coordinates[day].has(position));coordinates[day].add(position);}}
@@ -41,6 +42,7 @@ test('every GLOBAL image is assembled from one real Schiil at each participant c
  for(const [day,file] of Object.entries(world.globals)){
   const global=await read(file);assert.equal(global.schiils.length,global.count);assert.equal(new Set(global.schiils.map(tile=>tile.position)).size,global.count);
   const atlas=await sharp(await readFile(new URL(global.schiilImage.replace('/week/',''),root))).ensureAlpha().raw().toBuffer({resolveWithObject:true}),cell=global.schiilCellSize;assert.equal(atlas.info.width,global.outputSize*cell);assert.equal(atlas.info.height,atlas.info.width);
+  for(let position=global.count;position<global.outputSize**2;position++){const offset=(Math.floor(position/global.outputSize)*cell*atlas.info.width+position%global.outputSize*cell)*4;assert.deepEqual([...atlas.data.subarray(offset,offset+4)],[...voidColor(position%global.outputSize,Math.floor(position/global.outputSize),0,day),255]);}
   for(const tile of global.schiils){if(!thumbnailCache.has(tile.image))thumbnailCache.set(tile.image,await sharp(await readFile(new URL(tile.image.replace('/week/',''),root))).resize(cell,cell,{fit:'cover'}).ensureAlpha().raw().toBuffer());const expected=thumbnailCache.get(tile.image),x=tile.position%global.outputSize*cell,y=Math.floor(tile.position/global.outputSize)*cell;for(let row=0;row<cell;row++){const offset=((y+row)*atlas.info.width+x)*4;assert(atlas.data.subarray(offset,offset+cell*4).equals(expected.subarray(row*cell*4,(row+1)*cell*4)));}}
  }
  let globalOnly=0;for(const descriptor of world.people){const person=await read(descriptor.file),pixel=person.globals[world.lastDay];if(pixel.x===undefined)continue;const position=pixel.y*current.outputSize+pixel.x,source=current.artworks.find(art=>art.positions.includes(position)),image=current.schiils.find(tile=>tile.position===position).image;if(source)assert.equal(image,person.photos[source.code]);else{assert(image.startsWith('/week/photos/'));globalOnly++;}}assert(globalOnly>0);

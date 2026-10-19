@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import sharp from 'sharp';
 import {createAtelierService,images} from '../server/atelier-service.mjs';
 import {memoryStore} from '../server/memory-store.mjs';
+import {voidColor} from '../src/engine.ts';
 import {workerImages} from '../cloudflare/images.mjs';
 
 test('GLOBAL archive lists recorded days only; linked atelier art requires membership',async()=>{
@@ -24,4 +25,11 @@ test('native and Worker codecs keep GLOBAL padding white and share the same quie
   const empty=await codec.compose([{x:0,y:0,w:128,h:128,slot:0}],async()=>null,3,256),raw=await sharp(empty).ensureAlpha().raw().toBuffer();assert(raw.every(value=>value>=246));versions.push(raw);
  }
  assert.deepEqual(versions[0],versions[1]);
+});
+
+test('native and Worker daily backgrounds agree in GLOBAL padding and atelier void cells',async()=>{
+ const versions=[];for(const day of ['2026-10-19','2026-10-20'])for(const codec of [images,workerImages]){
+  const global=await codec.global([{position:0,color:[20,30,40]}],2,day),pixels=await sharp(global).ensureAlpha().raw().toBuffer();assert.deepEqual([...pixels.subarray(0,4)],[20,30,40,255]);for(let position=1;position<4;position++)assert.deepEqual([...pixels.subarray(position*4,position*4+4)],[...voidColor(position%2,Math.floor(position/2),0,day),255]);
+  const empty=await codec.compose([{x:0,y:0,w:128,h:128,slot:0}],async()=>null,3,256,day),raw=await sharp(empty).ensureAlpha().raw().toBuffer();assert.deepEqual([...raw.subarray(0,4)],[...voidColor(0,0,3,day),255]);versions.push(raw);
+ }assert.deepEqual(versions[0],versions[1]);assert.deepEqual(versions[2],versions[3]);assert.notDeepEqual(versions[0],versions[2]);
 });

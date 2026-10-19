@@ -29,10 +29,10 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
   const today=new Date(now()).toISOString().slice(0,10);
   if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z'))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day||day>today)throw new ApiError(400,'invalid');
   const row=await store.getWithMetadata(dayKey(day),{type:'json'});if(!row||!Object.keys(row.data.pixels).length)return {day,image:null,count:0,outputSize:0,positions:[],ateliers:0,layout:'compact-v1',explicitRecording:true,area:{pixels:0,total:0,percent:0},final:day<today};
-  const data=row.data,layout=compactGlobal(data.pixels),{outputSize}=layout,revision=digest(JSON.stringify({layout:'compact-v1',background:'white-v2',outputSize,pixels:layout.pixels.map(({position,color})=>({position,color}))})),key=`global/${day}/${revision}`;
+  const data=row.data,layout=compactGlobal(data.pixels),{outputSize}=layout,revision=digest(JSON.stringify({layout:'compact-v1',background:'daily-void-v1',day,outputSize,pixels:layout.pixels.map(({position,color})=>({position,color}))})),key=`global/${day}/${revision}`;
   if(outputSize>4096)throw new ApiError(503,'global_full');
   let bytes=await store.get(key,{type:'arrayBuffer'});
-  if(!bytes){const made=await images.global(layout.pixels,outputSize);await store.set(key,made,{onlyIfNew:true});bytes=await store.get(key,{type:'arrayBuffer'});}
+  if(!bytes){const made=await images.global(layout.pixels,outputSize,day);await store.set(key,made,{onlyIfNew:true});bytes=await store.get(key,{type:'arrayBuffer'});}
   if(!bytes)throw new ApiError(503,'unavailable');
   const mine=layout.pixels.find(pixel=>pixel.member===member),all=await listRecords(store,'globals/'),total=outputSize*outputSize,artworks=[];
   // A GLOBAL pixel is public; an atelier work still requires current membership.

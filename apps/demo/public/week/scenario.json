@@ -72,7 +72,8 @@
       800,
       1000
     ],
-    "globalPosts": 6309
+    "globalPosts": 6309,
+    "voidTheme": "daily-void-v1"
   },
   "credits": "photos/credits.json"
 }
