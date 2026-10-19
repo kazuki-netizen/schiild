@@ -24,7 +24,7 @@ function createServer(port){http.createServer(async(req,res)=>{
    res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(result));return;
   }
   const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
-  const target=url.pathname==='/'?path.join(root,'index.html'):file;
+  const target=url.pathname.endsWith('/')?path.join(file,'index.html'):file;
   const body=await readFile(target);res.writeHead(200,{'Content-Type':types[path.extname(target)]??'application/octet-stream'});res.end(body);
  }catch(error){res.writeHead(error instanceof ApiError?error.status:404,{'Content-Type':'application/json'});res.end(JSON.stringify({error:error instanceof ApiError?error.code:'not_found'}));}
 }).listen(port,'127.0.0.1',()=>console.log(`Demo: http://localhost:${port}`));}

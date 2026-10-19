@@ -1,3 +1,4 @@
+import {browserStorage} from './preview-mode.ts';
 // DEMO ONLY: local identity and invitation snapshots; no authentication or synchronization.
 import {initial,dayAfter} from './model';
 import type {State} from './model';
@@ -7,7 +8,7 @@ export type Atelier=Invitation&{creator:string|null;activeFrom:string;state:Stat
 export type Collection={version:3;device:string;selected:string;ateliers:Atelier[];departed?:Atelier[]};
 export const COLLECTION='schiild.demo.ateliers.v3';
 export function restore():Collection{
- try{const value=JSON.parse(localStorage.getItem(COLLECTION)||'null');if(value?.version===3&&typeof value.device==='string'&&Array.isArray(value.ateliers))return value;}catch{/* Start empty when stored data cannot be read. */}
+ try{const value=JSON.parse(browserStorage().getItem(COLLECTION)||'null');if(value?.version===3&&typeof value.device==='string'&&Array.isArray(value.ateliers))return value;}catch{/* Start empty when stored data cannot be read. */}
  return {version:3,device:crypto.randomUUID(),selected:'',ateliers:[]};
 }
 export function newCode(){return Array.from(crypto.getRandomValues(new Uint8Array(8)),n=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[n%32]).join('');}

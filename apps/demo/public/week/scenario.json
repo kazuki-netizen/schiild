@@ -1,0 +1,180 @@
+{
+  "metadata": {
+    "fictional": true,
+    "people": 40,
+    "ateliers": 10,
+    "days": [
+      "2026-10-13",
+      "2026-10-14",
+      "2026-10-15",
+      "2026-10-16",
+      "2026-10-17",
+      "2026-10-18",
+      "2026-10-19"
+    ],
+    "firstDay": "2026-10-13",
+    "lastDay": "2026-10-19",
+    "posts": 277,
+    "completedWorks": 60,
+    "daily": [
+      {
+        "day": "2026-10-13",
+        "activePeople": 26,
+        "globalPeople": 17,
+        "posts": 33
+      },
+      {
+        "day": "2026-10-14",
+        "activePeople": 31,
+        "globalPeople": 29,
+        "posts": 38
+      },
+      {
+        "day": "2026-10-15",
+        "activePeople": 26,
+        "globalPeople": 22,
+        "posts": 34
+      },
+      {
+        "day": "2026-10-16",
+        "activePeople": 30,
+        "globalPeople": 22,
+        "posts": 38
+      },
+      {
+        "day": "2026-10-17",
+        "activePeople": 33,
+        "globalPeople": 30,
+        "posts": 42
+      },
+      {
+        "day": "2026-10-18",
+        "activePeople": 33,
+        "globalPeople": 26,
+        "posts": 48
+      },
+      {
+        "day": "2026-10-19",
+        "activePeople": 31,
+        "globalPeople": 25,
+        "posts": 44
+      }
+    ],
+    "memberships": [
+      3,
+      1,
+      2,
+      1,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      2,
+      2,
+      1,
+      1,
+      2,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "publicAteliers": 7
+  },
+  "definitions": [
+    {
+      "name": "日々のかけら",
+      "concept": "",
+      "capacity": 12,
+      "visibility": "public",
+      "participants": 8
+    },
+    {
+      "name": "窓際の5人",
+      "concept": "今日見つけた光",
+      "capacity": 5,
+      "visibility": "private",
+      "participants": 5
+    },
+    {
+      "name": "いつもの散歩道",
+      "concept": "外で見つけたもの",
+      "capacity": 12,
+      "visibility": "public",
+      "participants": 6
+    },
+    {
+      "name": "小さな机",
+      "concept": "手元の風景",
+      "capacity": 5,
+      "visibility": "public",
+      "participants": 5
+    },
+    {
+      "name": "朝の余白",
+      "concept": "",
+      "capacity": 12,
+      "visibility": "public",
+      "participants": 7
+    },
+    {
+      "name": "遠くの友だち",
+      "concept": "",
+      "capacity": 5,
+      "visibility": "private",
+      "participants": 4
+    },
+    {
+      "name": "週末のよりみち",
+      "concept": "",
+      "capacity": 12,
+      "visibility": "public",
+      "participants": 6
+    },
+    {
+      "name": "帰りみち",
+      "concept": "今日見つけた色",
+      "capacity": 5,
+      "visibility": "public",
+      "participants": 5
+    },
+    {
+      "name": "緑のある日",
+      "concept": "外で見つけたもの",
+      "capacity": 12,
+      "visibility": "public",
+      "participants": 6
+    },
+    {
+      "name": "いつもの仲間",
+      "concept": "",
+      "capacity": 12,
+      "visibility": "private",
+      "participants": 7
+    }
+  ],
+  "credits": "photos/credits.json"
+}

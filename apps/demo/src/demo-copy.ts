@@ -213,4 +213,10 @@ export const demoCopy={
  'demo.settings.notifications':'このデモでは通知を配信しません。',
  'demo.settings.notification_privacy':'他の人が記録したかどうかは、通知に含まれません。',
  'demo.settings.privacy':'共有写真と作品はXserver、参加情報とアカウントはCloudflareに保存します。パスワードはハッシュで保存します。サンプル履歴と演出の設定は、このブラウザに保存します。',
+ "demo.week.entry":"1週間の利用例を見る",
+ "demo.week.label":"利用例 · 10アトリエ / 40人 / 7日間",
+ "demo.week.context":"架空の記録・閲覧用",
+ "demo.week.exit":"通常のデモへ",
+ "demo.week.read_only":"この利用例は閲覧専用です。操作を試す場合は通常のデモへ戻ってください。",
+ "demo.week.person":"見る人",
 };

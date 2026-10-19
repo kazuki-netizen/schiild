@@ -396,4 +396,10 @@ export const spanish={
  'demo.settings.notifications':'Esta demo no envía notificaciones.',
  'demo.settings.notification_privacy':'Las notificaciones nunca indican si otras personas han registrado una foto.',
  'demo.settings.privacy':'Las fotos compartidas y las obras se guardan en Xserver. Las participaciones y cuentas, en Cloudflare. Las contraseñas se guardan mediante hash. El historial de ejemplo y los ajustes de animación quedan en este navegador.',
+ "demo.week.entry":"Explorar una semana de uso",
+ "demo.week.label":"Ejemplo · 10 ateliers / 40 personas / 7 días",
+ "demo.week.context":"Registros ficticios · solo lectura",
+ "demo.week.exit":"Volver a la demo",
+ "demo.week.read_only":"Este ejemplo es de solo lectura. Vuelve a la demo para registrar y hacer cambios.",
+ "demo.week.person":"Punto de vista",
 } satisfies Record<CopyKey,string>;

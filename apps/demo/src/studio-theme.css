@@ -17,6 +17,13 @@
 }
 body, .demo-shell, .app { background: #fff; }
 body { -webkit-font-smoothing: antialiased; }
+.week-notice { max-width: 720px; margin: auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid var(--line); font-size: 11px; color: var(--ink2); }
+.week-notice small { display: block; margin-top: 6px; font-size: 10px; }
+.week-notice a, .week-entry { color: var(--orange); text-underline-offset: 4px; }
+.week-notice a { flex-shrink: 0; }
+.week-notice label { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.week-notice select { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; min-height: 36px; padding: 6px 24px 6px 10px; }
+.week-entry { display: inline-block; margin-top: 32px; font-size: 12px; padding: 12px 0; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea { outline-color: var(--orange); }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,

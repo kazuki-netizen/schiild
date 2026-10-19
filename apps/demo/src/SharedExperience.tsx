@@ -1,3 +1,4 @@
+import {browserStorage,isWeekPreview} from './preview-mode.ts';
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {Camera,Reveal} from '../App';
 import type {Navigation} from './DemoNav';
@@ -47,7 +48,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
  }
  async function open(day:string){
   if(lock.current)return;lock.current=true;setBusy(true);setError('');
-  try{const next=await fetchWork(entry.code,day);next.opened=localStorage.getItem(`schiild.shared.opened.${entry.code}.${day}`)==='true';setWork(next);go('work');}
+  try{const next=await fetchWork(entry.code,day);next.opened=browserStorage().getItem(`schiild.shared.opened.${entry.code}.${day}`)==='true';setWork(next);go('work');}
   catch(cause){setError(cause instanceof Error?cause.message:t('demo.shared.unavailable'));}
   finally{lock.current=false;setBusy(false);}
  }
@@ -87,7 +88,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
     <AreaDisplay area={state.area}/>
     <div className="shared-actions">
      {state.status==='ready'?<ActionIconButton kind="open" label={t('reveal.open')} disabled={busy} onClick={()=>void open(state.day)}/>:<>
-      {state.hasPhoto?<div className="posted"><p>{t('demo.shared.saved')}</p></div>:state.status==='open'&&<button className="button" onClick={()=>go('camera')}>{t('onboarding.1.title')}</button>}
+      {state.hasPhoto?<div className="posted"><p>{t('demo.shared.saved')}</p></div>:state.status==='open'&&<button className="button" disabled={isWeekPreview} onClick={()=>go('camera')}>{t('onboarding.1.title')}</button>}
       {state.canGenerate&&state.postedSlots.length>0?<><button className="button secondary" disabled={busy} onClick={()=>setConfirm(true)}>{t(state.status==='generating'?'common.retry':'demo.shared.generate')}</button></>:state.hasPhoto&&<p className="shared-status">{t('demo.shared.wait_short')}</p>}
      </>}
      {state.status==='open'&&<div className="draft-actions"><p className="wall-label">{t('demo.draft.label')}</p><button className="button secondary" disabled={busy||state.postedSlots.length===0} onClick={()=>void preview()}>{t(busy?'demo.draft.loading':'demo.draft.generate')}</button></div>}
@@ -98,7 +99,7 @@ export default function SharedExperience({entry,onManage,onShare,onAccount,onPos
    </section>}
    {screen==='camera'&&<Camera shared day={cameraDay??state.day} atelier={state.name} concept={state.concept} onBack={()=>go('home')} onSubmit={post}/>}
    {screen==='draft'&&draft&&<DraftPreview draft={draft} atelier={state.name} onClose={()=>{setDraft(null);go('home');}}/>}
-   {screen==='work'&&work&&<Reveal shared key={work.day} atelier={state.name} work={work} onOpened={()=>{try{localStorage.setItem(`schiild.shared.opened.${entry.code}.${work.day}`,'true');}catch{/* Viewing remains possible when local storage is full. */}}} onNext={()=>onGlobal(work.day)}/>}
+   {screen==='work'&&work&&<Reveal shared key={work.day} atelier={state.name} work={work} onOpened={()=>{try{browserStorage().setItem(`schiild.shared.opened.${entry.code}.${work.day}`,'true');}catch{/* Viewing remains possible when local storage is full. */}}} onNext={()=>onGlobal(work.day)}/>}
    {screen==='archive'&&<ArchiveCalendar items={state.works} currentDay={state.day} atelier={state.name} busy={busy} loadImage={loadArchiveImage} onOpen={item=>void open(item.day)} onGlobal={item=>onGlobal(item.day)}/>}
   </>}
   </main>

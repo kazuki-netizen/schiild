@@ -1,3 +1,4 @@
+import {browserStorage,isWeekPreview} from './preview-mode.ts';
 import {t} from './copy';
 import type {Work} from './model';
 import type {Area} from './area';
@@ -10,24 +11,25 @@ export type SharedPreview={concept?:string;code:string;name:string;capacity:numb
 const credentialKey='schiild.shared.credential.v2';
 const sessionKey='schiild.account.session.v2';
 let deletionNotified=false;
-export function clearAccountBrowser(){let cleared=true;try{const keys=Object.keys(localStorage).filter(key=>key.startsWith('schiild.'));for(const key of keys)localStorage.removeItem(key);}catch{cleared=false;}return cleared;}
+export function clearAccountBrowser(){let cleared=true;try{const keys=Object.keys(browserStorage()).filter(key=>key.startsWith('schiild.'));for(const key of keys)browserStorage().removeItem(key);}catch{cleared=false;}return cleared;}
 export type Account={username:string;name:string;since:string;googleEmail?:string;lineLinked?:boolean;hasPassword?:boolean;canDelete?:boolean;ateliers:{code:string;name:string;capacity:number;canGenerate:boolean}[];custody:{code:string;name:string;day:string;index:number}[]};
-export function saveSession(token:string){if(!/^[a-f0-9]{64}$/.test(token))throw Error('invalid_session');localStorage.setItem(sessionKey,token);deletionNotified=false;}
-export function clearSession(){localStorage.removeItem(sessionKey);localStorage.removeItem(credentialKey);}
+export function saveSession(token:string){if(!/^[a-f0-9]{64}$/.test(token))throw Error('invalid_session');browserStorage().setItem(sessionKey,token);deletionNotified=false;}
+export function clearSession(){browserStorage().removeItem(sessionKey);browserStorage().removeItem(credentialKey);}
 export class SharedError extends Error{constructor(public code:string,message:string){super(message);}}
 export function sharedErrorMessage(key:string){
  const messages={global_already_recorded:'demo.global.already_recorded',concept_restricted:'demo.posts.concept_restricted',already_recorded:'demo.posts.already',source_forbidden:'demo.posts.source_forbidden',window_closed:'error.window_closed',forbidden:'demo.posts.target_forbidden',not_found:'join.error.not_found',full:'join.error.full',image_invalid:'demo.shared.image_invalid',retry:'demo.posts.retry'} as const;
  return t(key in messages?messages[key as keyof typeof messages]:'demo.shared.unavailable');
 }
 export function credential(){
- const session=localStorage.getItem(sessionKey);if(session&&/^[a-f0-9]{64}$/.test(session))return session;
- let value=localStorage.getItem(credentialKey);
+ const session=browserStorage().getItem(sessionKey);if(session&&/^[a-f0-9]{64}$/.test(session))return session;
+ let value=browserStorage().getItem(credentialKey);
  if(!value||!/^[a-f0-9]{64}$/.test(value)){
   value=Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('');
-  localStorage.setItem(credentialKey,value);
+  browserStorage().setItem(credentialKey,value);
  }return value;
 }
 export async function sharedRequest<T=SharedState>(action:string,values:Record<string,unknown>={},signal?:AbortSignal):Promise<T>{
+ if(isWeekPreview){const {weekRequest}=await import('./week-preview');return weekRequest<T>(action,values,signal);}
  // Public API URL only. Secrets are never part of Expo's public environment.
  const endpoint=process.env.EXPO_PUBLIC_DEMO_API_URL||'/.netlify/functions/atelier';
  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${credential()}`},body:JSON.stringify({action,...values}),signal});
