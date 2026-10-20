@@ -200,4 +200,6 @@ p { color: var(--ink2); }
 /* The personal GLOBAL entry uses the recorded photograph, without a color chip. */
 .global-own-schiil{width:100%;display:flex;align-items:center;gap:20px;padding:20px 0;margin:12px 0;text-align:left;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:14px;line-height:1.7}
 .global-own-schiil>img{width:112px;height:112px;flex-shrink:0;object-fit:cover}.own-schiil-loading{width:112px;min-height:112px;display:grid;place-items:center;color:var(--ink3);font-size:12px}
+.own-schiil-copy{display:flex;flex-direction:column;gap:8px}.own-schiil-copy .mono{color:var(--ink3);font-size:12px}
+.pixel-inspection>div{width:100%;min-width:0}
 @media(max-width:360px){.global-own-schiil{gap:14px}.global-own-schiil>img,.own-schiil-loading{width:88px;height:88px;min-height:88px}}

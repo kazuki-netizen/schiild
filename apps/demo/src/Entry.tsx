@@ -9,6 +9,6 @@ export default function Entry(){
  activateLanguage(readLanguage());
  const [assemble]=useState(()=>new URLSearchParams(location.search).get('opening')==='assemble');
  const [visible,setVisible]=useState(true),[reduced]=useState(()=>preferences().reduceMotion||matchMedia('(prefers-reduced-motion: reduce)').matches);
- useEffect(()=>{const timer=setTimeout(()=>setVisible(false),reduced?600:assemble?3000:4000);return()=>clearTimeout(timer);},[assemble,reduced]);
+ useEffect(()=>{const timer=setTimeout(()=>setVisible(false),reduced?600:assemble?3000:2000);return()=>clearTimeout(timer);},[assemble,reduced]);
  return <><div inert={visible||undefined} aria-hidden={visible||undefined}><AtelierApp/></div>{visible&&<section className={'brand-opening'+(assemble?' assemble':'')+(reduced?' reduced':'')} aria-label="Schiild" data-testid="brand-opening"><div className="opening-lockup"><span className="opening-symbol" aria-hidden="true"><i/><i/><i/></span><h1>Schiild</h1></div><button className="opening-close" onClick={()=>setVisible(false)}>{t('common.close')}</button></section>}</>;
 }

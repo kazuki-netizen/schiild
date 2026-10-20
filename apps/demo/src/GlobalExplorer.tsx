@@ -63,10 +63,11 @@ export default function GlobalExplorer({image,detailImage,positions,mine,sample=
   {loadingPhotos&&<p className="explorer-photo-status" role="status">{t('common.loading')}</p>}{photoError&&<button className="text-button" onClick={()=>setRetry(value=>value+1)}>{t('common.retry')}</button>}
   {mine&&mineNumber!==null&&loadSchiils&&<button type="button" className="global-own-schiil" data-testid="global-own-schiil" data-x={mine.x} data-y={mine.y} onClick={focusMine}>
    {photoImages[mineNumber]?<img src={photoImages[mineNumber]!} alt=""/>:<span className="own-schiil-loading">{t(photoImages[mineNumber]===null?'demo.global.photo_unavailable':'common.loading')}</span>}
-   <span>{t('schiild.regions.mine')}</span>
+   <span className="own-schiil-copy" data-testid={self?'global-pixel-inspection':undefined} data-x={mine.x} data-y={mine.y}><span>{t('schiild.regions.mine')}</span><span className="mono" data-testid="global-own-coordinates">{t('global.coords',mine)}</span></span>
   </button>}
-  {selected&&<div className="pixel-inspection" data-testid="global-pixel-inspection" data-x={selected.x} data-y={selected.y}><div>{!self&&<p>{t(sample?'demo.global.sample_pixel':posted?'demo.global.selected_schiil':'demo.global.empty_pixel')}</p>}<p className="mono">{t('global.coords',selected)}</p></div></div>}
-  {selectedNumber!==null&&loadSchiils&&posted&&!self&&<div className="global-selected-schiil" data-testid="global-selected-schiil">{photoImages[selectedNumber]?<img src={photoImages[selectedNumber]!} alt={t('demo.global.selected_schiil')}/>:photoImages[selectedNumber]===null?<p>{t('demo.global.photo_unavailable')}</p>:null}</div>}
+  {selected&&!self&&<div className="pixel-inspection" data-testid="global-pixel-inspection" data-x={selected.x} data-y={selected.y}><div><p>{t(sample?'demo.global.sample_pixel':posted?'demo.global.selected_schiil':'demo.global.empty_pixel')}</p><p className="mono">{t('global.coords',selected)}</p>
+   {selectedNumber!==null&&loadSchiils&&posted&&<div className="global-selected-schiil" data-testid="global-selected-schiil">{photoImages[selectedNumber]?<img src={photoImages[selectedNumber]!} alt={t('demo.global.selected_schiil')}/>:photoImages[selectedNumber]===null?<p>{t('demo.global.photo_unavailable')}</p>:null}</div>}
+  </div></div>}
 
   <HelpDetails label="demo.help.gestures"><p id="explorer-help">{t('demo.global.gestures')}</p><p>{t('demo.global.pixel_note')}</p></HelpDetails>
  </div>;
