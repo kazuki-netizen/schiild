@@ -10,6 +10,7 @@ export const demoCopy={
  'demo.line.delete':'削除の確定後、LINEで本人確認します。',
  "demo.discover.title":"見つける",
  "demo.discover.public":"公開アトリエ",
+ "demo.discover.join_public":"公開アトリエに参加",
  "demo.discover.search":"アトリエを検索",
  "demo.discover.placeholder":"名前・コンセプト・コード",
  "demo.discover.empty":"公開アトリエはまだありません。",
@@ -220,8 +221,8 @@ export const demoCopy={
  'demo.calendar.next_atelier':'次のアトリエ',
  'demo.global.atelier_work':'このシールのアトリエ作品',
  'demo.global.artwork_unavailable':'閲覧できるアトリエ作品はまだありません。',
- "demo.week.context":"架空の記録・閲覧用",
+ "demo.week.context":"架空の記録・参加は一時的",
  "demo.week.exit":"通常のデモへ",
- "demo.week.read_only":"この利用例は閲覧専用です。操作を試す場合は通常のデモへ戻ってください。",
+ "demo.week.read_only":"この利用例の参加は一時的です。撮影などは通常のデモで試せます。",
  "demo.week.person":"見る人",
 };

@@ -9,6 +9,7 @@ export const spanish={
  "demo.line.unavailable":"El acceso con LINE no está disponible. Inténtalo más tarde.",
  "demo.line.storage":"Permite el almacenamiento de este sitio para iniciar sesión con LINE.",
  "demo.line.delete":"Tras confirmar la eliminación, verifica tu identidad con LINE.",
+ "demo.discover.join_public":"Unirse a un atelier público",
  "demo.discover.title":"Descubrir",
  "demo.discover.public":"Ateliers públicos",
  "demo.discover.search":"Buscar ateliers",
@@ -403,8 +404,8 @@ export const spanish={
  'demo.calendar.next_atelier':'Atelier siguiente',
  'demo.global.atelier_work':'Obra del atelier de este Schiil',
  'demo.global.artwork_unavailable':'Todavía no hay ninguna obra de atelier disponible para ver.',
- "demo.week.context":"Registros ficticios · solo lectura",
+ "demo.week.context":"Registros ficticios · participación temporal",
  "demo.week.exit":"Volver a la demo",
- "demo.week.read_only":"Este ejemplo es de solo lectura. Vuelve a la demo para registrar y hacer cambios.",
+ "demo.week.read_only":"La participación en este ejemplo es temporal. Vuelve a la demo para probar la cámara y otros cambios.",
  "demo.week.person":"Punto de vista",
 } satisfies Record<CopyKey,string>;

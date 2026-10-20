@@ -1,4 +1,4 @@
-// DEMO ONLY. Read-only replay of a fictional week, generated with the demo engine.
+// DEMO ONLY. Fictional week with session-only atelier participation, generated with the demo engine.
 // No application API, authentication service or shared storage is contacted here.
 import {t} from './copy';
 import type {Account,SharedState,DirectoryAtelier} from './shared-api';
@@ -22,6 +22,24 @@ export async function weekRequest<T>(action:string,values:Record<string,unknown>
  if(action==='account.me')result={account:data.profile};
  else if(action==='account.line.config'||action==='account.google.start')result={enabled:false};
  else if(action==='area')result=data.area;
+ else if(action==='join'){
+  const room=snapshot.allRooms.find(room=>room.code===code);if(!room)throw Error(t('join.error.not_found'));
+  if(!data.states[code]){
+   if(room.members>=room.capacity)throw Error(t('join.error.full'));
+   // The fixture gives each atelier's first person at position atelierIndex * 5.
+   // Clone the public record; never adopt that person's photos, custody or area.
+   const template=await load<Person>(snapshot.people[snapshot.allRooms.indexOf(room)*5].file),source=template.states[code],slot=room.members;
+   if(!source)throw Error(t('demo.shared.unavailable'));
+   const area={pixels:0,total:source.area.total,percent:0};
+   data.states[code]={...structuredClone(source),members:room.members+1,slot,hasPhoto:false,canGenerate:false,area,works:source.works.map(work=>({...work,custody:'other',area:{pixels:0,total:work.area.total,percent:0}}))};
+   for(const [key,work] of Object.entries(template.works))if(key.startsWith(code+'/'))data.works[key]={...structuredClone(work),custody:'other',opened:false,area:{pixels:0,total:work.area?.total??(work.outputSize??256)**2,percent:0}};
+   if(template.drafts[code])data.drafts[code]={...structuredClone(template.drafts[code]),area};
+   data.profile.ateliers.push({code:room.code,name:room.name,capacity:room.capacity,canGenerate:false});
+   data.area.ateliers.push({code:room.code,name:room.name,pixels:0,days:0,joined:true});
+   for(const entry of [...snapshot.allRooms,...snapshot.rooms])if(entry.code===code)entry.members=data.states[code].members;
+  }
+  result=data.states[code];
+ }
  else if(action==='state')result=data.states[code];
  else if(action==='work')result=data.works[code+'/'+day];
  else if(action==='draft')result=data.drafts[code];

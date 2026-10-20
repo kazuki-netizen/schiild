@@ -10,6 +10,7 @@ export const translations={
  "demo.line.unavailable":["LINE login is unavailable. Please try again later.", "LINE 로그인에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.", "La connexion LINE est indisponible. Réessayez plus tard.", "Inloggen met LINE is niet beschikbaar. Probeer het later opnieuw."],
  "demo.line.storage":["Allow browser storage for this site to log in with LINE.", "LINE 로그인을 위해 이 사이트의 브라우저 저장을 허용해 주세요.", "Autorisez le stockage de ce site pour vous connecter avec LINE.", "Sta browseropslag voor deze site toe om met LINE in te loggen."],
  "demo.line.delete":["After confirming deletion, verify your identity with LINE.", "삭제를 확정하면 LINE에서 본인 확인을 진행합니다.", "Après confirmation de la suppression, vérifiez votre identité avec LINE.", "Bevestig de verwijdering en verifieer daarna je identiteit met LINE."],
+ "demo.discover.join_public":["Join a public atelier","공개 아틀리에 참여","Rejoindre un atelier public","Deelnemen aan een openbaar atelier"],
  "demo.discover.title":["Discover", "찾기", "Découvrir", "Ontdekken"],
  "demo.discover.public":["Public ateliers", "공개 아틀리에", "Ateliers publics", "Openbare ateliers"],
  "demo.discover.search":["Search ateliers", "아틀리에 검색", "Rechercher un atelier", "Ateliers zoeken"],
@@ -404,8 +405,8 @@ export const translations={
  'demo.calendar.next_atelier':['Next atelier','다음 아틀리에','Atelier suivant','Volgend atelier'],
  'demo.global.atelier_work':['Atelier work for this Schiil','이 실의 아틀리에 작품','Œuvre de l’atelier de ce Schiil','Atelierwerk bij deze Schiil'],
  'demo.global.artwork_unavailable':['No atelier work is available to view yet.','아직 열람할 수 있는 아틀리에 작품이 없습니다.','Aucune œuvre d’atelier n’est encore consultable.','Er is nog geen atelierwerk beschikbaar om te bekijken.'],
- "demo.week.context":["Fictional records · view only","가상의 기록 · 열람 전용","Archives fictives · consultation seule","Fictieve archieven · alleen bekijken"],
+ "demo.week.context":["Fictional records · temporary participation","가상의 기록 · 일시적 참여","Archives fictives · participation temporaire","Fictieve archieven · tijdelijk deelnemen"],
  "demo.week.exit":["Return to demo","일반 데모로","Revenir à la démo","Terug naar de demo"],
- "demo.week.read_only":["This example is view only. Return to the demo to try recording and other changes.","이 이용 예시는 열람 전용입니다. 기록 등의 조작은 일반 데모에서 시도해 주세요.","Cet exemple est en consultation seule. Revenez à la démo pour enregistrer et modifier.","Dit voorbeeld is alleen om te bekijken. Ga terug naar de demo om iets vast te leggen of te wijzigen."],
+ "demo.week.read_only":["Participation in this example is temporary. Return to the demo to try the camera and other changes.","이 예시의 참여는 일시적입니다. 촬영 등은 일반 데모에서 시도할 수 있습니다.","La participation dans cet exemple est temporaire. Revenez à la démo pour essayer la caméra et les autres modifications.","Deelname aan dit voorbeeld is tijdelijk. Ga terug naar de demo om de camera en andere wijzigingen te proberen."],
  "demo.week.person":["Viewpoint","보는 사람","Point de vue","Perspectief"],
 } satisfies Record<CopyKey,readonly [string,string,string,string]>;
