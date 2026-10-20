@@ -1,6 +1,7 @@
 // SQLite-backed Durable Object KV adapter. CAS runs atomically, without I/O.
 import {removalChanges,metadataWriteAllowed} from '../server/account-removal.mjs';
-export function metadataStore(storage,images){
+import {roomNotificationEvents} from '../server/notification-events.mjs';
+export function metadataStore(storage,images,{notificationEvents=false,now=()=>Date.now()}={}){
  return {
   async listJSON(prefix){return storage.sql.exec('SELECT key,data,etag FROM rooms WHERE key LIKE ?',prefix+'%').toArray().map(row=>({...row,data:JSON.parse(row.data)}));},
   async registerAccount(account){return storage.transactionSync(()=>{
@@ -47,8 +48,9 @@ export function metadataStore(storage,images){
   });},
   async get(key){return images.get(key);},
   async set(key,data){return images.set(key,data);},
+  async deleteJSON(key){if(!/^push-(preferences|subscriptions|events|deliveries)\/[a-f0-9]{64}$/.test(key))throw Error('metadata_key');storage.sql.exec('DELETE FROM rooms WHERE key = ?',key);},
   async setJSON(key,data,{onlyIfNew,onlyIfMatch}={}){
-   if(!/^(rooms\/[A-Z0-9]{8}|globals\/\d{4}-\d{2}-\d{2}|accounts\/[a-z0-9_-]{3,24}|members\/[a-f0-9]{64}|sessions\/[a-f0-9]{64}|auth-attempts\/[a-f0-9]{64}|(google|line)-(challenges|identities)\/[a-f0-9]{64})$/.test(key))throw Error('metadata_key');
+   if(!/^(rooms\/[A-Z0-9]{8}|globals\/\d{4}-\d{2}-\d{2}|accounts\/[a-z0-9_-]{3,24}|members\/[a-f0-9]{64}|sessions\/[a-f0-9]{64}|auth-attempts\/[a-f0-9]{64}|(google|line)-(challenges|identities)\/[a-f0-9]{64}|push-(preferences|subscriptions|events|deliveries)\/[a-f0-9]{64})$/.test(key))throw Error('metadata_key');
    return storage.transactionSync(()=>{
     const read=key=>{const value=storage.sql.exec('SELECT data FROM rooms WHERE key = ?',key).toArray()[0];return value?JSON.parse(value.data):undefined;};
     if(!metadataWriteAllowed(key,data,read))return {modified:false};
@@ -56,6 +58,7 @@ export function metadataStore(storage,images){
     if((onlyIfNew&&row)||(onlyIfMatch&&row?.etag!==onlyIfMatch))return {modified:false};
     const etag=String(Number(row?.etag??0)+1);
     storage.sql.exec('INSERT INTO rooms (key,data,etag) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET data=excluded.data,etag=excluded.etag',key,JSON.stringify(data),etag);
+    if(notificationEvents&&key.startsWith('rooms/'))for(const event of roomNotificationEvents(row?JSON.parse(row.data):null,data,now()))storage.sql.exec('INSERT OR IGNORE INTO rooms (key,data,etag) VALUES (?,?,?)',event.key,JSON.stringify(event.data),'1');
     return {modified:true,etag};
    });
   },

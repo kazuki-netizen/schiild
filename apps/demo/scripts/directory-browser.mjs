@@ -1,3 +1,4 @@
+import {italian} from '../src/italian.ts';
 // Local-only publication/participation fixtures. Never writes to the public service.
 import {fixtureChromium as chromium} from './browser-fixture.mjs';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ import {translations} from '../src/translations.ts';
 import {spanish} from '../src/spanish.ts';
 const origin='http://localhost:8085',suffix=randomBytes(5).toString('hex');
 const japanese={...JSON.parse(await readFile(new URL('../src/copy.json',import.meta.url),'utf8')),...demoCopy};
-const say=(language,key)=>language==='ja'?japanese[key]:language==='es'?spanish[key]:translations[key][{en:0,ko:1,fr:2,nl:3}[language]];
+const say=(language,key)=>language==='ja'?japanese[key]:language==='es'?spanish[key]:language==='it'?italian[key]:translations[key][{en:0,ko:1,fr:2,nl:3}[language]];
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{})});
 const [first,second]=await Promise.all([0,1].map(()=>browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}))),[page,guest]=await Promise.all([first,second].map(context=>context.newPage())),errors=[];
 for(const current of [page,guest])current.on('pageerror',error=>errors.push(error.message));
@@ -34,10 +35,10 @@ try{
  for(let n=0;n<26;n++)assert.equal((await api(page,'create',{name:`Page ${suffix} ${n}`,capacity:2,visibility:'public'})).status,200);
  await discover(guest,'Page '+suffix);await guest.waitForFunction(()=>document.querySelectorAll('.discover-card').length===24);await guest.getByRole('button',{name:'さらに表示',exact:true}).click();await guest.waitForFunction(()=>document.querySelectorAll('.discover-card').length===26);assert.equal(new Set(await guest.locator('.discover-card').evaluateAll(nodes=>nodes.map(node=>node.dataset.code))).size,26);assert.equal(await guest.getByRole('button',{name:'さらに表示',exact:true}).count(),0);
  const fail=async route=>{if(route.request().postDataJSON()?.action==='directory')await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'unavailable'})});else await route.continue();};await guest.route('**/.netlify/functions/atelier',fail);await guest.getByLabel('アトリエを検索',{exact:true}).fill('Window '+suffix);await guest.getByRole('alert').waitFor();await guest.unroute('**/.netlify/functions/atelier',fail);await guest.getByRole('button',{name:japanese['common.retry'],exact:true}).click();await card(guest,listed).waitFor();
- for(const language of ['ja','en','ko','fr','nl','es']){
+ for(const language of ['ja','en','ko','fr','nl','es','it']){
   await page.getByRole('button',{name:'Schiild',exact:true}).click();await page.getByTestId('auth-page').waitFor();await page.locator('.language-select select').selectOption(language);await nav(page).locator('button').nth(3).click();await page.getByRole('heading',{name:say(language,'demo.discover.title'),exact:true}).waitFor();await page.getByLabel(say(language,'demo.discover.search'),{exact:true}).fill('Window '+suffix);await card(page,listed).waitFor();
   for(const width of [320,390,768]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert(await nav(page).locator('button').last().isVisible());}await page.setViewportSize({width:390,height:844});if(language==='ja'||language==='en')await page.screenshot({path:`test-results/discover-${language}.png`,fullPage:true});
   await nav(page).locator('button').nth(0).click();await page.getByTestId('today-board').waitFor();await page.getByRole('button',{name:say(language,'home.title')+' ＋',exact:true}).click();await page.locator(`.atelier-row[data-code="${listed}"]`).getByRole('button',{name:say(language,'created.share'),exact:true}).click();await page.locator('.visibility-field').getByRole('button',{name:say(language,'demo.visibility.public'),exact:true}).waitFor();assert.equal(await page.locator('.visibility-field').getByRole('button',{name:say(language,'demo.visibility.public'),exact:true}).getAttribute('aria-pressed'),'true');
  }
- assert.deepEqual(errors,[]);console.log('Four-tab discovery, private defaults, creator publication, hidden search data, code-only joining, existing membership, pagination/retry and six-language mobile layouts: passed');
+ assert.deepEqual(errors,[]);console.log('Four-tab discovery, private defaults, creator publication, hidden search data, code-only joining, existing membership, pagination/retry and seven-language mobile layouts: passed');
 }catch(error){await page.screenshot({path:'test-results/directory-failure.png',fullPage:true});await guest.screenshot({path:'test-results/directory-guest-failure.png',fullPage:true});throw error;}finally{await browser.close();}

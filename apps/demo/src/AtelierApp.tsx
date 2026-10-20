@@ -1,3 +1,4 @@
+import {refreshPush,disablePush} from './push-client';
 import WeekNotice from './WeekNotice';
 import {browserStorage,isWeekPreview,demoDay} from './preview-mode.ts';
 import React,{useEffect,useRef,useState} from 'react';
@@ -53,7 +54,7 @@ export default function AtelierApp(){
  useEffect(()=>{if(!browserReady)return;setCollection(restore());function receive(){const incoming=parseInvite(location.hash);if(incoming){setInvitation(incoming);setInput(incoming.online?incoming.code:location.href);setView('join');}history.replaceState(null,'',location.pathname+location.search);}receive();window.addEventListener('hashchange',receive);return()=>window.removeEventListener('hashchange',receive);},[]);
  useEffect(()=>{if(collection)try{browserStorage().setItem(COLLECTION,JSON.stringify(collection));}catch{setMessage(t('error.server.title'));}},[collection]);
  useEffect(()=>{if(view!=='me'||!account)return;const controller=new AbortController();void sharedRequest<{account:Account|null}>('account.me',{},controller.signal).then(value=>setAccount(value.account)).catch(cause=>{if(!controller.signal.aborted)setMessage(cause instanceof Error?cause.message:t('error.server.body'));});return()=>controller.abort();},[view]);
- useEffect(()=>{if(!collection||lineCallback)return;const controller=new AbortController(),request=++accountSequence.current;void sharedRequest<{account:Account|null}>('account.me',{},controller.signal).then(value=>{if(request===accountSequence.current){setAccount(value.account);if(value.account)restoreMembership(value.account);}}).catch(cause=>{if(!controller.signal.aborted&&request===accountSequence.current){if(cause instanceof SharedError&&['session_expired','unauthorized'].includes(cause.code)){clearSession();setAccount(null);setView('auth');}setMessage(cause instanceof Error?cause.message:t('error.server.body'));}});return()=>controller.abort();},[collection?.device]);
+ useEffect(()=>{if(!collection||lineCallback)return;const controller=new AbortController(),request=++accountSequence.current;void sharedRequest<{account:Account|null}>('account.me',{},controller.signal).then(value=>{if(request===accountSequence.current){setAccount(value.account);if(value.account)restoreMembership(value.account);else if(['global','atelier'].includes(new URLSearchParams(location.search).get('push')??''))setView('auth');}}).catch(cause=>{if(!controller.signal.aborted&&request===accountSequence.current){if(cause instanceof SharedError&&['session_expired','unauthorized'].includes(cause.code)){clearSession();setAccount(null);setView('auth');}setMessage(cause instanceof Error?cause.message:t('error.server.body'));}});return()=>controller.abort();},[collection?.device]);
  useEffect(()=>{if(!collection||!lineCallback||lineFinished.current)return;lineFinished.current=true;const request=++accountSequence.current;setView('account-check');void completeLine(lineCallback).then(result=>{if(request!==accountSequence.current)return;if('deleted' in result){finishDeletion();return;}saveSession(result.token);setAccount(result.account);restoreMembership(result.account);setAccountRevision(value=>value+1);setMessage('');setView('me');}).catch(cause=>{if(request===accountSequence.current){setView('auth');setMessage(cause instanceof Error?cause.message:t('demo.line.invalid'));}});},[collection?.device]);
  useEffect(()=>{
   if(view!=='join'||!input)return;
@@ -81,6 +82,17 @@ export default function AtelierApp(){
    if(next===0)visit('home');else if(next===1)showGlobal(demoDay());else if(next===2)visit('archive');else if(next===3)go('discover');
   },
  });
+ useEffect(()=>{if(account&&!isWeekPreview)void refreshPush(language).catch(()=>{});},[account?.username,accountRevision,language]);
+ useEffect(()=>{
+  if(!account||!collection)return;
+  const url=new URL(location.href),kind=url.searchParams.get('push'),day=url.searchParams.get('day'),code=url.searchParams.get('code');
+  if(!['global','atelier'].includes(kind??'')||!/^\d{4}-\d{2}-\d{2}$/.test(day??''))return;
+  if(kind==='global')showGlobal(day!);
+  else if(account.ateliers.some(room=>room.code===code)&&collection.ateliers.some(room=>room.code===code)){
+   setCollection({...collection,selected:code!});setNavigation(previous=>({screen:'home',openDay:url.searchParams.get('ready')==='1'?day!:undefined,revision:previous.revision+1}));go('experience');
+  }else if(kind==='atelier'&&account.ateliers.some(room=>room.code===code))return;
+  for(const key of ['push','day','code','ready'])url.searchParams.delete(key);history.replaceState(null,'',url.pathname+url.search+url.hash);
+ },[account?.username,collection?.ateliers.length]);
  if(!browserReady)return <main className="app"><p className="error" role="alert">{t('demo.reset.storage')}</p></main>;
  if(!collection)return <div className="loading">{t('common.loading')}</div>;
  const active=collection.ateliers.find(a=>a.code===collection.selected);
@@ -115,7 +127,7 @@ export default function AtelierApp(){
  async function updateName(name:string){const result=await sharedRequest<{account:Account}>('account.update',{name});setAccount(result.account);}
  function changeLanguage(value:Language){try{saveLanguage(value);setLanguage(value);setMessage('');}catch{setMessage(t('error.server.title'));}}
  function updateSettings(value:Preferences){try{savePreferences(value);setSettings(value);}catch{setMessage(t('error.server.title'));}}
- async function logout(){accountSequence.current++;await sharedRequest('account.logout');clearSession();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setCollection(current=>current?{...current,ateliers:current.ateliers.filter(entry=>!entry.online),selected:current.ateliers.find(entry=>!entry.online)?.code??''}:current);setView('auth');}
+ async function logout(){accountSequence.current++;await disablePush().catch(()=>{});await sharedRequest('account.logout');clearSession();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setCollection(current=>current?{...current,ateliers:current.ateliers.filter(entry=>!entry.online),selected:current.ateliers.find(entry=>!entry.online)?.code??''}:current);setView('auth');}
  function finishDeletion(){accountSequence.current++;const cleared=clearAccountBrowser();resetBrowser();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setSettings({name:'',reduceMotion:false});setCollection(restore());setNavigation(previous=>({screen:'home',revision:previous.revision+1}));setSharing(null);setInvitation(null);setView('auth');setMessage(t(cleared?'demo.delete.done':'demo.delete.local_failed'));window.scrollTo(0,0);}
  async function deleteAccount(confirmUsername:string,password:string){if(account?.lineLinked&&!account.hasPassword){await beginLine('delete',confirmUsername);return;}accountSequence.current++;await sharedRequest<{done:boolean}>('account.delete',{confirmUsername,password});finishDeletion();}
  async function operation(task:()=>Promise<void>){if(lock.current)return;lock.current=true;setBusy(true);setMessage('');try{await task();}catch(error){setMessage(error instanceof Error?error.message:t('demo.shared.unavailable'));}finally{lock.current=false;setBusy(false);}}

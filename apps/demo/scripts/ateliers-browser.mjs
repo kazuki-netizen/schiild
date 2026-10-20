@@ -23,7 +23,7 @@ try{
  await guest.goto(url);await guest.getByRole('heading',{name:'ふたりの窓',exact:true}).waitFor();await guest.getByRole('button',{name:'参加する',exact:true}).click();
  await guest.getByText('参加 2人 ／ 定員 2人',{exact:true}).waitFor();await guest.getByRole('button',{name:'今日のシールを記録',exact:true}).waitFor();
  assert.equal(await guest.getByRole('button',{name:'シールトを生成する',exact:true}).count(),0);
- await record(page);await record(guest);await page.getByText('2 of 2 が今日を記録',{exact:true}).waitFor({timeout:15000});
+ await record(page);await record(guest);await page.getByText("2人中2人が記録済み",{exact:true}).waitFor({timeout:15000});
  assert.equal(await page.locator('.today-tile.filled').count(),2);
  await page.getByRole('button',{name:'シールトを生成する',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'シールトを生成する',exact:true}).click();await page.getByTestId('reveal').waitFor();
  await page.getByRole('button',{name:'ひらく',exact:true}).last().click();await page.getByTestId('reveal').locator('img').first().waitFor();

@@ -31,7 +31,7 @@ export default function GlobalPage({selection,revision}:{selection:GlobalSelecti
   {work?.image&&<>
    <div data-testid="global-zoom" data-zoom={zoom}><GlobalExplorer key={day} image={work.image} detailImage={work.schiilImage} positions={work.positions} mine={mine?{x,y}:undefined} sample={Boolean(selection.sample)} resolution={resolution} loadSchiils={selection.sample?undefined:loadSchiils} onFocusMine={()=>setZoom(true)} onReset={()=>setZoom(false)}/></div>
    {!mine&&<p>{t('demo.global.no_pixel')}</p>}
-   <div className="stats"><div><span>{t('global.stat.posts')}</span><b>{work.count}</b></div><div><span>{t('global.stat.ateliers')}</span><b>{work.ateliers}</b></div></div>
+   <div className="stats global-stats"><div><span>{t('global.stat.posts')}</span><b>{work.count}</b></div></div>
    <AreaDisplay global area={{pixels:mine?1:0,total,percent:(mine?1:0)/total*100}}/>
    {!work.final&&!selection.sample&&<p className="shared-note">{t('demo.global.live')}</p>}
   </>}

@@ -5,6 +5,7 @@
  "compatibility_date":"2026-10-08",
  "compatibility_flags":["nodejs_compat"],
  "workers_dev":true,
+ "triggers":{"crons":["* * * * *"]},
  "vars":{"ALLOWED_ORIGINS":"https://schiild.pickleballnavi.jp","XSERVER_STORAGE_URL":"https://schiild.pickleballnavi.jp/storage.php"},
  "durable_objects":{"bindings":[{"name":"ATELIERS","class_name":"AtelierDirectory"}]},
  "migrations":[{"tag":"v1","new_sqlite_classes":["AtelierDirectory"]}],

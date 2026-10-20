@@ -1,6 +1,7 @@
 // Test/development adapter only. The published demo uses Cloudflare durable SQLite.
 import {removalChanges,metadataWriteAllowed} from './account-removal.mjs';
-export function memoryStore(){
+import {roomNotificationEvents} from './notification-events.mjs';
+export function memoryStore({notificationEvents=false,now=()=>Date.now()}={}){
  const values=new Map();let revision=0;
  return {
   async listJSON(prefix){return [...values].filter(([key])=>key.startsWith(prefix)).map(([key,row])=>({key,...structuredClone(row)}));},
@@ -38,11 +39,14 @@ export function memoryStore(){
   },
   async get(key,{type}={}){const value=values.get(key)?.data;if(value===undefined)return null;return type==='arrayBuffer'?(value instanceof ArrayBuffer?value.slice(0):Uint8Array.from(value).buffer):structuredClone(value);},
   async setJSON(key,data,options={}){return this.set(key,structuredClone(data),options);},
+  async deleteJSON(key){if(!/^push-(preferences|subscriptions|events|deliveries)\/[a-f0-9]{64}$/.test(key))throw Error('metadata_key');values.delete(key);},
   async set(key,data,{onlyIfNew,onlyIfMatch}={}){
    if(!metadataWriteAllowed(key,data,key=>values.get(key)?.data))return {modified:false};
    const previous=values.get(key);
    if(onlyIfNew&&previous||onlyIfMatch&&previous?.etag!==onlyIfMatch)return {modified:false};
-   const etag=String(++revision);values.set(key,{data:structuredClone(data),etag,metadata:{}});return {modified:true,etag};
+   const etag=String(++revision);values.set(key,{data:structuredClone(data),etag,metadata:{}});
+   if(notificationEvents&&key.startsWith('rooms/'))for(const event of roomNotificationEvents(previous?.data,data,now()))if(!values.has(event.key))values.set(event.key,{data:structuredClone(event.data),etag:String(++revision),metadata:{}});
+   return {modified:true,etag};
   },
  };
 }

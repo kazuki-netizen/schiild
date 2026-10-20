@@ -1,3 +1,4 @@
+import {italian} from '../src/italian.ts';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -7,11 +8,11 @@ import {demoCopy} from '../src/demo-copy.ts';
 import {singularCopy} from '../src/singular-copy.ts';
 import {LANGUAGE_KEY,languages,validLanguage,readLanguage,saveLanguage,activateLanguage,currentLanguage,numberLocale,shortDate} from '../src/language.ts';
 
-test('all five translated catalogs cover every Japanese key and preserve every placeholder',async()=>{
+test('all six translated catalogs cover every Japanese key and preserve every placeholder',async()=>{
  const original={...JSON.parse(await readFile(new URL('../src/copy.json',import.meta.url),'utf8')),...demoCopy};
  const expected=Object.keys(original).sort(),parameters=value=>[...value.matchAll(/\{(\w+)\}/g)].map(match=>match[1]).sort();
- assert.deepEqual(Object.keys(translations).sort(),expected);assert.deepEqual(Object.keys(spanish).sort(),expected);
- for(const key of expected){const texts=[...translations[key],spanish[key]];assert.equal(texts.length,5);for(const text of texts){assert.equal(typeof text,'string');assert(text.trim());assert.deepEqual(parameters(text),parameters(original[key]),key);assert.equal(/[!！]/u.test(text),false,key);assert.equal(/[ぁ-んァ-ン]/u.test(text),false,key);}}
+ assert.deepEqual(Object.keys(translations).sort(),expected);assert.deepEqual(Object.keys(spanish).sort(),expected);assert.deepEqual(Object.keys(italian).sort(),expected);
+ for(const key of expected){const texts=[...translations[key],spanish[key],italian[key]];assert.equal(texts.length,6);for(const text of texts){assert.equal(typeof text,'string');assert(text.trim());assert.deepEqual(parameters(text),parameters(original[key]),key);assert.equal(/[!！]/u.test(text),false,key);assert.equal(/[ぁ-んァ-ン]/u.test(text),false,key);}}
  for(const [key,forms] of Object.entries(singularCopy))for(const text of Object.values(forms)){assert.deepEqual(parameters(text),parameters(original[key]),key);assert.equal(/[!！]/u.test(text),false,key);}
 });
 

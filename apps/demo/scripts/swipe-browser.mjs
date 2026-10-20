@@ -21,7 +21,7 @@ try{
  await mkdir('test-results',{recursive:true});await page.goto(origin);await page.getByTestId('today-board').waitFor();
  // Keep the fixture deterministic across month boundaries, including the first day of a month.
  await page.evaluate(()=>{const key='schiild.demo.ateliers.v3',collection=JSON.parse(localStorage.getItem(key)),state=collection.ateliers[0].state,first=Date.parse(state.day.slice(0,7)+'-01T00:00:00Z');state.works=state.works.map((work,n)=>({...work,day:new Date(first-n*2*86400000).toISOString().slice(0,10)}));localStorage.setItem(key,JSON.stringify(collection));});
- await page.reload();await page.getByTestId('today-board').waitFor();
+ await page.reload();await page.getByTestId('today-board').waitFor();await page.getByTestId('brand-opening').waitFor({state:'detached'});
  await swipe('.eyebrow',170);assert.equal(await active(),'アトリエ');
  await swipe('.eyebrow',-170);await page.getByTestId('global-page').waitFor();assert.equal(await active(),'GLOBAL SCHIILD');
  await swipe('.global-page h1',-170);await calendar.waitFor();assert.equal(await active(),'アーカイブ');
