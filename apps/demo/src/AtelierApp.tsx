@@ -1,6 +1,7 @@
 import AtelierNameLabel from './AtelierNameLabel';
 import {refreshPush,disablePush} from './push-client';
 import WeekNotice from './WeekNotice';
+import {localizeWeekData} from './week-localization';
 import {browserStorage,isWeekPreview,demoDay} from './preview-mode.ts';
 import React,{useEffect,useRef,useState} from 'react';
 import {Experience} from '../App';
@@ -126,7 +127,7 @@ export default function AtelierApp(){
   accountSequence.current++;const result=await sharedRequest<{token:string;account:Account}>('account.google',{idToken});saveSession(result.token);setAccount(result.account);restoreMembership(result.account);setAccountRevision(value=>value+1);setMessage('');setView('me');
  }
  async function updateName(name:string){const result=await sharedRequest<{account:Account}>('account.update',{name});setAccount(result.account);}
- function changeLanguage(value:Language){try{saveLanguage(value);setLanguage(value);setMessage('');}catch{setMessage(t('error.server.title'));}}
+ function changeLanguage(value:Language){try{saveLanguage(value);if(isWeekPreview){setAccount(current=>current?localizeWeekData(current,value):current);setCollection(current=>current?localizeWeekData(current,value):current);setSharing(current=>current?localizeWeekData(current,value):current);setInvitation(current=>current?localizeWeekData(current,value):current);}setLanguage(value);setMessage('');}catch{setMessage(t('error.server.title'));}}
  function updateSettings(value:Preferences){try{savePreferences(value);setSettings(value);}catch{setMessage(t('error.server.title'));}}
  async function logout(){accountSequence.current++;await disablePush().catch(()=>{});await sharedRequest('account.logout');clearSession();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setCollection(current=>current?{...current,ateliers:current.ateliers.filter(entry=>!entry.online),selected:current.ateliers.find(entry=>!entry.online)?.code??''}:current);setView('auth');}
  function finishDeletion(){accountSequence.current++;const cleared=clearAccountBrowser();resetBrowser();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setSettings({name:'',reduceMotion:false});setCollection(restore());setNavigation(previous=>({screen:'home',revision:previous.revision+1}));setSharing(null);setInvitation(null);setView('auth');setMessage(t(cleared?'demo.delete.done':'demo.delete.local_failed'));window.scrollTo(0,0);}
@@ -163,7 +164,7 @@ export default function AtelierApp(){
  async function share(copy:boolean){if(!sharing)return;const url=inviteUrl(sharing);try{if(!copy&&navigator.share)await navigator.share({title:sharing.name,url});else{await navigator.clipboard.writeText(copy?sharing.code:url);setMessage(t('common.done'));}}catch(error){if(!(error instanceof DOMException&&error.name==='AbortError'))setMessage(t('error.server.title'));}}
  const preview=partition(capacity,random(414));
  const confirm=collection.ateliers.find(a=>a.code===deleting&&a.creator===collection.device&&!a.online);
- return <div className={settings.reduceMotion?'demo-shell motion-reduced':'demo-shell'} data-week-preview={isWeekPreview||undefined} data-language={language} data-swipe-scope="tabs" {...tabSwipe}>
+ return <div key={isWeekPreview?language:undefined} className={settings.reduceMotion?'demo-shell motion-reduced':'demo-shell'} data-week-preview={isWeekPreview||undefined} data-language={language} data-swipe-scope="tabs" {...tabSwipe}>
  {isWeekPreview&&<WeekNotice/>}
  {view==='experience'&&active?(active.online?<SharedExperience key={active.code+accountRevision} entry={active} navigation={navigation} onScreenChange={setExperienceScreen} onManage={()=>go('list')} onAccount={()=>void openAccount()} onPosts={showPosts} onGlobal={day=>showGlobal(day)} onOpenAtelier={(code,day)=>{setCollection({...collection,selected:code});setNavigation(previous=>({screen:'home',openDay:day,revision:previous.revision+1}));go('experience');}} onShare={()=>{setSharing(active);go('share');}}/>:<Experience key={active.code} entry={active} navigation={navigation} onScreenChange={setExperienceScreen} onChange={change} onManage={()=>go('list')} onAccount={()=>void openAccount()} onPosts={showPosts} onGlobal={(day,sample)=>showGlobal(day,sample)}/>):<div className="app atelier-app">
   <header className="header"><button className="brand" aria-label="Schiild" onClick={()=>void openAccount()}><span className="brand-symbol"><i/><i/><i/></span>Schiild</button><button className="text-button" disabled={busy} onClick={()=>visit('home')}>{t('common.back')}</button></header>

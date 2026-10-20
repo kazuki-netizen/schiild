@@ -1,6 +1,8 @@
 // DEMO ONLY. Fictional week with session-only atelier participation, generated with the demo engine.
 // No application API, authentication service or shared storage is contacted here.
 import {t} from './copy';
+import {currentLanguage} from './language';
+import {localizeWeekData,weekPersonName} from './week-localization';
 import type {Account,SharedState,DirectoryAtelier} from './shared-api';
 import type {Work} from './model';
 import type {Draft} from './draft';
@@ -49,7 +51,7 @@ export async function weekRequest<T>(action:string,values:Record<string,unknown>
  else if(action==='preview'){const room=snapshot.allRooms.find(room=>room.code===code);if(room)result={...room,online:true};}
  else if(action==='directory'){
   const query=String(values.query??'').normalize('NFKC').trim().toLowerCase();
-  const matches=snapshot.rooms.filter(room=>room.code>String(values.cursor??'')&&[room.name,room.concept,room.code].some(value=>value.normalize('NFKC').toLowerCase().includes(query))).sort((a,b)=>a.code.localeCompare(b.code)),page=matches.slice(0,24);
+  const matches=snapshot.rooms.map(room=>localizeWeekData(room,currentLanguage())).filter(room=>room.code>String(values.cursor??'')&&[room.name,room.concept,room.code].some(value=>value.normalize('NFKC').toLowerCase().includes(query))).sort((a,b)=>a.code.localeCompare(b.code)),page=matches.slice(0,24);
   result={ateliers:page,nextCursor:matches.length>24?page.at(-1)!.code:null};
  }else if(action==='posts')result={day:snapshot.lastDay,sources:Object.values(data.states).filter(room=>room.hasPhoto).map(room=>({code:room.code,name:room.name,day:snapshot.lastDay})),targets:Object.values(data.states).map(room=>({code:room.code,name:room.name,concept:room.concept,posted:room.hasPhoto,status:room.status})),freeConceptOnly:true,globalRecorded:true};
  else if(action==='post.photo'){const photo=data.photos[String(values.sourceCode??'')];if(photo)result={day:snapshot.lastDay,photo};}
@@ -57,6 +59,6 @@ export async function weekRequest<T>(action:string,values:Record<string,unknown>
  if(result===undefined)throw Error(t('demo.shared.unavailable'));
  // Xserver's automatic JPEG conversion changes pixel art. A query keeps the
  // original PNG response; no-transform also documents this requirement upstream.
- return JSON.parse(JSON.stringify(result,(_key,value)=>typeof value==='string'&&/^\/week\/art\/[a-f0-9]{24}\.png$/.test(value)?value+'?pixels=1':value)) as T;
+ return JSON.parse(JSON.stringify(localizeWeekData(result,currentLanguage()),(_key,value)=>typeof value==='string'&&/^\/week\/art\/[a-f0-9]{24}\.png$/.test(value)?value+'?pixels=1':value)) as T;
 }
-export async function weekPeople(){return (await world()).people.map(person=>({username:person.username,name:person.name}));}
+export async function weekPeople(){return (await world()).people.map(person=>({username:person.username,name:weekPersonName(person.username,currentLanguage())??person.name}));}
