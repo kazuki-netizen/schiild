@@ -7,6 +7,9 @@ Options -Indexes
  Header always set Referrer-Policy "strict-origin-when-cross-origin"
  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
  Header always set Permissions-Policy "camera=(self)"
+ <FilesMatch "^[a-f0-9]{24}\.png$">
+  Header always set Cache-Control "public, max-age=31536000, immutable, no-transform"
+ </FilesMatch>
  <FilesMatch "^(index\.html|deployment\.json)$">
   Header always set Cache-Control "no-cache, must-revalidate"
  </FilesMatch>

@@ -55,6 +55,8 @@ export async function weekRequest<T>(action:string,values:Record<string,unknown>
  else if(action==='post.photo'){const photo=data.photos[String(values.sourceCode??'')];if(photo)result={day:snapshot.lastDay,photo};}
  else throw Error(t('demo.week.read_only'));
  if(result===undefined)throw Error(t('demo.shared.unavailable'));
- return structuredClone(result) as T;
+ // Xserver's automatic JPEG conversion changes pixel art. A query keeps the
+ // original PNG response; no-transform also documents this requirement upstream.
+ return JSON.parse(JSON.stringify(result,(_key,value)=>typeof value==='string'&&/^\/week\/art\/[a-f0-9]{24}\.png$/.test(value)?value+'?pixels=1':value)) as T;
 }
 export async function weekPeople(){return (await world()).people.map(person=>({username:person.username,name:person.name}));}
