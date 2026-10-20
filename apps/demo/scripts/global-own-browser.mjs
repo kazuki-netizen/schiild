@@ -1,0 +1,18 @@
+// Real browser gestures; the published fictional week never writes to the API.
+import {chromium} from '@playwright/test';
+import {pinchToOverview} from './browser-gestures.mjs';
+import assert from 'node:assert/strict';
+const origin=process.env.DEMO_URL||'http://localhost:8085',browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{})});
+try{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'no-preference'}),page=await context.newPage(),posts=[],errors=[];
+ page.on('pageerror',cause=>errors.push(cause.message));await page.route('**/*',async route=>{if(route.request().method()==='POST'){posts.push(route.request().url());await route.abort();}else await route.continue();});
+ await page.goto(origin+'/week/');await page.locator('.nav').getByRole('button',{name:'GLOBAL SCHIILD',exact:true}).click();const stage=page.getByTestId('global-explorer'),own=page.getByTestId('global-own-schiil');await own.locator('img').waitFor();
+ const day=await page.getByTestId('global-page').getAttribute('data-day'),global=await(await page.request.get(origin+'/week/globals/'+day+'.json')).json(),profile=await(await page.request.get(origin+'/week/people/example_0001.json')).json(),pixel=profile.globals[day],position=pixel.y*global.outputSize+pixel.x;
+ assert.equal(await own.locator('img').getAttribute('src'),global.schiils.find(item=>item.position===position).image);assert.equal(await page.locator('.global-related-work,.pixel-link,.pixel-swatch').count(),0);assert(!(await page.getByTestId('global-page').innerText()).includes('番目のピクセル'));assert(!/色 #[A-F0-9]{6}/.test(await page.getByTestId('global-page').innerText()));
+ await own.click();assert.equal(await stage.getAttribute('data-animating'),'true');assert.equal(Number(await stage.getAttribute('data-scale')),1);await page.waitForFunction(()=>Number(document.querySelector('[data-testid=global-explorer]').dataset.scale)>1.1);
+ // A real pointer takes over, without the animation continuing behind it.
+ await stage.scrollIntoViewIfNeeded();const box=await stage.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+20,box.y+box.height/2,{steps:3});await page.mouse.up();assert.equal(await stage.getAttribute('data-animating'),'false');const stopped=await stage.getAttribute('data-scale');await page.waitForTimeout(150);assert.equal(await stage.getAttribute('data-scale'),stopped);
+ await own.click();assert.equal(Number(await stage.getAttribute('data-scale')),1);await page.waitForFunction(()=>{const node=document.querySelector('[data-testid=global-explorer]');return node.dataset.animating==='false'&&Number(node.dataset.scale)>2;});assert.equal(await page.getByTestId('global-pixel-inspection').getAttribute('data-x'),String(pixel.x));assert.equal(await page.getByTestId('global-pixel-inspection').getAttribute('data-y'),String(pixel.y));
+ await page.screenshot({path:'test-results/global-own-overview-to-photo.png',fullPage:true});await pinchToOverview(page);assert.equal(Number(await stage.getAttribute('data-scale')),1);
+ await page.emulateMedia({reducedMotion:'reduce'});await own.click();assert.equal(await stage.getAttribute('data-animating'),'false');assert(Number(await stage.getAttribute('data-scale'))>2);assert.deepEqual(posts,[]);assert.deepEqual(errors,[]);console.log('Own real photo entry, no artwork/index/color panels, overview-to-own animation, repeat, native interruption and reduced motion: passed');
+}finally{await browser.close();}

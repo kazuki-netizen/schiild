@@ -32,9 +32,6 @@ body { -webkit-font-smoothing: antialiased; }
 .calendar-detail-art img { width:100%; aspect-ratio:1; object-fit:contain; image-rendering:pixelated; }
 .calendar-carousel-controls { display:flex; align-items:center; justify-content:center; gap:24px; font-size:12px; }
 .calendar-carousel-controls button { width:44px; height:44px; font-size:24px; }
-.global-related-work { margin:28px 0; }
-.global-related-work h2 { font-size:16px; font-weight:500; margin:12px 0; }
-.global-related-work>img { display:block; width:min(100%,256px); aspect-ratio:1; object-fit:contain; image-rendering:pixelated; }
 .explorer-schiil { position:absolute; overflow:hidden; background:#fff; pointer-events:none; }
 .explorer-stage .explorer-schiil img { image-rendering:auto; object-fit:cover; }
 .global-selected-schiil>img { display:block; width:min(100%,320px); aspect-ratio:1; object-fit:contain; image-rendering:auto; margin:20px auto; }
@@ -199,3 +196,8 @@ p { color: var(--ink2); }
   .calendar-paging { gap: 4px; }
   .calendar-paging button { width: 30px; height: 32px; padding: 6px; }
 }
+
+/* The personal GLOBAL entry uses the recorded photograph, without a color chip. */
+.global-own-schiil{width:100%;display:flex;align-items:center;gap:20px;padding:20px 0;margin:12px 0;text-align:left;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:14px;line-height:1.7}
+.global-own-schiil>img{width:112px;height:112px;flex-shrink:0;object-fit:cover}.own-schiil-loading{width:112px;min-height:112px;display:grid;place-items:center;color:var(--ink3);font-size:12px}
+@media(max-width:360px){.global-own-schiil{gap:14px}.global-own-schiil>img,.own-schiil-loading{width:88px;height:88px;min-height:88px}}
