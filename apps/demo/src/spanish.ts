@@ -159,7 +159,7 @@ export const spanish={
  "archive.longest":"Racha más larga",
  "archive.note":"Los días sin foto también quedan en el registro.",
  'create.title':'Crear un atelier',
- 'create.name_label':'NOMBRE',
+ "create.name_label":"Nombre del atelier",
  'create.name_ph':'Nombre del atelier',
  'create.capacity_label':'CAPACIDAD',
  'create.capacity_explain':'El número de personas define la composición: {n} personas, {n} zonas.',

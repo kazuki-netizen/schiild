@@ -159,7 +159,7 @@ export const italian={
  'archive.longest':'Serie più lunga',
  'archive.note':'Anche i giorni senza foto restano così come sono.',
  'create.title':'Crea un atelier',
- 'create.name_label':'Nome',
+ "create.name_label":"Nome dell’atelier",
  'create.name_ph':'Nome dell’atelier',
  'create.capacity_label':'Posti',
  'create.capacity_explain':'Il numero di posti determina la composizione: {n} persone, {n} zone.',

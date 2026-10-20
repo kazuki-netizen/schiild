@@ -251,7 +251,7 @@ export const demoCopy={
  "excluded.final":"Schiildでは、一度確定した作品は描き直しません。明日から、またシールを記録できます。",
  "me.since":"{date}から参加",
  "me.section.custody":"預かっている作品",
- "create.name_label":"名前",
+ "create.name_label":"アトリエ名",
  "create.capacity_label":"定員",
  "create.capacity_explain":"定員に合わせて区画が決まります。{n}人なら{n}区画に分かれます。",
  "create.fixed.body":"過去の作品と構図を揃えるため、定員は作成時に決まります。その後に参加者が増えても、定員は変わりません。",

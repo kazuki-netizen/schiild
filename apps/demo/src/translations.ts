@@ -160,7 +160,7 @@ export const translations={
  "archive.longest":["Longest","최장","Plus longue série","Langste reeks"],
  "archive.note":["Days without a photo stay part of the record.","기록하지 않은 날도 그대로 남습니다.","Les jours sans photo restent eux aussi dans les archives.","Ook dagen zonder foto blijven zichtbaar."],
  'create.title':["Create an atelier","아틀리에 만들기","Créer un atelier","Atelier maken"],
- 'create.name_label':["NAME","이름","NOM","NAAM"],
+ "create.name_label":["Atelier name","아틀리에 이름","Nom de l’atelier","Ateliernaam"],
  'create.name_ph':["Atelier name","아틀리에 이름","Nom de l’atelier","Naam van het atelier"],
  'create.capacity_label':["CAPACITY","정원","CAPACITÉ","CAPACITEIT"],
  "create.capacity_explain":["Capacity shapes the composition: {n} people, {n} regions.","인원수가 구도를 정합니다. {n}명이면 {n}개 구역으로 나뉩니다.","Le nombre de personnes détermine la composition : {n} personnes, {n} zones.","Het aantal personen bepaalt de compositie: {n} personen, {n} vlakken."],

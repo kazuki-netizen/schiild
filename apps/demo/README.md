@@ -370,3 +370,7 @@ VAPIDの鍵はサーバー専用の WEB_PUSH_CONFIG Secret（JSONのsubject/publ
 [iPhone・iPadのWeb Push要件](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/) に従い、ホーム画面へ追加して、そこから開いたアプリで通知を有効にします。通常のSafariタブでは手順を表示します。Android・PCも対応ブラウザで端末の許可が必要です。push-worker.jsはPushと通知タップだけを扱い、アプリのHTMLやJSをキャッシュしません。通知をタップすると対象日付のGLOBALまたは参加アトリエを開きます。
 
 notifications.test.mjsはメモリーとSQLiteでイベント、3種類の抑止、匿名の文面、重複・再試行・購読検証・退出・ログアウト・削除を検証します。notification-runtime.test.mjsは実際のworkerdでVAPIDと暗号化、アラームによる配信を検証します。外部Pushサービスはモックです。notifications-browser.mjsは DEMO_PUSH_FIXTURE=1 で起動したローカルサーバーに対して実行し、許可ボタン、種類別の保存、端末停止、イタリア語、ログアウトと/week/の分離を確認します。実端末でのOS通知・バックグラウンド制限・通信キャリアの挙動はこの自動テストには含みません。
+
+## アトリエ名の補足表示（2026年10月20日）
+
+[ユーザー依頼] アトリエの一覧・参加プレビュー・共有画面・作品・アーカイブなど、独立した名前表示の直前に、小さな「アトリエ名」を付けます。既存の create.name_label キーを7言語で使い、見出しの名前そのものや保存データは変更しません。アトリエトップ、GLOBAL、アトリエのない空のアーカイブにはこの補足を付けません。英語版・イタリア語版の独立したPVでは、アトリエ名を Everyday Fragments に統一し、表示前にそれぞれ Atelier name / Nome dell’atelier を添えます。日本語PVにも補足を付け、前版は残します。
