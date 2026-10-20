@@ -3,8 +3,10 @@ import React,{useEffect,useState} from 'react';
 import AtelierApp from './AtelierApp';
 import {preferences} from './preferences';
 import {t} from './copy';
+import {activateLanguage,readLanguage} from './language';
 import './opening.css';
 export default function Entry(){
+ activateLanguage(readLanguage());
  const [assemble]=useState(()=>new URLSearchParams(location.search).get('opening')==='assemble');
  const [visible,setVisible]=useState(true),[reduced]=useState(()=>preferences().reduceMotion||matchMedia('(prefers-reduced-motion: reduce)').matches);
  useEffect(()=>{const timer=setTimeout(()=>setVisible(false),reduced?600:assemble?3000:4000);return()=>clearTimeout(timer);},[assemble,reduced]);
