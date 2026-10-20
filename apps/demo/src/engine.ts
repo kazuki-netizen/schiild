@@ -8,18 +8,35 @@ export type Pixels={width:number;height:number;data:Uint8ClampedArray};
 export const PALETTE=['#14130f','#292823','#44453d','#77796b','#b5b7a5','#f3efe1','#26384d','#345673','#4b7895','#87a6b0','#bcc6bd','#334638','#52684c','#798959','#a8a36c','#d7c49a','#442f38','#69474c','#9c6965','#c39582','#e5bbaa','#543e2e','#7b573a','#aa7745','#d4a561','#e9ca7d','#473e59','#726781','#a795aa','#afb6ca','#61777a','#8d9890'];
 export const colors:RGB[]=PALETTE.map(hex=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)]);
 export const VOID_COLOR:RGB=[255,255,255];
-// DEMO ONLY. Daily quiet mosaic for unposted regions; UI surfaces remain solid white.
+// DEMO ONLY. Daily colorful mosaic for unposted regions; UI surfaces remain solid white.
+export const VOID_THEME='daily-void-color-v3';
 export const VOID_PALETTE:RGB[]=[VOID_COLOR,[252,252,251],[249,250,249],[246,248,247]];
 export const VOID_BASES:RGB[]=[VOID_COLOR,[203,225,242],[216,235,223],[247,224,209],[229,222,242],[244,235,207]];
 const voidPalettes=new Map<string,RGB[]>();
-export function voidPalette(day=''):RGB[]{
- const cached=voidPalettes.get(day);if(cached)return cached;
+// Retained only to migrate the isolated fictional week without touching photos.
+export function legacyVoidPalette(day=''):RGB[]{
  const ordinal=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);if(!Number.isFinite(ordinal))return VOID_PALETTE;
  // Disjoint alternating pools avoid the same hue on adjacent UTC days.
  const hash=Math.imul(ordinal^0x45d9f3b,0x45d9f3b)>>>0,index=(hash%3)*2+((ordinal%2+2)%2),base=VOID_BASES[index];
- const palette=index===0?VOID_PALETTE:[base,...[3,6,9].map(delta=>base.map(value=>Math.max(0,value-delta)) as RGB)];if(voidPalettes.size>=64)voidPalettes.clear();voidPalettes.set(day,palette);return palette;
+ return index===0?VOID_PALETTE:[base,...[3,6,9].map(delta=>base.map(value=>Math.max(0,value-delta)) as RGB)];
 }
-export function voidColor(x:number,y:number,seed:number,day=''):RGB{const hash=(Math.imul(Math.floor(x)+1,73856093)^Math.imul(Math.floor(y)+1,19349663)^Math.imul(seed,83492791))>>>0,n=hash%16;return voidPalette(day)[n<10?0:n<13?1:n<15?2:3];}
+function hsl(hue:number,saturation:number,lightness:number):RGB{
+ const chroma=(1-Math.abs(2*lightness-1))*saturation,h=((hue%360)+360)%360/60,x=chroma*(1-Math.abs(h%2-1)),m=lightness-chroma/2;
+ const rgb=h<1?[chroma,x,0]:h<2?[x,chroma,0]:h<3?[0,chroma,x]:h<4?[0,x,chroma]:h<5?[x,0,chroma]:[chroma,0,x];
+ const result=rgb.map(value=>Math.round((value+m)*255)) as RGB;
+ // Photo pixels use the separate fixed 32-color palette.
+ if(colors.some(color=>color.every((value,index)=>value===result[index])))result[2]=result[2]===255?254:result[2]+1;
+ return result;
+}
+export function voidPalette(day=''):RGB[]{
+ const cached=voidPalettes.get(day);if(cached)return cached;
+ const ordinal=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);if(!Number.isFinite(ordinal))return VOID_PALETTE;
+ const hash=Math.imul(ordinal^0x45d9f3b,0x45d9f3b)>>>0,hue=ordinal*137.50776405+(hash%31)-15;
+ // Four related hues and four lightnesses: colorful days without rainbow static.
+ const palette=[-15,-5,5,15].flatMap((offset,index)=>[0,.045,.09,.135].map(shade=>hsl(hue+offset,.62+((hash>>>(index*4))%15)/100,.62+((hash>>>(index*3))%17)/100+shade)));
+ if(voidPalettes.size>=64)voidPalettes.clear();voidPalettes.set(day,palette);return palette;
+}
+export function voidColor(x:number,y:number,seed:number,day=''):RGB{let hash=(Math.imul(Math.floor(x)+1,73856093)^Math.imul(Math.floor(y)+1,19349663)^Math.imul(seed,83492791))>>>0;hash=Math.imul(hash^(hash>>>16),0x7feb352d);hash=Math.imul(hash^(hash>>>15),0x846ca68b);hash=(hash^(hash>>>16))>>>0;const n=hash%16,palette=voidPalette(day);return palette===VOID_PALETTE?palette[n<10?0:n<13?1:n<15?2:3]:palette[n];}
 export function random(seed:number){return ()=>{seed|=0;seed=seed+0x6d2b79f5|0;let n=Math.imul(seed^seed>>>15,1|seed);n^=n+Math.imul(n^n>>>7,61|n);return ((n^n>>>14)>>>0)/4294967296;};}
 export function shuffle<T>(items:T[],rng= Math.random){const out=[...items];for(let n=out.length-1;n>0;n--){const k=Math.floor(rng()*(n+1));[out[n],out[k]]=[out[k],out[n]];}return out;}
 export function partition(capacity=12,rng=Math.random):Rect[]{

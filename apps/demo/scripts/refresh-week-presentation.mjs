@@ -2,14 +2,14 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import sharp from 'sharp';
-import {voidColor,voidPalette,VOID_PALETTE,colors} from '../src/engine.ts';
+import {voidColor,voidPalette,legacyVoidPalette,VOID_THEME,VOID_PALETTE,colors} from '../src/engine.ts';
 import {globalService} from '../server/global-service.mjs';
 import {memoryStore} from '../server/memory-store.mjs';
 import {images as codec} from '../server/atelier-service.mjs';
 const root=new URL('../public/week/',import.meta.url),read=async path=>JSON.parse(await readFile(new URL(path.replace('/week/',''),root),'utf8')),digest=value=>createHash('sha256').update(value).digest('hex'),chance=(...parts)=>parseInt(digest(parts.join('/')).slice(0,8),16)/0xffffffff;
 const world=await read('/week/world.json'),people=await Promise.all(world.people.map(person=>read(person.file))),seeds=new Map(),replacements=new Map();
 for(const person of people)for(const [code,state] of Object.entries(person.states)){for(const work of state.works){const image=person.works[code+'/'+work.day]?.image;if(image)seeds.set(image,{seed:work.seed,day:work.day});}if(person.drafts[code])seeds.set(person.drafts[code].image,{seed:state.seed,day:state.day});}
-const blankColors=new Set([...VOID_PALETTE,...world.metadata.days.flatMap(day=>voidPalette(day))].map(color=>color.join(',')));if(colors.some(color=>blankColors.has(color.join(','))))throw Error('blank_photo_palette_overlap');
+const blankColors=new Set([...VOID_PALETTE,...world.metadata.days.flatMap(day=>[...voidPalette(day),...legacyVoidPalette(day)])].map(color=>color.join(',')));if(colors.some(color=>blankColors.has(color.join(','))))throw Error('blank_photo_palette_overlap');
 for(const [image,{seed,day}] of seeds){const original=await readFile(new URL(image.replace('/week/',''),root)),{data,info}=await sharp(original).ensureAlpha().raw().toBuffer({resolveWithObject:true});for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++){const offset=(y*info.width+x)*4;if(blankColors.has(data.subarray(offset,offset+3).join(',')))data.set(voidColor(x,y,seed,day),offset);}const png=await sharp(data,{raw:{width:info.width,height:info.height,channels:4}}).png().toBuffer(),file='art/'+digest(png).slice(0,24)+'.png';await writeFile(new URL(file,root),png);replacements.set(image,'/week/'+file);}
 const credits=await read('/week/photos/credits.json'),numbers=credits.map(value=>value.imageNumber),desk=numbers.filter(n=>n<10||[20,23,24,30,42,48,60,63].includes(n)),outside=numbers.filter(n=>n>=10&&n<=19||[25,27,28,29,33].includes(n)),thumbnails=new Map(),cellSize=64;
 const normalized=new Map(),means=new Map();
@@ -31,6 +31,6 @@ for(const [day,file] of Object.entries(world.globals)){
  global.schiils.sort((a,b)=>a.position-b.position);const width=global.outputSize*cellSize,background=Buffer.alloc(width*width*4);for(let y=0;y<width;y++)for(let x=0;x<width;x++)background.set([...voidColor(x,y,0,day),255],(y*width+x)*4);const atlas=await sharp(background,{raw:{width,height:width,channels:4}}).composite(global.schiils.map(tile=>({input:thumbnails.get(tile.image),left:tile.position%global.outputSize*cellSize,top:Math.floor(tile.position/global.outputSize)*cellSize}))).png().toBuffer(),atlasFile='art/'+digest(atlas).slice(0,24)+'.png';await writeFile(new URL(atlasFile,root),atlas);global.schiilImage='/week/'+atlasFile;global.schiilCellSize=cellSize;
  for(const art of global.artworks)art.image=replacements.get(art.image)??art.image;await writeFile(new URL(file.replace('/week/',''),root),JSON.stringify(global));
 }
-world.metadata.voidTheme='daily-void-pixel-v2';world.metadata.globalRange=[800,1000];world.metadata.globalPosts=totalRecords;await writeFile(new URL('world.json',root),JSON.stringify(world));await writeFile(new URL('scenario.json',root),JSON.stringify({metadata:world.metadata,credits:'photos/credits.json'},null,2)+'\n');
+world.metadata.voidTheme=VOID_THEME;world.metadata.globalRange=[800,1000];world.metadata.globalPosts=totalRecords;await writeFile(new URL('world.json',root),JSON.stringify(world));await writeFile(new URL('scenario.json',root),JSON.stringify({metadata:world.metadata,credits:'photos/credits.json'},null,2)+'\n');
 for(let n=0;n<people.length;n++){const person=people[n],count=Object.values(person.globals).filter(pixel=>pixel.x!==undefined).length;person.area.global={pixels:count,days:count};for(const work of [...Object.values(person.works),...Object.values(person.drafts)])work.image=replacements.get(work.image)??work.image;await writeFile(new URL(world.people[n].file.replace('/week/',''),root),JSON.stringify(person));}
 console.log(JSON.stringify({fictional:true,refreshedArtworks:seeds.size,globalDays:Object.keys(world.globals).length,people:people.length,recordedPhotos:true}));

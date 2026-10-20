@@ -1,3 +1,4 @@
+import {VOID_THEME} from '../src/engine.ts';
 // DEMO ONLY. One logical pixel per participant/day, with the recorded Schiil on zoom.
 import {createHash} from 'node:crypto';
 import {ApiError} from './atelier-core.mjs';
@@ -29,7 +30,7 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
   const today=new Date(now()).toISOString().slice(0,10);
   if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z'))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day||day>today)throw new ApiError(400,'invalid');
   const row=await store.getWithMetadata(dayKey(day),{type:'json'});if(!row||!Object.keys(row.data.pixels).length)return {day,image:null,count:0,outputSize:0,positions:[],ateliers:0,layout:'compact-v1',explicitRecording:true,area:{pixels:0,total:0,percent:0},final:day<today};
-  const data=row.data,layout=compactGlobal(data.pixels),{outputSize}=layout,revision=digest(JSON.stringify({layout:'compact-v1',background:'daily-void-pixel-v2',day,outputSize,pixels:layout.pixels.map(({position,color})=>({position,color}))})),key=`global/${day}/${revision}`;
+  const data=row.data,layout=compactGlobal(data.pixels),{outputSize}=layout,revision=digest(JSON.stringify({layout:'compact-v1',background:VOID_THEME,day,outputSize,pixels:layout.pixels.map(({position,color})=>({position,color}))})),key=`global/${day}/${revision}`;
   if(outputSize>4096)throw new ApiError(503,'global_full');
   let bytes=await store.get(key,{type:'arrayBuffer'});
   if(!bytes){const made=await images.global(layout.pixels,outputSize,day);await store.set(key,made,{onlyIfNew:true});bytes=await store.get(key,{type:'arrayBuffer'});}

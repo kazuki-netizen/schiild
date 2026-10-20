@@ -1,4 +1,6 @@
 // DEMO ONLY. Shared UI and encrypted push copy: ja / en / ko / fr / nl / es / it.
+import {displayTerminology} from './terminology.ts';
+import type {Language} from './language';
 export const pushCopy={
  'demo.push.enable':['この端末で通知を受け取る','Enable notifications on this device','이 기기에서 알림 받기','Activer les notifications sur cet appareil','Meldingen op dit apparaat inschakelen','Activar notificaciones en este dispositivo','Attiva le notifiche su questo dispositivo'],
  'demo.push.disable':['この端末の通知を止める','Stop notifications on this device','이 기기의 알림 끄기','Arrêter les notifications sur cet appareil','Meldingen op dit apparaat stoppen','Desactivar notificaciones en este dispositivo','Disattiva le notifiche su questo dispositivo'],
@@ -30,5 +32,5 @@ export const pushSpanish=Object.fromEntries(entries.map(([key,texts])=>[key,text
 export const pushItalian=Object.fromEntries(entries.map(([key,texts])=>[key,texts[6]])) as Record<PushKey,string>;
 export function pushText(key:PushKey,language:string,params:Record<string,string>={}){
  const index=['ja','en','ko','fr','nl','es','it'].indexOf(language),value=pushCopy[key][index<0?0:index];
- return value.replace(/\{(\w+)\}/g,(_match,name)=>params[name]??`{${name}}`);
+ return displayTerminology(key,(['ja','en','ko','fr','nl','es','it'][index<0?0:index]) as Language,value).replace(/\{(\w+)\}/g,(_match,name)=>params[name]??`{${name}}`);
 }

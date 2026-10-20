@@ -1,3 +1,4 @@
+import {displayTerminology} from '../src/terminology.ts';
 import {italian} from '../src/italian.ts';
 import {pinch} from './browser-gestures.mjs';
 // This flow writes test accounts and photos only to the local in-memory server.
@@ -11,7 +12,7 @@ import {singularCopy} from '../src/singular-copy.ts';
 import {demoCopy} from '../src/demo-copy.ts';
 const origin=process.env.DEMO_URL||'http://localhost:8085';if(!origin.startsWith('http://localhost:'))throw Error('language_test_is_local_only');
 const japanese={...JSON.parse(await readFile(new URL('../src/copy.json',import.meta.url),'utf8')),...demoCopy},locales={ja:'ja-JP',en:'en-GB',ko:'ko-KR',fr:'fr-FR',nl:'nl-NL',es:'es-ES',it:'it-IT'};
-function say(language,key,params={}){const base=language==='ja'?japanese[key]:language==='es'?spanish[key]:language==='it'?italian[key]:translations[key][{en:0,ko:1,fr:2,nl:3}[language]],text=(Number(params.n)===1?singularCopy[key]?.[language]:undefined)??base;return text.replace(/\{(\w+)\}/g,(_,name)=>String(params[name]??`{${name}}`));}
+function say(language,key,params={}){const base=language==='ja'?japanese[key]:language==='es'?spanish[key]:language==='it'?italian[key]:translations[key][{en:0,ko:1,fr:2,nl:3}[language]],text=(Number(params.n)===1?singularCopy[key]?.[language]:undefined)??base;return displayTerminology(key,language,text).replace(/\{(\w+)\}/g,(_,name)=>String(params[name]??`{${name}}`));}
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{}),args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
 const context=await browser.newContext({viewport:{width:390,height:844},permissions:['camera'],reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
 page.on('pageerror',error=>errors.push(error.message));

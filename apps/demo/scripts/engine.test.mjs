@@ -37,3 +37,10 @@ test('UTC day changes only empty regions, keeps the same day stable and varies c
  const blank=rects.find(rect=>rect.slot!==4),offset=(blank.y*2*256+blank.x*2)*4;assert.deepEqual([...a.data.subarray(offset,offset+4)],[...voidColor(blank.x*2,blank.y*2,29,day),255]);
  const first=Date.parse('2026-01-01T00:00:00Z');let previous;for(let n=0;n<366;n++){const palette=voidPalette(new Date(first+n*86400000).toISOString().slice(0,10));assert.notDeepEqual(palette[0],previous);previous=palette[0];}
 });
+
+
+test('daily empty areas have sixteen colorful pixel colors with no dominant near-white fill',()=>{
+ const days=['2026-10-13','2026-10-14','2026-10-15','2026-10-16','2026-10-17','2026-10-18','2026-10-19'],palettes=[];
+ for(const day of days){const palette=voidPalette(day);assert.equal(palette.length,16);assert.equal(new Set(palette.map(color=>color.join(','))).size,16);assert(palette.every(color=>Math.max(...color)-Math.min(...color)>25));assert(palette.every(color=>!colors.some(photo=>photo.every((value,index)=>value===color[index]))));const counts=new Map();for(let y=0;y<128;y++)for(let x=0;x<128;x++){const key=voidColor(x,y,29,day).join(',');counts.set(key,(counts.get(key)??0)+1);}assert.equal(counts.size,16);assert(Math.max(...counts.values())/(128*128)<.1);palettes.push(JSON.stringify(palette));}
+ assert.equal(new Set(palettes).size,days.length);
+});
