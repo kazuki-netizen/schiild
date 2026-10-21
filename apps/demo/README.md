@@ -1,6 +1,6 @@
 # Schiild デモ — 友達とつくるシールト
 
-アトリエを作成して友達を招待し、それぞれのカメラで撮った写真から同じシールトを生成できます。公開先は `https://schiild.pickleballnavi.jp/`。Xserverには静的UIと画像だけを置き、Cloudflare WorkersとSQLite Durable Objectで共有API・参加状況・生成・抽選を処理します。スマホではページ全体を縦にスクロールできます。
+アトリエを作成して友達を招待し、それぞれのカメラで撮った写真から同じシールトを生成できます。公開先は `https://schiild.app/`。静的UIはCloudflare Workers Assets、画像・アカウント・参加状況は既存のSQLite Durable Objectへ保存し、生成・抽選もCloudflare Workersで処理します。Xserverへの実行時依存はありません。スマホではページ全体を縦にスクロールできます。
 
 `demo`ブランチ専用です。本番のM1〜M4、API、DB、Rust/WASMには接続しません。TypeScript生成エンジンと暫定32色は、このデモだけで使います。
 
@@ -28,7 +28,7 @@
 
 [ユーザー依頼] 利用例も色の配列だけにせず、各人がその日にGLOBALへ選択した実写真1枚を対応するセルへ配置したPNGを生成しています。日別の人数Nに対し一辺 ceil(sqrt(N)) の正方形、1人1セル、重複しない連番座標です。1セル64×64pxの画像を合成しますが、本人の座標・選択・面積の分母は従来の論理ピクセルで扱います。`schiils` の位置と画像、各人のx/y、合成PNGの各セルが一致することを全件検証します。素材32点は架空の利用例で再利用します。1,000枚の異なる写真を撮影した実績ではありません。
 
-通常デモでは、GLOBALへ明示的に選ばれた写真だけをXserverの非公開保存領域へ保持します。`global.schiils` は画面内の位置を最大9件ずつ受け取り、その日の記録にある写真の256pxサムネイルだけを返します。アトリエ名、参加者の識別値、元の保存キーは返しません。アカウント削除後もユーザー確認済みの匿名記録として残ります。古いGLOBALは同じハッシュの元写真が残っている場合だけ取得し、ない場合は取得不可を表示します。推測した画像は作りません。
+通常デモでは、GLOBALへ明示的に選ばれた写真だけをCloudflareの非公開保存領域へ保持します。`global.schiils` は画面内の位置を最大9件ずつ受け取り、その日の記録にある写真の256pxサムネイルだけを返します。アトリエ名、参加者の識別値、元の保存キーは返しません。アカウント削除後もユーザー確認済みの匿名記録として残ります。古いGLOBALは同じハッシュの元写真が残っている場合だけ取得し、ない場合は取得不可を表示します。推測した画像は作りません。
 
 ピンチ・スワイプ・マウスで画面内の実写真だけを読み込み、タップすると写真と座標を確認できます。拡大・縮小ボタン、倍率表示、スライダーは表示しません。本人のシール画像をタップすると、同じ閲覧領域を全体から本人の座標へ移動・拡大します。従来の色だけを拡大する別画像・拡大鏡は使いません。位置計算、全区画への到達、明示的に選んでいない写真の除外、旧記録、取得失敗と再試行、実Worker/PHP保存経路を検証しています。本番M1〜M4には変更しません。
 
@@ -42,7 +42,7 @@
 
 [実装済み・現在保留] LINE連携の実装を残しています。WhatsAppとGoogleの新しい設定も保留中です。再開した場合、LINEで初めてログインするとアカウントを作り、次回以降は同じLINEから同じアカウントへ戻ります。既存のID・パスワードのアカウントへ連携する場合は、先にそのアカウントへログインし、プロフィールのLINEログインから連携します。表示名やメールアドレスだけではアカウントを結合しません。
 
-LINE DevelopersのLINEログインチャネルでウェブアプリを有効にし、コールバックURLを `https://schiild.pickleballnavi.jp/?auth=line` に設定してください。一般の利用者に使ってもらう場合は、チャネルを公開する必要があります。要求スコープは `openid profile` だけです。メールアドレス・電話番号・友だち一覧にはアクセスしません。
+LINE DevelopersのLINEログインチャネルでウェブアプリを有効にし、コールバックURLを `https://schiild.app/?auth=line` に設定してください。一般の利用者に使ってもらう場合は、チャネルを公開する必要があります。要求スコープは `openid profile` だけです。メールアドレス・電話番号・友だち一覧にはアクセスしません。
 
 Cloudflare WorkerのSecret `LINE_LOGIN_CONFIG` に `channelId`・`channelSecret`・`redirectUri` の3項目を持つJSONを設定します。秘密情報はチャット、Git、Expoの公開環境変数、Xserverへ入れません。接続設定がない間はLINEの導線を表示しません。手動の設定は `apps/demo` で `pnpm exec wrangler secret put LINE_LOGIN_CONFIG --config wrangler.jsonc` を実行し、JSONをCLIの入力欄へ渡します。ローカルの接続入力画面を使う場合、Channel secretはWindows資格情報マネージャーへ保存します。
 
@@ -70,7 +70,7 @@ LINEだけで作ったアカウントも設定から完全削除できます。I
 
 生成日ごとに `outputSize` を保存します。未生成の旧データは新しい256pxで生成し、完成済み・生成処理中の旧データは `outputSize` がなければ128pxとして扱います。保存済みの完成作品を再生成・上書きしません。専有面積は各作品の実画素数で集計し、新しい作品では同じ区画のpx数が4倍、構図に対する割合は同じになります。新旧の履歴が混在しても当時の画素数を合計します。
 
-Xserverの保存口はアトリエ作品の128pxと256pxだけを受け付けます。Cloudflareの順次画像処理とブラウザ側の生成の双方に反映し、開封・カレンダーでも同じ画像を表示します。`resolution.test.mjs` と生成エンジンのテストでは細部の保持、旧作品のバイト列と面積の維持、256pxのPNG出力を確認します。workerd/PHPのテストでも生成・保存・読み出しまで通します。
+アトリエ作品は128pxの旧作品と256pxの新作品を読み出せます。Cloudflareの順次画像処理とブラウザ側の生成の双方に反映し、開封・カレンダーでも同じ画像を表示します。`resolution.test.mjs` と生成エンジンのテストでは細部の保持、旧作品のバイト列と面積の維持、256pxのPNG出力を確認します。workerd/PHPのテストでも生成・保存・読み出しまで通します。
 
 ## 友達との使い方
 
@@ -92,7 +92,7 @@ Xserverの保存口はアトリエ作品の128pxと256pxだけを受け付けま
 
 今日の画面の「今日のシールトを仮生成する」から、その時点で集まっている写真をすぐ画像にできます。共有アトリエでは参加者全員が使え、1枚以上の投稿が必要です。正式生成の前に何度でも試せます。投稿の受付は続き、正式作品・抽選・アーカイブ・GLOBAL・投稿済み区画は変更しません。「デモ専用・仮表示」を明示して表示し、戻る・再読み込み・日付変更・正式生成で仮表示を破棄します。画像はサーバーや端末のストレージへ保存せず、表示中だけメモリに置きます。生成失敗時に仮の代替画像を出しません。
 
-「ひとりで試す」のアトリエにも同じボタンがあります。ここでは既存のサンプル参加者を含めてブラウザ内で仮生成し、サンプルを使用したことを明示します。共有アトリエの仮生成は、Cloudflareで実際の投稿写真から行い、Xserverからは既存の写真を読み出すだけです。
+「ひとりで試す」のアトリエにも同じボタンがあります。ここでは既存のサンプル参加者を含めてブラウザ内で仮生成し、サンプルを使用したことを明示します。共有アトリエの仮生成は、Cloudflareで実際の投稿写真から行い、非公開保存領域から既存の写真を読み出すだけです。
 
 [ASSUMPTION / ユーザーのデモ特例指示] 正式な `Work` と別の一時的な `Draft` として実装し、文言を `demo.draft.*` に追加します。本番のM1〜M4へは追加しません。
 
@@ -114,41 +114,29 @@ Xserverの保存口はアトリエ作品の128pxと256pxだけを受け付けま
 
 このアトリエで「コードを共有する」を押すと、同じ名前・定員の共有アトリエを新しく作成します。共有アトリエには、新しい招待コードが発行されます。古い端末内デモの写真やダミー履歴は共有しません。
 
-## XserverとCloudflareへの反映
+## Cloudflareへの反映
 
-Cloudflare APIトークンは対象アカウントのWorkers編集権限に限定することを推奨します。Global API Keyを使う場合は登録メールアドレスも必要です。Windowsでは `LocalApiKeys/cloudflare` と `LocalApiKeys/xserver` に保存し、実行する子プロセスにだけ渡します。キーをチャット・Git・公開環境変数へ保存しません。
+現在のプランを維持し、R2の利用開始・プラン変更は行いません。静的UIはWorkers Assets、非公開の画像は既存のSQLite Durable Object内に64KiB単位のBLOBとして保持します。画像の論理キー・ハッシュ名・バイト列と、`ATELIERS` / `AtelierDirectory` / `shared-demo-v1` は維持します。アカウント、参加履歴、作品を初期化しません。画像は1件3MBまで、同じキーには上書きしません。これは現在の少量のデモ用構成です。保存量とWorkers/Durable Objectsの利用上限はCloudflareの管理画面で確認してください。
 
-1. Xserverで `schiild.pickleballnavi.jp` と独自SSLを用意し、SSH公開鍵を登録します。SSHのホスト鍵を確認・記録してください。証明書検証やホスト鍵検証は無効化しません。
-2. `apps/demo/scripts/configure-xserver.ps1` をPC上で実行します。画像ディレクトリは `/home/<server-id>/schiild-demo-images` のように、すべての `public_html` の外にします。設定と共有署名キーはアクセスを制限した `.deploy-private/` に保存されます。既存の署名キーを作り直さないでください。
-3. 対象アカウントを `CLOUDFLARE_ACCOUNT_ID` に設定し、次を実行します。有料プランへの切り替えは不要です。利用量の上限に達すると制限されます。
+Cloudflareの認証情報はチャットやGit、Expoの公開環境変数に入れません。Windowsでは `LocalApiKeys/cloudflare` に保存し、実行する子プロセスにだけ渡します。既存の通知・認証用Worker Secretsは維持します。GoogleとLINEの接続は保留中です。
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm --filter demo exec wrangler deploy
+node apps/demo/scripts/prepare-cloudflare.mjs
+pnpm --filter demo exec wrangler deploy --config wrangler.jsonc
 ```
 
-4. `.deploy-private/storage-secret.txt` の値を、チャット外の伏せ字入力または標準入力でWorkerの `XSERVER_STORAGE_SECRET` に登録します。コマンドの引数に秘密の値を含めません。
+`prepare-cloudflare.mjs` は `/api/atelier` を同一オリジンの接続先として書き出し、公開ファイルだけを `.wrangler/cloudflare-site/` に用意します。Netlify専用の `_redirects` は含めません。`wrangler.jsonc` で `IMAGE_BACKEND=durable-sqlite`、Assets、既存Durable Object、`schiild.app` / `www.schiild.app` のカスタムドメインを指定します。既存Workerと同じアカウントへ配置してください。DOの名前やバインディング、マイグレーションを変更しないでください。
 
-```sh
-pnpm --filter demo exec wrangler secret put XSERVER_STORAGE_SECRET
-```
+Xserverからの移行では、非公開画像をSSHでバックアップし、ファイル名・容量・SHA-256を記録します。一時的な `IMAGE_MIGRATION_TOKEN` Secretがある間だけ `/api/migration/images` で取り込めます。取り込みは正しいトークン、ハッシュ形式の名前、内容のSHA-256一致が必須で、既存画像との不一致は拒否します。コピー後に全件の容量とハッシュを照合し、Secretを削除して入口が404になることを確認します。この入口は画像やアカウントの一覧・削除・公開配信を提供しません。
 
-5. デプロイ結果のWorker URLに `/api/atelier` を付け、公開用環境変数を設定してUIを書き出します。以下はPowerShellの例です。この変数はAPIのURLのみで、秘密情報を含みません。
+画像用の実行環境テストは、テスト専用の保存フォルダーを指定した `wrangler dev --local` を起動し、そのURLを `DEMO_SQLITE_WORKER_URL` に設定して `node --test apps/demo/scripts/sqlite-images-runtime.test.mjs` を実行します。本番URLは指定しないでください。このテストは投稿・生成・GLOBAL・アカウントの復元まで行います。`cloudflare-site.test.mjs` は64KiB分割、書き込み失敗時の巻き戻し、画像の不変性、ハッシュ不一致、認証なしの移行拒否と静的配信を確認します。
 
-```powershell
-$env:EXPO_PUBLIC_DEMO_API_URL = 'https://schiild-demo-api.black-field-ae8f.workers.dev/api/atelier'
-node apps/demo/scripts/prepare-xserver.mjs
-& apps/demo/scripts/deploy-xserver.ps1 -CheckOnly
-& apps/demo/scripts/deploy-xserver.ps1
-```
-
-アップロード先は設定したサブドメインのdocument rootだけです。画像用PHPはHMAC署名したGET/PUTだけを受け付け、同じキーの画像を上書きしません。認証・アトリエ・抽選・生成の処理やDBをXserverに置きません。署名キーと非公開画像を静的UIに含めません。
-
-配置後は、HTTPS、署名なしの画像アクセス拒否、異なるブラウザでの招待・写真投稿・同じ作品の開封・再読み込みを確認してください。Worker側のCORSは `wrangler.jsonc` の `ALLOWED_ORIGINS` に記載したUIだけを許可します。
+配置後は、新ドメインのHTTPS、UI、アーカイブと利用例、API認証、画像の非公開性を確認します。旧 `schiild.pickleballnavi.jp` は同じパス・クエリーの新ドメインへ転送します。旧サーバーのバックアップは残します。ドメイン変更でブラウザ保存領域が別になるため、アカウントは新ドメインで再ログインしてください。通知許可も新ドメインで設定し直します。登録済みアカウントと所属・作品は同じCloudflare保存領域に残ります。
 
 ## 以前のNetlify版
 
-`https://schiildmoc.netlify.app/` は、移行確認中も既存のFunctions・Blobsで動作します。下記は旧サイトを維持する場合の手順です。Cloudflare版の画像はXserverに保存し、Netlify Blobsへは保存しません。
+`https://schiildmoc.netlify.app/` は、移行確認中も既存のFunctions・Blobsで動作します。下記は旧サイトを維持する場合の手順です。現在のCloudflare版の画像はSQLite Durable Objectに保存し、Netlify Blobsへは保存しません。
 
 Netlifyの既存データは自動移行しません。旧サイトの共有アトリエ・写真・作品・ブラウザの識別情報を残しています。新しいドメインではブラウザの保存領域が別になるため、同じブラウザでも別の参加者として開始します。旧サイトの招待コードは新しいAPIでは使えません。データ移行と本人の引き継ぎは、別途確認して実施する必要があります。
 
@@ -196,7 +184,7 @@ pnpm test:rust
 
 ## 保存とアクセス
 
-ブラウザ内で生成した秘密の識別情報で、そのブラウザの参加を確認します。その値は招待リンクに含めません。共有APIは参加者だけに作品を返し、生成操作は作成者だけに許可します。Cloudflare版はDurable ObjectのSQLiteトランザクションと条件付き更新で、同時参加・同時投稿による上書きを防ぎます。SQLiteに画像バイナリを格納しません。
+ブラウザ内で生成した秘密の識別情報で、そのブラウザの参加を確認します。その値は招待リンクに含めません。共有APIは参加者だけに作品を返し、生成操作は作成者だけに許可します。Cloudflare版はDurable ObjectのSQLiteトランザクションと条件付き更新で、同時参加・同時投稿による上書きを防ぎます。画像は同じDurable Objectの専用テーブルへ分割して格納し、画像の容量・SHA-256を読み出し時にも確認します。
 
 カメラ写真は1080×1080のJPEGとして検証し、メタデータを除いて保存します。元の写真を参加者へ配信するAPIはなく、生成したシールトを共有します。送信に失敗した場合は、確認画面に写真を保持して再試行できます。
 
@@ -220,11 +208,11 @@ Cloudflare画像コーデック・Xserver署名ゲートウェイ・SQLite・COR
 
 選択した写真の平均色を暫定32色へ減色し、1人1ピクセルにします。GLOBALへ記録した当日のユニーク人数 N に対して一辺 ceil(sqrt(N)) の正方形PNGを生成し、0〜N−1の重複しない連番セルへ配置します。5人なら3×3、10人なら4×4で、最後の行の必要最小限だけを空きセルとして残します。同じ人の複数アトリエの投稿は同じGLOBALピクセルです。人数増加で一辺が変わる日は座標も再計算されますが、元の写真・色は変えません。全利用者に同じ画像を返し、当日の記録に合わせて更新し、翌日から固定します。従来のGLOBALメタデータは色と並び順を保持してコンパクト表示に対応し、元画像を削除・上書きしません。記録先に選ばなかった写真を過去のアトリエからGLOBALへ自動追加する処理は行いません。
 
-拡大・ピクセル選択・自分の位置・面積の分母はAPIの outputSize に合わせます。XserverのGLOBAL保存口は1〜4096pxの正方形PNGを受け付け、写真1080pxとアトリエ作品128/256pxの制限は維持します。過去30日の端末内履歴と端末内で生成した作品は「サンプル作品」と表示し、共有GLOBALの集計に混ぜません。
+拡大・ピクセル選択・自分の位置・面積の分母はAPIの outputSize に合わせます。Cloudflareの画像処理は1〜4096pxの正方形GLOBALを扱い、写真1080pxとアトリエ作品128/256pxの制限は維持します。過去30日の端末内履歴と端末内で生成した作品は「サンプル作品」と表示し、共有GLOBALの集計に混ぜません。
 
-共通の下部ナビゲーションはアトリエ選択・コード共有・アカウント・設定でも表示します。「アーカイブ」から日付ごとのGLOBALを選べます。設定の「開封・ズームの演出を省略する」はこのブラウザに保存されます。通知は設定から種類別に有効・無効を選べます。Xserverは静的UIと署名付き画像保存のみ、認証と共有処理はCloudflare内です。
+共通の下部ナビゲーションはアトリエ選択・コード共有・アカウント・設定でも表示します。「アーカイブ」から日付ごとのGLOBALを選べます。設定の「開封・ズームの演出を省略する」はこのブラウザに保存されます。通知は設定から種類別に有効・無効を選べます。UI・画像・認証・共有処理はすべてCloudflare内です。
 
-旧Netlifyサイトには今回のログイン機能を反映しません。新しいUIを利用する配置先はCloudflare APIを設定したXserver版です。
+旧Netlifyサイトには今回のログイン機能を反映しません。新しいUIを利用する配置先は `schiild.app` のCloudflare版です。
 
 ## 月別カレンダーのデザイン試作（2026年10月15日）
 
@@ -234,7 +222,7 @@ Cloudflare画像コーデック・Xserver署名ゲートウェイ・SQLite・COR
 
 共有アトリエのサムネイルは保存済みの完成作品から取得します。画面上の月だけを最大3件ずつ取得・画面内にキャッシュし、失敗時には生成した代替画像を出さず再試行を用意します。撮影、投稿、生成、抽選、面積集計、認証、データ保存形式、APIは変更していません。本番M1〜M4にも変更はありません。
 
-変更前は `e5954eb` です。このカレンダー変更は独立したコミットにまとめているため、戻す場合はそのコミットを `git revert` し、静的UIを再書き出してXserverへ配置します。Cloudflareや保存済みの写真・作品を巻き戻す必要はありません。
+変更前は `e5954eb` です。このカレンダー変更は独立したコミットにまとめているため、戻す場合はそのコミットを `git revert` し、静的UIを再書き出してCloudflareへ配置します。保存済みの写真・作品を巻き戻す必要はありません。
 
 ## アカウントの完全削除（デモ専用）
 
@@ -257,9 +245,9 @@ ID・パスワードでログインし、左上のアイコン →「設定」�
 Google側での設定が完了するまで、Googleボタンは表示しません。設定手順は次のとおりです。
 
 1. Google CloudのGoogle Auth Platformでプロジェクトを作成または選択し、ブランディング、サポートメール、対象「外部」を設定します。
-2. WebアプリケーションのOAuthクライアントを作成します。承認済みJavaScript生成元は `https://schiild.pickleballnavi.jp` です。ポップアップのJavaScriptコールバックを使うため、リダイレクトURIは不要です。
+2. WebアプリケーションのOAuthクライアントを作成します。承認済みJavaScript生成元は `https://schiild.app` です。ポップアップのJavaScriptコールバックを使うため、リダイレクトURIは不要です。
 3. 基本の `openid / email / profile` のみを使います。Gmail APIやメール本文を読む権限は要求しません。テスト中はGoogle側でテストユーザーを指定します。一般利用者へ公開する場合はGoogle側の公開状態と表示される確認事項を確認してください。
-4. ホームページは `https://schiild.pickleballnavi.jp/`、プライバシー情報は `https://schiild.pickleballnavi.jp/privacy.html` です。運用内容に合うことを確認し、承認済みドメイン `pickleballnavi.jp` と一緒にGoogleへ登録します。
+4. ホームページは `https://schiild.app/`、プライバシー情報は `https://schiild.app/privacy.html` です。運用内容に合うことを確認し、承認済みドメイン `schiild.app` と一緒にGoogleへ登録します。
 5. `node apps/demo/scripts/configure-google.mjs` を実行し、`http://127.0.0.1:8799/` にWeb用クライアントIDを入力します。Git対象外の `apps/demo/.deploy-private/google-auth.json` へ保存します。クライアントシークレットやGoogleパスワードは不要です。
 6. 同じクライアントIDをCloudflare Workerの `GOOGLE_CLIENT_ID` に設定し、WorkerとUIを配置します。CLIでは `pnpm --filter demo exec wrangler secret put GOOGLE_CLIENT_ID` の対話入力を使えます。このIDは公開識別子ですが、認証を有効化する対象をローカル設定に限定します。UIはAPIからIDを取得するので、Google設定だけの変更でUIを再ビルドする必要はありません。
 

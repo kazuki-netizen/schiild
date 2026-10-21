@@ -320,7 +320,7 @@ export const italian={
  'demo.camera.missing':'Nessuna fotocamera trovata. Su computer, collegane una e verifica che il dispositivo la riconosca.',
  'demo.camera.busy':'Non è stato possibile avviare la fotocamera. Chiudi altre app o schede che la stanno usando e riprova. Controlla anche i permessi del dispositivo.',
  'demo.camera.unsupported':'La fotocamera non è disponibile qui. Copia l’URL e aprilo in Safari, Chrome o Edge.',
- 'demo.camera.insecure':'La fotocamera richiede una connessione sicura. Apri https://schiild.pickleballnavi.jp/ nel browser.',
+ 'demo.camera.insecure':'La fotocamera richiede una connessione sicura. Apri https://schiild.app/ nel browser.',
  'demo.camera.interrupted':'La fotocamera si è disconnessa. Ricontrollala per continuare.',
  'demo.camera.unknown':'Non è stato possibile avviare la fotocamera. Controlla i permessi e riprova.',
  'demo.atelier.delete':'Elimina l’atelier',

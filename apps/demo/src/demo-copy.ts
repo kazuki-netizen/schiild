@@ -137,7 +137,7 @@ export const demoCopy={
  'demo.camera.missing':'カメラが見つかりません。PCではカメラを接続し、端末がカメラを認識しているか確認してください。',
  'demo.camera.busy':'カメラを起動できません。他のアプリやタブでカメラを使っている場合は閉じて、もう一度試してください。端末のカメラ許可も確認してください。',
  'demo.camera.unsupported':'この画面ではカメラを利用できません。URLをコピーしてSafari・Chrome・Edgeで開いてください。',
- 'demo.camera.insecure':'カメラは安全な接続でのみ使えます。https://schiild.pickleballnavi.jp/ をブラウザで開いてください。',
+ 'demo.camera.insecure':'カメラは安全な接続でのみ使えます。https://schiild.app/ をブラウザで開いてください。',
  'demo.camera.interrupted':'カメラとの接続が切れました。撮影を続けるには、カメラを再確認してください。',
  'demo.camera.unknown':'カメラを起動できませんでした。許可の設定を確認して、もう一度試してください。',
  'demo.atelier.delete':'アトリエを削除する',

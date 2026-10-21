@@ -320,7 +320,7 @@ export const spanish={
  'demo.camera.missing':'No se ha encontrado una cámara. En un ordenador, conecta una y comprueba que el dispositivo la reconoce.',
  'demo.camera.busy':'No se pudo iniciar la cámara. Cierra otras aplicaciones o pestañas que la usen e inténtalo de nuevo. Revisa también los permisos del dispositivo.',
  'demo.camera.unsupported':'La cámara no está disponible aquí. Copia la URL y ábrela en Safari, Chrome o Edge.',
- 'demo.camera.insecure':'La cámara necesita una conexión segura. Abre https://schiild.pickleballnavi.jp/ en tu navegador.',
+ 'demo.camera.insecure':'La cámara necesita una conexión segura. Abre https://schiild.app/ en tu navegador.',
  'demo.camera.interrupted':'La cámara se ha desconectado. Vuelve a comprobarla para continuar.',
  'demo.camera.unknown':'No se pudo iniciar la cámara. Revisa los permisos e inténtalo de nuevo.',
  'demo.atelier.delete':'Eliminar atelier',

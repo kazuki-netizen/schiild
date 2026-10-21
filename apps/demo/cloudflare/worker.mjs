@@ -4,7 +4,8 @@ import {ApiError,createAtelierService} from '../server/atelier-core.mjs';
 import {workerImages} from './images.mjs';
 import {metadataStore} from './metadata-store.mjs';
 import {xserverImages} from './xserver-store.mjs';
-import {gateway} from './gateway.mjs';
+import {siteRequest} from './site.mjs';
+import {sqliteImages} from './sqlite-images.mjs';
 import {accounts} from '../server/accounts.mjs';
 import {validGoogleClient} from '../server/google-identity.mjs';
 import {readLineConfig,validLineConfig} from '../server/line-identity.mjs';
@@ -15,10 +16,13 @@ export class AtelierDirectory extends DurableObject {
   this.storage.sql.exec('CREATE TABLE IF NOT EXISTS rooms (key TEXT PRIMARY KEY, data TEXT NOT NULL, etag TEXT NOT NULL)');
  }
  services(){
-  const images=xserverImages({url:this.env.XSERVER_STORAGE_URL,secret:this.env.XSERVER_STORAGE_SECRET});
+  // The legacy branch is for migration/rollback tests only. The deployed backend is SQLite.
+  const images=this.env.IMAGE_BACKEND==='durable-sqlite'?sqliteImages(this.storage):xserverImages({url:this.env.XSERVER_STORAGE_URL,secret:this.env.XSERVER_STORAGE_SECRET});
   const store=metadataStore(this.storage,images,{notificationEvents:Boolean(readPushConfig(this.env.WEB_PUSH_CONFIG))});
   return {store,push:notificationService(store,{config:this.env.WEB_PUSH_CONFIG,images:workerImages})};
  }
+ async importImage(name,bytes,expected){return sqliteImages(this.storage).importImage(name,bytes,expected);}
+ async imageInfo(name){return sqliteImages(this.storage).info(name);}
  async tick(){
   if(this.draining)return;this.draining=true;
   try{const {push}=this.services();try{await push.finalizeGlobal();}finally{const next=await push.drain();if(next){const current=await this.storage.getAlarm();if(!current||current>next)await this.storage.setAlarm(next);}}}finally{this.draining=false;}
@@ -45,4 +49,4 @@ export class AtelierDirectory extends DurableObject {
   }catch(error){return Response.json({error:error instanceof ApiError?error.code:'unavailable'},{status:error instanceof ApiError?error.status:503});}
  }
 }
-export default {fetch:gateway,async scheduled(_event,env,ctx){const stub=env.ATELIERS.get(env.ATELIERS.idFromName('shared-demo-v1'));ctx.waitUntil(stub.tick());}};
+export default {fetch:siteRequest,async scheduled(_event,env,ctx){const stub=env.ATELIERS.get(env.ATELIERS.idFromName('shared-demo-v1'));ctx.waitUntil(stub.tick());}};

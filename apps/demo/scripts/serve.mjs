@@ -18,7 +18,7 @@ const service=createAtelierService(store);
 function createServer(port){http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,`http://localhost:${port}`);
-  if(url.pathname==='/.netlify/functions/atelier'){
+  if(['/api/atelier','/.netlify/functions/atelier'].includes(url.pathname)){
    if(req.method!=='POST'){res.writeHead(405);res.end();return;}
    let text='';for await(const chunk of req){text+=chunk;if(text.length>4100000)throw new ApiError(413,'image_invalid');}
    const credential=req.headers.authorization?.replace(/^Bearer /,'');

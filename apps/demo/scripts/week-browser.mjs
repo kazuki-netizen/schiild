@@ -7,7 +7,8 @@ const origin=process.env.DEMO_URL||'http://localhost:8085';
 const browser=await chromium.launch({headless:true,...(process.env.DEMO_BROWSER?{executablePath:process.env.DEMO_BROWSER}:{})});
 try{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}),page=await context.newPage(),errors=[],posts=[],requests=[];
- page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>requests.push(request.url()));await page.route('**/*',async route=>{if(route.request().method()==='POST'){posts.push(route.request().url());await route.abort();}else await route.continue();});
+ // Cloudflare may inject its own RUM beacon. It is separate from application writes.
+ page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>requests.push(request.url()));await page.route('**/*',async route=>{if(route.request().method()==='POST'&&new URL(route.request().url()).pathname!=='/cdn-cgi/rum'){posts.push(route.request().url());await route.abort();}else await route.continue();});
  await mkdir('test-results',{recursive:true});await page.goto(origin+'/metadata.json');await page.evaluate(()=>{localStorage.setItem('schiild.account.session.v2','a'.repeat(64));localStorage.setItem('schiild.demo.ateliers.v3','private-atelier-record');localStorage.setItem('schiild.language.v1','fr');localStorage.setItem('unrelated.application','keep');});const before=await page.evaluate(()=>({...localStorage}));
  await page.goto(origin+'/week/');await page.getByTestId('today-board').waitFor();assert.equal(await page.locator('.week-notice option').count(),1000);await page.getByRole('heading',{name:'日々のかけら',exact:true}).waitFor();assert((await page.locator('.week-notice').innerText()).includes('1,000人'));
  assert.equal(new Set(requests.filter(url=>/\/week\/people\//.test(url))).size,1);await page.screenshot({path:'test-results/week-today.png',fullPage:true});
