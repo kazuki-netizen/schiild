@@ -1,7 +1,8 @@
 import AtelierNameLabel from './AtelierNameLabel';
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {t} from './copy';
-import {numberLocale,shortDate} from './language';
+import {currentLanguage,shortDate} from './language';
+import {localizedDate} from './locale-dates';
 import {calendarCells,shiftMonth,calendarLimits} from './calendar';
 import {dayAfter} from './model';
 import './archive-calendar.css';
@@ -11,7 +12,7 @@ import {sharedRequest} from './shared-api';
 export type ArchiveEntry={day:string;concept?:string;index:number;image?:string;sample?:boolean};
 export type DayAtelierWork=ArchiveEntry&{code:string;name:string;image:string};
 type Props={items:ArchiveEntry[];currentDay:string;atelier?:string;busy?:boolean;onOpen:(item:ArchiveEntry)=>void;onGlobal:(item:ArchiveEntry)=>void;loadImage?:(day:string,signal:AbortSignal)=>Promise<string>;loadDayWorks?:(day:string,signal:AbortSignal)=>Promise<DayAtelierWork[]>;onOpenAtelier?:(code:string,day:string)=>void};
-const displayDate=(day:string)=>new Intl.DateTimeFormat(numberLocale(),{year:'numeric',month:'long',day:'numeric',weekday:'short',timeZone:'UTC'}).format(new Date(day+'T00:00:00Z'));
+const displayDate=(day:string)=>localizedDate(day,'full',currentLanguage());
 const short=shortDate;
 export default function ArchiveCalendar({items:atelierItems,currentDay,atelier,busy=false,onOpen,onGlobal,loadImage:loadAtelierImage,loadDayWorks,onOpenAtelier}:Props){
  const latest=atelierItems.reduce((day,item)=>item.day>day?item.day:day,'');
@@ -32,8 +33,8 @@ export default function ArchiveCalendar({items:atelierItems,currentDay,atelier,b
  useEffect(()=>{if(!selected)return;const scrollStyles=[document.body,document.documentElement].map(node=>({node,value:node.style.getPropertyValue('overflow-y'),priority:node.style.getPropertyPriority('overflow-y')}));for(const {node} of scrollStyles)node.style.setProperty('overflow-y','hidden','important');close.current?.focus();function keys(event:KeyboardEvent){if(event.key==='Escape')setSelected(null);if(event.key==='Tab'){const nodes=dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');if(!nodes?.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}}document.addEventListener('keydown',keys);return()=>{for(const {node,value,priority} of scrollStyles){if(value)node.style.setProperty('overflow-y',value,priority);else node.style.removeProperty('overflow-y');}document.removeEventListener('keydown',keys);trigger.current?.focus();};},[selected]);
  function move(offset:number){setMonth(value=>shiftMonth(value,offset));setSelected(null);}
  const monthSwipe=useSwipe({onSwipe:move,canStart:target=>!target.closest('button:not(.archive-work),input,select,textarea,a,summary,.modal-shade')});
- const monthDate=new Date(month+'-01T00:00:00Z'),monthName=new Intl.DateTimeFormat(numberLocale(),{year:'numeric',month:'long',timeZone:'UTC'}).format(monthDate);
- const weekdays=Array.from({length:7},(_,n)=>new Intl.DateTimeFormat(numberLocale(),{weekday:'short',timeZone:'UTC'}).format(new Date(Date.UTC(2026,0,4+n))));
+ const monthName=localizedDate(month+'-01','month',currentLanguage());
+ const weekdays=Array.from({length:7},(_,n)=>localizedDate(`2026-01-${String(4+n).padStart(2,'0')}`,'weekday',currentLanguage()));
  const imageFor=(item:ArchiveEntry)=>item.image||images[kind+'/'+item.day];
  function switchKind(next:'atelier'|'global'){setKind(next);setSelected(null);}
  const current=gallery[Math.max(0,Math.min(gallery.length-1,slide))];

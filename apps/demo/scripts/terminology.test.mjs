@@ -1,3 +1,4 @@
+import {extraCatalogs} from '../src/locale-catalogs.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -9,7 +10,7 @@ import {spanish} from '../src/spanish.ts';
 import {singularCopy} from '../src/singular-copy.ts';
 import {pushText} from '../src/push-copy.ts';
 const ja={...JSON.parse(await readFile(new URL('../src/copy.json',import.meta.url),'utf8')),...demoCopy};
-const catalogs={ja,en:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[0]])),ko:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[1]])),fr:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[2]])),nl:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[3]])),it:italian,es:spanish};
+const catalogs={...extraCatalogs,ja,en:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[0]])),ko:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[1]])),fr:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[2]])),nl:Object.fromEntries(Object.entries(translations).map(([key,value])=>[key,value[3]])),it:italian,es:spanish};
 test('approved terminology covers every catalog and singular form without changing placeholders',()=>{
  const params=text=>[...text.matchAll(/\{\w+\}/g)].map(match=>match[0]).sort();
  for(const [language,catalog] of Object.entries(catalogs))for(const [key,value] of Object.entries(catalog)){

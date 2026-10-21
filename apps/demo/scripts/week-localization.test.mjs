@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {localizeWeekData,weekPersonName,weekAtelierName} from '../src/week-localization.ts';
 
-const languages=['ja','en','ko','fr','nl','es','it'];
+const languages=['ja','en','ko','fr','nl','es','it','id','km','hi'];
 const fixture=JSON.parse(await readFile(new URL('../public/week/people/example_0001.json',import.meta.url),'utf8'));
-const expected={ja:['佐藤葵','日々のかけら'],en:['Alex Smith','Everyday Fragments'],ko:['김서연','일상의 조각'],fr:['Camille Martin','Fragments du quotidien'],nl:['Emma de Jong','Stukjes van elke dag'],es:['Lucía García','Pedacitos del día a día'],it:['Luca Rossi','Frammenti di ogni giorno']};
+const expected={ja:['佐藤葵','日々のかけら'],en:['Alex Smith','Everyday Fragments'],ko:['김서연','일상의 조각'],fr:['Camille Martin','Fragments du quotidien'],nl:['Emma de Jong','Stukjes van elke dag'],es:['Lucía García','Pedacitos del día a día'],it:['Luca Rossi','Frammenti di ogni giorno'],'id':['Ayu Pratama','Kepingan Hari'],km:['សុខ សុភា','ចំណែកនៃរាល់ថ្ងៃ'],hi:['आरव शर्मा','रोज़ के टुकड़े']};
 
-test('all 1,000 viewpoints and 200 distinct ateliers have local names in seven languages',()=>{
+test('all 1,000 viewpoints and 200 distinct ateliers have local names in ten languages',()=>{
  for(const language of languages){
   const people=Array.from({length:1000},(_,i)=>weekPersonName('example_'+String(i+1).padStart(4,'0'),language));assert(people.every(Boolean));assert.equal(new Set(people).size,1000);
   const rooms=Array.from({length:200},(_,i)=>weekAtelierName('WK'+String(i+1).padStart(6,'0'),language));

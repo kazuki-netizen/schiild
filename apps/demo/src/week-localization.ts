@@ -1,9 +1,11 @@
 // DEMO ONLY. Localize fictional fixture labels, never real account data or identifiers.
 import type {Language} from './language';
+import {extraWeekNames} from './extra-week-names.ts';
 
-type Names={given:string[];family:string[];rooms:string[];places:string[];concepts:string[]};
+export type Names={given:string[];family:string[];rooms:string[];places:string[];concepts:string[]};
 const words=(text:string)=>text.split('|');
 const catalog:Record<Language,Names>={
+ ...extraWeekNames,
  ja:{
   given:words('葵|陽菜|結衣|陸|美咲|蓮|さくら|湊|結菜|悠真|杏|大翔|七海|颯太|彩花|樹|美月|陽太|花|直樹|優奈|健太|愛|翔太|遥|大輝|凛|拓海|琴音|駿|真央|和也|莉子|亮|桃子|翼|紗季|智也|明日香|祐介|香織|達也|千尋|聡|恵|誠|沙織|浩太|奈々|悠斗'),
   family:words('佐藤|鈴木|高橋|田中|伊藤|渡辺|山本|中村|小林|加藤|吉田|山田|佐々木|山口|松本|井上|木村|林|清水|斎藤'),
@@ -58,7 +60,7 @@ export function weekPersonName(username:string,language:Language){
  const match=/^example_(\d{4})$/.exec(username),index=match?Number(match[1])-1:-1;
  if(index<0||index>=1000)return undefined;
  const names=catalog[language],given=names.given[index%names.given.length],family=names.family[Math.floor(index/names.given.length)%names.family.length];
- return language==='ja'||language==='ko'?family+given:given+' '+family;
+ return language==='ja'||language==='ko'?family+given:language==='km'?family+' '+given:given+' '+family;
 }
 export function weekAtelierName(code:string,language:Language){
  const match=/^WK(\d{6})$/.exec(code),index=match?Number(match[1])-1:-1;

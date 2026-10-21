@@ -1,0 +1,8 @@
+/* Bundled OFL fonts. No request to a third-party font host at runtime. */
+@font-face{font-family:'Noto Sans Khmer';src:url('/fonts/NotoSansKhmer.ttf') format('truetype');font-style:normal;font-weight:100 900;font-display:swap}
+@font-face{font-family:'Noto Sans Devanagari';src:url('/fonts/NotoSansDevanagari.ttf') format('truetype');font-style:normal;font-weight:100 900;font-display:swap}
+html[lang=km] body,html[lang=km] :is(.mono,.wall-label,.window,.countdown,.eyebrow,.stats),option[lang=km]{font-family:'Noto Sans Khmer',Inter,sans-serif;letter-spacing:normal}
+html[lang=hi] body,html[lang=hi] :is(.mono,.wall-label,.window,.countdown,.eyebrow,.stats),option[lang=hi]{font-family:'Noto Sans Devanagari',Inter,sans-serif;letter-spacing:normal}
+html:is([lang=km],[lang=hi]) :is(h1,h2,p,label,input,select,textarea,summary){letter-spacing:normal}
+html:is([lang=km],[lang=hi]) .brand{font-family:Inter,'Noto Sans JP',sans-serif}
+html[lang=km] .nav-four button span,html[lang=hi] .nav-four button span{line-height:20px}

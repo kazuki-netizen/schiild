@@ -6,9 +6,10 @@ import {italian} from './italian';
 import {singularCopy} from './singular-copy';
 import {currentLanguage} from './language';
 import {displayTerminology} from './terminology';
+import {extraCatalogs,isExtraLanguage} from './locale-catalogs';
 const values={...official,...demoCopy};
 export type CopyKey = keyof typeof values;
 export function t(key:CopyKey,params:Record<string,string|number>={}){
- const language=currentLanguage(),base=language==='ja'?values[key]:language==='es'?spanish[key]:language==='it'?italian[key]:translations[key][{en:0,ko:1,fr:2,nl:3}[language]],text=(Number(params.n)===1?singularCopy[key]?.[language]:undefined)??base;
+ const language=currentLanguage(),base=isExtraLanguage(language)?extraCatalogs[language][key]:language==='ja'?values[key]:language==='es'?spanish[key]:language==='it'?italian[key]:translations[key][{en:0,ko:1,fr:2,nl:3}[language]],text=(Number(params.n)===1?singularCopy[key]?.[language]:undefined)??base;
  return displayTerminology(key,language,text).replace(/\{(\w+)\}/g,(_,name)=>String(params[name]??`{${name}}`));
 }

@@ -1,3 +1,4 @@
+import {pushText} from '../src/push-copy.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
@@ -97,4 +98,14 @@ test('LINE-required deployment stops queued notifications for unlinked legacy ac
  const strict=notificationService(f.store,{requireLine:true,config,images,now:f.now,send:async()=>{throw Error('unlinked account received notification');}});
  await assert.rejects(strict.execute({action:'push.config'},await f.auth.identity(b.token)),error=>error.code==='line_required');
  await strict.drain();assert.equal(f.sent.length,0);
+});
+
+
+test('Indonesian, Khmer and Hindi subscriptions receive translated notifications',async()=>{
+ for(const language of ['id','km','hi']){
+  const f=fixture(),a=await f.register('sender_member',1),b=await f.register('reader_member',2),room=await f.call('create',{name:'Original Atelier Name',capacity:2},a.token);
+  await f.call('join',{code:room.code},b.token);await f.subscribe(b.token,'device-'+language,language);f.advance(1);
+  await f.call('post',{code:room.code,day:room.day,photo},a.token);await f.push.drain();
+  assert.equal(f.sent.length,1);assert.equal(f.sent[0].payload.title,pushText('demo.push.post_title',language));assert(f.sent[0].payload.body.includes(room.name));assert(!/[ぁ-んァ-ン]/u.test(f.sent[0].payload.body));
+ }
 });

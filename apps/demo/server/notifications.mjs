@@ -6,7 +6,9 @@ import {listRecords} from './accounts.mjs';
 import {globalService} from './global-service.mjs';
 import {pushDigest,EVENT_TTL} from './notification-events.mjs';
 import {pushText} from '../src/push-copy.ts';
-const kinds=['atelierReady','globalReady','post'],locales=['ja','en','ko','fr','nl','es','it'];
+import {localeTags} from '../src/locale-info.ts';
+import {localizedDate} from '../src/locale-dates.ts';
+const kinds=['atelierReady','globalReady','post'],locales=Object.keys(localeTags);
 const defaults={atelierReady:true,globalReady:true,post:true};
 const fail=(status,code)=>{throw new ApiError(status,code);};
 const read=(store,key)=>store.getWithMetadata(key,{type:'json'});
@@ -82,8 +84,7 @@ export function notificationService(store,{config,images,now=()=>Date.now(),send
  }
  async function payload(event,sub){
   const atelier=event.code?(await read(store,`rooms/${event.code}`))?.data.name??'Schiild':'',language=sub.language;
-  const locale={ja:'ja-JP',en:'en-GB',ko:'ko-KR',fr:'fr-FR',nl:'nl-NL',es:'es-ES',it:'it-IT'}[language]??'ja-JP';
-  const date=new Intl.DateTimeFormat(locale,{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(event.day+'T00:00:00Z'));
+  const date=localizedDate(event.day,'notification',language);
   const prefix={atelierReady:'ready',globalReady:'global',post:'post'}[event.kind];
   const query=new URLSearchParams({push:event.kind==='globalReady'?'global':'atelier',day:event.day,...(event.code?{code:event.code,ready:event.kind==='atelierReady'?'1':'0'}:{})});
   return {title:pushText(`demo.push.${prefix}_title`,language),body:pushText(`demo.push.${prefix}_body`,language,{atelier,date}),tag:`schiild-${event.eventId}`,url:'/?'+query,icon:'/app-icons/icon-192.png'};

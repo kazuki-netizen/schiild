@@ -2,14 +2,14 @@
 // never rewrite registered names, IDs, artwork data or other user-supplied values.
 import type {Language} from './language';
 
-export const propertyTerms={en:'property',it:'proprietà',ko:'소유지',fr:'propriété',nl:'perceel',es:'propiedad'} as const;
-export const categoryTerms:Record<Language,string>={ja:'カテゴリー',en:'Category',it:'Categoria',ko:'카테고리',fr:'Catégorie',nl:'Categorie',es:'Categoría'};
+export const propertyTerms={en:'property',it:'proprietà',ko:'소유지',fr:'propriété',nl:'perceel',es:'propiedad','id':'lahan',km:'ដីកម្មសិទ្ធិ',hi:'भूखंड'} as const;
+export const categoryTerms:Record<Language,string>={ja:'カテゴリー',en:'Category',it:'Categoria',ko:'카테고리',fr:'Catégorie',nl:'Categorie',es:'Categoría','id':'Kategori',km:'ប្រភេទ',hi:'श्रेणी'};
 
 function initialCase(source:string,target:string){return source[0]===source[0].toUpperCase()?target[0].toUpperCase()+target.slice(1):target;}
 export function displayTerminology(key:string,language:Language,value:string){
  if(key==='me.title'&&language==='ja')return 'プロフィール';
  if(key==='schiild.meta.tier')return categoryTerms[language];
- if(key==='demo.global.empty_pixel'&&language!=='ja')return {en:'This property is empty',it:'Questa proprietà è vuota',ko:'이 소유지는 아직 비어 있습니다',fr:'Cette propriété est vide',nl:'Dit perceel is leeg',es:'Esta propiedad está vacía'}[language];
+ if(key==='demo.global.empty_pixel'&&language!=='ja')return {en:'This property is empty',it:'Questa proprietà è vuota',ko:'이 소유지는 아직 비어 있습니다',fr:'Cette propriété est vide',nl:'Dit perceel is leeg',es:'Esta propiedad está vacía','id':'Lahan ini kosong',km:'ដីកម្មសិទ្ធិនេះនៅទំនេរ',hi:'यह भूखंड खाली है'}[language];
  // Keep the GLOBAL name indivisible while lowercasing the two artwork names.
  const marker='\uE000';
  let text=value.replace(/グローバル(?:シールト)?|\bGLOBAL(?:\s+SCHIILD)?\b/gi,marker);

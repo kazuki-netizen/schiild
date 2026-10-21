@@ -1,0 +1,26 @@
+[
+  {
+    "file": "NotoSansKhmer.ttf",
+    "source": "https://github.com/google/fonts/blob/main/ofl/notosanskhmer/NotoSansKhmer[wdth,wght].ttf",
+    "sha": "4ede67c660e1a5921a9a6830f346808097c2ef86",
+    "bytes": 359788
+  },
+  {
+    "file": "NotoSansKhmer-OFL.txt",
+    "source": "https://github.com/google/fonts/blob/main/ofl/notosanskhmer/OFL.txt",
+    "sha": "fddb7127172332edd0d0a0097ab3ad92ead7ba6b",
+    "bytes": 4381
+  },
+  {
+    "file": "NotoSansDevanagari.ttf",
+    "source": "https://github.com/google/fonts/blob/main/ofl/notosansdevanagari/NotoSansDevanagari[wdth,wght].ttf",
+    "sha": "163f04bddc5a96fc523e4080466cac5c588f6594",
+    "bytes": 641944
+  },
+  {
+    "file": "NotoSansDevanagari-OFL.txt",
+    "source": "https://github.com/google/fonts/blob/main/ofl/notosansdevanagari/OFL.txt",
+    "sha": "cd2cc5c94b4151933eba6ee508e3975274d6fa07",
+    "bytes": 4386
+  }
+]
