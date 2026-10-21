@@ -1,6 +1,7 @@
 // DEMO ONLY. Machine-assisted draft with reviewed UI labels and preserved product names.
 import type {CopyKey} from '../copy';
 export default {
+  "demo.delete.failed": "គណនីរបស់អ្នកមិនទាន់ត្រូវបានលុបទេ។ សូមព្យាយាមម្តងទៀតពីទំព័រលុបគណនី។",
   "demo.line.login": "ចូលដោយប្រើ LINE",
   "demo.line.register": "ចុះឈ្មោះដោយប្រើ LINE",
   "demo.line.not_registered": "គណនី LINE នេះមិនទាន់បានចុះឈ្មោះទេ។ សូមបង្កើតគណនីថ្មី។",

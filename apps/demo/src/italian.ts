@@ -3,6 +3,7 @@ import type {CopyKey} from './copy';
 import {pushItalian} from './push-copy.ts';
 // DEMO ONLY. Italian (it-IT, tu). Product names and interpolation keys stay unchanged.
 export const italian={
+ 'demo.delete.failed':'Il tuo account non è stato eliminato. Riprova dalla pagina di eliminazione dell’account.',
  'demo.line.login':'Accedi con LINE',
  'demo.line.register':'Registrati con LINE',
  'demo.line.not_registered':'Questo account LINE non è registrato. Crea un nuovo account.',

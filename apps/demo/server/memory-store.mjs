@@ -30,6 +30,7 @@ export function memoryStore({notificationEvents=false,now=()=>Date.now()}={}){
    return {modified:true,account:structuredClone(updated)};
   },
   async getWithMetadata(key){const value=values.get(key);return value?structuredClone(value):null;},
+  async pruneLineChallenges(now){for(const [key,row] of values)if(key.startsWith('line-challenges/')&&row.data.expires<=now)values.delete(key);},
   async deleteAccount(account,anonymousMember,attemptKeys){
    if(values.get(`accounts/${account.username}`)?.data.member!==account.member)return {modified:false};
    const {writes,deletes}=removalChanges([...values].map(([key,row])=>({key,data:row.data})),account,anonymousMember,attemptKeys);

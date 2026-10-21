@@ -15,6 +15,7 @@ export function clearAccountBrowser(){let cleared=true;try{const keys=Object.key
 export type Account={username:string;name:string;since:string;googleEmail?:string;lineLinked?:boolean;hasPassword?:boolean;canDelete?:boolean;ateliers:{code:string;name:string;capacity:number;canGenerate:boolean}[];custody:{code:string;name:string;day:string;index:number}[]};
 export function saveSession(token:string){if(!/^[a-f0-9]{64}$/.test(token))throw Error('invalid_session');browserStorage().setItem(sessionKey,token);deletionNotified=false;}
 export function clearSession(){browserStorage().removeItem(sessionKey);browserStorage().removeItem(credentialKey);}
+export function currentSession(){return browserStorage().getItem(sessionKey);}
 export class SharedError extends Error{constructor(public code:string,message:string){super(message);}}
 export function sharedErrorMessage(key:string){
  const messages={global_already_recorded:'demo.global.already_recorded',concept_restricted:'demo.posts.concept_restricted',already_recorded:'demo.posts.already',source_forbidden:'demo.posts.source_forbidden',window_closed:'error.window_closed',forbidden:'demo.posts.target_forbidden',not_found:'join.error.not_found',full:'join.error.full',image_invalid:'demo.shared.image_invalid',retry:'demo.posts.retry'} as const;
@@ -32,13 +33,16 @@ export async function sharedRequest<T=SharedState>(action:string,values:Record<s
  if(isWeekPreview){const {weekRequest}=await import('./week-preview');return weekRequest<T>(action,values,signal);}
  // Public API URL only. Secrets are never part of Expo's public environment.
  const endpoint=process.env.EXPO_PUBLIC_DEMO_API_URL||'/.netlify/functions/atelier';
- const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${credential()}`},body:JSON.stringify({action,...values}),signal});
+ const requestCredential=credential();
+ const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${requestCredential}`},body:JSON.stringify({action,...values}),signal});
  let body;try{body=await response.json();}catch{throw Error(t('demo.shared.unavailable'));}
  if(!response.ok){
   const key=body.error;
-  if(key==='line_required'){window.dispatchEvent(new Event('schiild:line-required'));throw new SharedError(key,t('demo.auth.line_required'));}
-  if(key==='session_expired'||key==='unauthorized')window.dispatchEvent(new Event('schiild:session-expired'));
-  if(key==='account_deleted'){if(!deletionNotified){deletionNotified=true;window.dispatchEvent(new Event('schiild:account-deleted'));}throw new SharedError(key,t('demo.delete.done'));}
+  // A response for an old session must not clear a newly signed-in account.
+  const current=(currentSession()||browserStorage().getItem(credentialKey))===requestCredential;
+  if(key==='line_required'){if(current)window.dispatchEvent(new Event('schiild:line-required'));throw new SharedError(key,t('demo.auth.line_required'));}
+  if(current&&(key==='session_expired'||key==='unauthorized'))window.dispatchEvent(new Event('schiild:session-expired'));
+  if(key==='account_deleted'){if(current&&!deletionNotified){deletionNotified=true;window.dispatchEvent(new Event('schiild:account-deleted'));}throw new SharedError(key,t('demo.delete.done'));}
   if(key==='concept_invalid'||key==='concept_forbidden')throw new SharedError(key,t(key==='concept_invalid'?'demo.concept.invalid':'demo.concept.forbidden'));
   if(key==='visibility_invalid'||key==='visibility_forbidden')throw new SharedError(key,t(key==='visibility_invalid'?'demo.visibility.invalid':'demo.visibility.forbidden'));
   if(key==='delete_requires_password')throw new SharedError(key,t('demo.delete.requires_password'));

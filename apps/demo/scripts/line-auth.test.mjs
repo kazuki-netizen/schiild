@@ -103,3 +103,20 @@ test('concurrent explicit LINE registrations cannot create duplicates or overwri
  assert.equal(results.filter(row=>row.status==='rejected'&&row.reason.code==='line_registered').length,1);
  assert.equal((await f.store.listJSON('accounts/')).length,1);assert.equal((await f.store.listJSON('line-identities/')).length,1);
 });
+
+test('another tab cannot overwrite a deletion attempt, and callback intent cannot turn deletion into login',async()=>{
+ const f=fixture(),signed=await f.finish(await f.start(first,{intent:'register'}));
+ const deletion=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username});
+ const login=await f.start(signed.token);
+ await assert.rejects(f.auth.execute({action:'account.line',code:'valid',state:login.state,expectedIntent:'delete'},signed.token),error=>error.code==='line_expired');
+ assert.equal(f.calls.length,1);
+ assert.deepEqual(await f.auth.execute({action:'account.line',code:'valid',state:deletion.state,expectedIntent:'delete'},signed.token),{deleted:true});
+ await assert.rejects(f.finish(login,signed.token),error=>error.code==='account_deleted');
+});
+
+test('a new per-attempt challenge is bound to the initiating session even for the same LINE account',async()=>{
+ const f=fixture(),signed=await f.finish(await f.start(first,{intent:'register'})),again=await f.finish(await f.start(second),second);
+ const deletion=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username});
+ await assert.rejects(f.finish(deletion,again.token),error=>error.code==='line_expired');
+ assert.deepEqual(await f.finish(deletion,signed.token),{deleted:true});
+});

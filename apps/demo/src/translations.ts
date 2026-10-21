@@ -4,6 +4,7 @@ import {pushTranslations} from './push-copy.ts';
 // Product names stay Schiil / Schiild; custody never implies a financial right.
 import type {CopyKey} from './copy';
 export const translations={
+ 'demo.delete.failed':['Your account has not been deleted. Please try again from the account deletion page.','계정 삭제가 완료되지 않았습니다. 계정 삭제 화면에서 다시 시도해 주세요.','Votre compte n’a pas été supprimé. Réessayez depuis la page de suppression du compte.','Je account is niet verwijderd. Probeer het opnieuw via de pagina voor het verwijderen van je account.'],
  "demo.line.login":["Sign in with LINE","LINE으로 로그인","Connexion avec LINE","Inloggen met LINE"],
  'demo.line.register':['Sign up with LINE','LINE으로 새 계정 만들기','Créer un compte avec LINE','Registreren met LINE'],
  'demo.line.not_registered':['This LINE account is not registered. Please sign up to create a new account.','등록되지 않은 LINE 계정입니다. 새 계정을 만들어 주세요.','Ce compte LINE n’est pas inscrit. Créez un nouveau compte.','Dit LINE-account is niet geregistreerd. Maak een nieuw account aan.'],

@@ -13,6 +13,7 @@ export const demoCopy={
  "demo.line.unavailable":"LINEでログインできませんでした。時間をおいて、もう一度試してください。",
  "demo.line.storage":"LINEでログインするには、ブラウザでこのサイトのデータ保存を許可してください。",
  'demo.line.delete':'削除の確定後、LINEで本人確認します。',
+ 'demo.delete.failed':'アカウントの削除は完了していません。削除画面からもう一度お試しください。',
  "demo.discover.title":"見つける",
  "demo.discover.public":"公開アトリエ",
  "demo.discover.join_public":"アトリエに参加",

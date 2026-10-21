@@ -37,6 +37,7 @@ export function metadataStore(storage,images,{notificationEvents=false,now=()=>D
    return {modified:true,account:updated};
   });},
   async getWithMetadata(key){const row=storage.sql.exec('SELECT data, etag FROM rooms WHERE key = ?',key).toArray()[0];return row?{data:JSON.parse(row.data),etag:row.etag,metadata:{}}:null;},
+  async pruneLineChallenges(now){storage.sql.exec("DELETE FROM rooms WHERE key LIKE 'line-challenges/%' AND json_extract(data,'$.expires') <= ?",now);},
   async deleteAccount(account,anonymousMember,attemptKeys){return storage.transactionSync(()=>{
    const current=storage.sql.exec('SELECT data FROM rooms WHERE key = ?',`accounts/${account.username}`).toArray()[0];
    if(!current||JSON.parse(current.data).member!==account.member)return {modified:false};

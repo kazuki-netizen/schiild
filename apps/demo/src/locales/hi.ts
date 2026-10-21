@@ -1,6 +1,7 @@
 // DEMO ONLY. Machine-assisted draft with reviewed UI labels and preserved product names.
 import type {CopyKey} from '../copy';
 export default {
+  "demo.delete.failed": "आपका खाता नहीं हटाया गया है। खाता हटाने वाले पेज से फिर कोशिश करें।",
   "demo.line.login": "LINE से लॉगिन करें",
   "demo.line.register": "LINE से नया खाता बनाएं",
   "demo.line.not_registered": "यह LINE खाता पंजीकृत नहीं है। कृपया नया खाता बनाएं।",

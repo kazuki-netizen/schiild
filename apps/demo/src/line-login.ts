@@ -4,7 +4,7 @@ import {saveLinePending,consumeLinePending} from './line-pending.ts';
 import {sharedRequest} from './shared-api';
 import type {Account} from './shared-api';
 import {t} from './copy';
-export type LineCallback={code:string;state:string;invalid:boolean};
+export type LineCallback={code:string;state:string;invalid:boolean;intent?:'login'|'register'|'delete'};
 let captured:LineCallback|null|undefined;
 export async function beginLine(intent:'login'|'register'|'delete'='login',confirmUsername?:string){
  const value=await sharedRequest<{enabled:boolean;url:string;state:string;intent:string}>('account.line.start',{intent,confirmUsername});
@@ -21,10 +21,13 @@ export function takeLineCallback():LineCallback|null{
  for(const key of ['auth','code','state','error','error_description','friendship_status_changed'])url.searchParams.delete(key);
  history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  try{const pending=consumeLinePending(state,{local:browserStorage(),session:browserSessionStorage()});
-  return captured={code,state,invalid:denied||!pending||!code||code.length>2048};
+  return captured={code,state,intent:pending?.intent,invalid:denied||!pending||!code||code.length>2048};
  }catch{return captured={code:'',state:'',invalid:true};}
 }
 export async function completeLine(value:LineCallback){
  if(value.invalid)throw Error(t('demo.line.expired'));
- return sharedRequest<{deleted:true}|{token:string;account:Account}>('account.line',{code:value.code,state:value.state});
+ const result=await sharedRequest<{deleted:true}|{token:string;account:Account}>('account.line',{code:value.code,state:value.state,expectedIntent:value.intent});
+ // A deletion return must never be accepted as a successful sign-in.
+ if(value.intent==='delete'&&(!('deleted' in result)||result.deleted!==true))throw Error(t('demo.delete.failed'));
+ return result;
 }

@@ -1,6 +1,7 @@
 // DEMO ONLY. Machine-assisted draft with reviewed UI labels and preserved product names.
 import type {CopyKey} from '../copy';
 export default {
+  "demo.delete.failed": "Akun Anda belum dihapus. Coba lagi dari halaman penghapusan akun.",
   "demo.line.login": "Masuk dengan LINE",
   "demo.line.register": "Daftar dengan LINE",
   "demo.line.not_registered": "Akun LINE ini belum terdaftar. Silakan buat akun baru.",

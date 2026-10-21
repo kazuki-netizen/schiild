@@ -3,6 +3,7 @@ import {pushSpanish} from './push-copy.ts';
 // DEMO ONLY. Spanish copy uses the same keys and restrictions as the other languages.
 import type {CopyKey} from './copy';
 export const spanish={
+ 'demo.delete.failed':'Tu cuenta no se ha eliminado. Vuelve a intentarlo desde la página de eliminación de la cuenta.',
  'demo.line.register':'Regístrate con LINE',
  'demo.line.not_registered':'Esta cuenta de LINE no está registrada. Crea una cuenta nueva.',
  'demo.line.registered':'Esta cuenta de LINE ya está registrada. Inicia sesión.',

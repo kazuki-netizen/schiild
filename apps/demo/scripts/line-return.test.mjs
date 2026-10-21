@@ -50,3 +50,32 @@ test('actual client callback completes LINE account/session in another tab; wron
  await assert.rejects(wrong.api.completeLine({code:'provider-code',state:callbackState,invalid:true}),/demo.line.expired/);
  assert(!JSON.stringify(local).includes('provider-code'));assert(!JSON.stringify(local).includes(result.token));
 });
+
+test('LINE-only deletion returns into a second tab, removes memberships and all sessions, and never restores a profile',async()=>{
+ const local=memory(),session=memory(),store=memoryStore(),config={channelId:'1234567890',channelSecret:'f'.repeat(32),redirectUri:'https://app.example/?auth=line'};
+ const auth=accounts(store,{requireLine:true,lineConfig:config,verifyLine:async()=>({subject:'U'+'1'.repeat(32),name:'Deletion test'})});
+ let token=credential;
+ const request=(action,values={})=>auth.execute({action,...values},token);
+ const original=client(local,session,'https://app.example/',request);await original.api.beginLine('register');
+ const firstState=new URL(original.location.href).searchParams.get('state');
+ const signed=client(local,memory(),'https://app.example/?auth=line&code=signup&state='+firstState,request);
+ const account=await signed.api.completeLine(signed.api.takeLineCallback());token=account.token;
+ assert.equal(account.account.hasPassword,false);
+ const deletion=client(local,memory(),'https://app.example/',request);await deletion.api.beginLine('delete',account.account.username);
+ const deleteState=new URL(deletion.location.href).searchParams.get('state');
+ // A second tab starts an ordinary sign-in while the deletion confirmation is open.
+ const other=client(local,memory(),'https://app.example/',request);await other.api.beginLine('login');
+ const resumed=client(local,memory(),'https://app.example/?auth=line&code=delete&state='+deleteState,request),callback=resumed.api.takeLineCallback();
+ assert.equal(callback.intent,'delete');assert.equal(callback.invalid,false);
+ assert.deepEqual(await resumed.api.completeLine(callback),{deleted:true});
+ assert.equal((await store.listJSON('accounts/')).length,0);assert.equal((await store.listJSON('line-identities/')).length,0);
+ await assert.rejects(auth.execute({action:'account.me'},token),error=>error.code==='account_deleted');
+ token='d'.repeat(64);const again=client(local,memory(),'https://app.example/',request);await again.api.beginLine('login');
+ const retryState=new URL(again.location.href).searchParams.get('state'),retry=client(local,memory(),'https://app.example/?auth=line&code=login&state='+retryState,request);
+ await assert.rejects(retry.api.completeLine(retry.api.takeLineCallback()),error=>error.code==='line_not_registered');
+});
+
+test('a deletion callback rejects a sign-in response instead of saving its token',async()=>{
+ const resumed=client(memory(),memory(),'https://app.example/',async()=>({token:'d'.repeat(64),account:{username:'old'}}));
+ await assert.rejects(resumed.api.completeLine({code:'delete',state,invalid:false,intent:'delete'}),/demo.delete.failed/);
+});
