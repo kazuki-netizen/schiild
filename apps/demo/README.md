@@ -36,15 +36,26 @@
 
 [ユーザー確認済み] 背景と白い面はすべて純白の単色にし、赤みのあるオレンジをボタン・選択状態・ブランドに使います。追加指示で装飾をなくし、ホームのイラスト、空色のグラデーション、飾りの線や丸印、作品周囲の飾り枠・切手風の縁・影を削除しました。作品・操作アイコン・選択状態を示す表示は維持します。参考写真はUIに使用しません。デモ専用の `src/studio-theme.css` を最後に読み込む構成で、作品自体の色・解像度・座標や本番のトークンは変更していません。
 
-## LINEログイン（デモ専用・現在保留）
+## 利用者のLINE登録・ログイン（デモ専用）
 
-[ユーザー確認済み・2026年10月19日] LINEログインを保留します。公開環境の `LINE_LOGIN_CONFIG` に `paused: true` を設定し、ログイン・連携の導線を非表示にし、認可開始とコールバックのAPIも拒否します。Windows内の接続情報と既存のアカウント・投稿は維持します。ID・パスワードのログインは利用できます。再開時は接続先チャネルの確認後に `paused` を解除します。以下は再開に備えた実装の説明です。
+利用者は自分のLINEアカウントから登録・ログインできます。初回はSchiildのアカウントを自動作成し、次回以降は同じアカウントと所属アトリエへ戻ります。既存のID・パスワードのアカウントへ連携する場合は、先にそのアカウントへログインし、プロフィールのLINEログインから連携します。表示名やメールアドレスだけではアカウントを結合しません。LINE公式アカウント管理者としてのログインとは別の機能です。WhatsAppとGoogleの新しい接続は保留を維持します。
 
-[実装済み・現在保留] LINE連携の実装を残しています。WhatsAppとGoogleの新しい設定も保留中です。再開した場合、LINEで初めてログインするとアカウントを作り、次回以降は同じLINEから同じアカウントへ戻ります。既存のID・パスワードのアカウントへ連携する場合は、先にそのアカウントへログインし、プロフィールのLINEログインから連携します。表示名やメールアドレスだけではアカウントを結合しません。
+[公開接続の確認待ち・2026年10月21日] 保存済みのChannel IDはLINEの認可画面で `Invalid client_id` と判定されました。有効な「LINEログイン」チャネルへの差し替えが済むまで、公開環境の `LINE_LOGIN_CONFIG` は `paused: true` を維持します。アプリ側の新規登録・再ログイン・既存アカウントとの連携は、SQLiteを含む自動テストで確認しています。
 
 LINE DevelopersのLINEログインチャネルでウェブアプリを有効にし、コールバックURLを `https://schiild.app/?auth=line` に設定してください。一般の利用者に使ってもらう場合は、チャネルを公開する必要があります。要求スコープは `openid profile` だけです。メールアドレス・電話番号・友だち一覧にはアクセスしません。
 
 Cloudflare WorkerのSecret `LINE_LOGIN_CONFIG` に `channelId`・`channelSecret`・`redirectUri` の3項目を持つJSONを設定します。秘密情報はチャット、Git、Expoの公開環境変数、Xserverへ入れません。接続設定がない間はLINEの導線を表示しません。手動の設定は `apps/demo` で `pnpm exec wrangler secret put LINE_LOGIN_CONFIG --config wrangler.jsonc` を実行し、JSONをCLIの入力欄へ渡します。ローカルの接続入力画面を使う場合、Channel secretはWindows資格情報マネージャーへ保存します。
+
+再開・停止の設定は `scripts/deploy-line.mjs` にまとめています。Git対象外の `.deploy-private/line-login.json` から公開のChannel IDを読み、Channel secretはWindows資格情報から子プロセスの `SCHIILD_LINE_SECRET` へ渡します。ファイルや引数へ秘密の値を書きません。`--check` は設定の形式だけを確認し、LINE側での有効性やチャネル公開状態は確認しません。有効なLINEログインチャネルと戻り先を確認してから `--enable` を実行します。
+
+```sh
+node apps/demo/scripts/deploy-line.mjs --check
+node apps/demo/scripts/deploy-line.mjs --enable
+# 停止するとき
+node apps/demo/scripts/deploy-line.mjs --pause
+```
+
+反映には `CLOUDFLARE_ACCOUNT_ID` とCloudflareの認証情報が必要です。スコープ付きの `CLOUDFLARE_API_TOKEN`、または `CLOUDFLARE_API_KEY` と `CLOUDFLARE_EMAIL` を子プロセスに渡します。秘密の値をコマンドライン引数へ含めません。これらの操作はLINE設定だけを更新し、アカウント・アトリエ・写真・作品を初期化しません。
 
 認可コードはCloudflareで交換し、LINEの検証APIで署名・発行元・対象チャネル・有効期限・nonceを確認します。state、PKCE S256、5分で失効する一度限りのブラウザ別チャレンジ、IPごとの認証試行制限を付けています。戻りURLから認可コードとstateを除去し、LINEのアクセストークンは保存しません。LINE識別子はチャネルIDと合わせたハッシュだけを保存します。
 
