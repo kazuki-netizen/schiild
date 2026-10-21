@@ -80,7 +80,7 @@ export default function AtelierApp(){
     else if(changed||!value.account)setView(previous=>changed||['me','settings','delete-account','account-check'].includes(previous)?value.account?'me':'auth':previous);
    }).catch(cause=>{if(request===accountSequence.current)setMessage(cause instanceof Error?cause.message:t('error.server.body'));});
   };
-  return watchAccountLifecycle({target:window,document,readSession:currentSession,onChange:()=>refresh(true),onResume:()=>refresh()});
+  return watchAccountLifecycle({target:window,document,readSession:currentSession,onChange:()=>refresh(true),onResume:()=>refresh(),onErase:()=>finishDeletion(false)});
  },[Boolean(collection)]);
  useEffect(()=>{
   if(view!=='join'||!input)return;
@@ -145,12 +145,12 @@ export default function AtelierApp(){
   else if(isWeekPreview&&profile.ateliers.length)next.selected=profile.ateliers[0].code;
   return next;
  });}
- async function updateName(name:string){const result=await sharedRequest<{account:Account}>('account.update',{name});setAccount(result.account);}
+ async function updateName(name:string){const request=accountSequence.current,session=currentSession(),result=await sharedRequest<{account:Account}>('account.update',{name});if(request===accountSequence.current&&session===currentSession())setAccount(result.account);}
  function changeLanguage(value:Language){try{saveLanguage(value);if(isWeekPreview){setAccount(current=>current?localizeWeekData(current,value):current);setCollection(current=>current?localizeWeekData(current,value):current);setSharing(current=>current?localizeWeekData(current,value):current);setInvitation(current=>current?localizeWeekData(current,value):current);}setLanguage(value);setMessage('');}catch{setMessage(t('error.server.title'));}}
  function updateSettings(value:Preferences){try{savePreferences(value);setSettings(value);}catch{setMessage(t('error.server.title'));}}
  async function logout(){accountSequence.current++;await disablePush().catch(()=>{});await sharedRequest('account.logout');clearSession();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setCollection(current=>current?{...current,ateliers:current.ateliers.filter(entry=>!entry.online),selected:current.ateliers.find(entry=>!entry.online)?.code??''}:current);setView('auth');}
- function finishDeletion(){accountSequence.current++;const cleared=clearAccountBrowser();resetBrowser();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setSettings({name:'',reduceMotion:false});setCollection(restore());setNavigation(previous=>({screen:'home',revision:previous.revision+1}));setSharing(null);setInvitation(null);setView('auth');setMessage(t(cleared?'demo.delete.done':'demo.delete.local_failed'));window.scrollTo(0,0);}
- async function deleteAccount(confirmUsername:string,password:string){if(account?.lineLinked&&!account.hasPassword){await beginLine('delete',confirmUsername);return;}accountSequence.current++;await sharedRequest<{done:boolean}>('account.delete',{confirmUsername,password});finishDeletion();}
+ function finishDeletion(notify=true){accountSequence.current++;const cleared=clearAccountBrowser(notify,notify);if(notify)resetBrowser();googleLogout();setAccount(null);setAccountRevision(value=>value+1);setSettings({name:'',reduceMotion:false});setName('');setInput('');setConcept('');setPublicCode('');setPostSelection(undefined);setDeleting(null);setGlobalSelection({day:demoDay()});setCollection({version:3,device:crypto.randomUUID(),selected:'',ateliers:[]});setNavigation(previous=>({screen:'home',revision:previous.revision+1}));setSharing(null);setInvitation(null);setView('auth');setMessage(t(cleared?'demo.delete.done':'demo.delete.local_failed'));window.scrollTo(0,0);}
+ async function deleteAccount(confirmUsername:string,password:string){if(account?.lineLinked){await beginLine('delete',confirmUsername);return;}accountSequence.current++;await sharedRequest<{done:boolean}>('account.delete',{confirmUsername,password});finishDeletion();}
  async function operation(task:()=>Promise<void>){if(lock.current)return;lock.current=true;setBusy(true);setMessage('');try{await task();}catch(error){setMessage(error instanceof Error?error.message:t('demo.shared.unavailable'));}finally{lock.current=false;setBusy(false);}}
  async function create(source?:Atelier){
   if(!participant){rememberAuthDestination('create');go('auth');return;}

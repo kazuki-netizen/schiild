@@ -31,7 +31,7 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
    if(data.pixels[member]){if(data.pixels[member].source===source)return;throw new ApiError(409,'global_already_recorded');}
    // Keep only the explicitly selected GLOBAL photo, independently of atelier membership.
    // The opaque storage key is never sent to the browser and survives anonymization.
-   const photoKey=`photos/${digest('global-schiil/'+source)}/${day}/${source}`;
+   const photoKey=`photos/${member}/${day}/${source}`;
    if(!await store.get(photoKey,{type:'arrayBuffer'}))await store.set(photoKey,photo,{onlyIfNew:true});
    if(!data.pixels[member]){
     const position=Object.values(data.pixels).reduce((last,pixel)=>Math.max(last,pixel.position),-1)+1;
@@ -77,7 +77,7 @@ export function globalService(store,{images,now=()=>Date.now()}={}){
   for(const position of positions){
    const pixel=layout.pixels[position],original=pixel?data.pixels[pixel.member]:null;if(!original){result.push({position,image:null});continue;}
    const thumbnailKey=`global/${day}/${digest('schiil-thumb-v1/'+original.source)}`;let bytes=await store.get(thumbnailKey,{type:'arrayBuffer'});
-   if(!bytes){let photo=original.photoKey?await store.get(original.photoKey,{type:'arrayBuffer'}):null;
+   if(!bytes&&!original.sourceDeleted){let photo=original.photoKey?await store.get(original.photoKey,{type:'arrayBuffer'}):null;
     if(!photo){if(!loadedRooms){rooms.push(...await listRecords(store,'rooms/'));loadedRooms=true;}for(const {data:room} of rooms){if(original.code&&original.code!==room.code)continue;const key=Object.values(room.days[day]?.posts??{}).find(key=>key.endsWith('/'+original.source));if(key){const candidate=await store.get(key,{type:'arrayBuffer'});if(candidate&&digest(Buffer.from(candidate))===original.source){photo=candidate;break;}}}}
     if(photo){bytes=await images.thumbnail(photo);await store.set(thumbnailKey,bytes,{onlyIfNew:true});}
    }

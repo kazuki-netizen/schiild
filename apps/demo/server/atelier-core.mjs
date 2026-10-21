@@ -6,6 +6,7 @@ import {listRecords} from './accounts.mjs';
 import {dayArea,areaSummary} from './personal-area.mjs';
 import {WORK_SIZE,workSize} from '../src/resolution.ts';
 import {normalizeConcept,isFreeConcept} from '../src/concept.ts';
+import {REMOVED_PHOTO} from './account-removal.mjs';
 
 export class ApiError extends Error {
  constructor(status, code){super(code);this.status=status;this.code=code;}
@@ -43,7 +44,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
  }
  async function composeDay(room,today){
   return images.compose(partition(room.capacity,random(today.seed)),async rect=>{
-   const key=today.posts[rect.slot];if(!key)return null;
+    const key=today.posts[rect.slot];if(!key||key===REMOVED_PHOTO)return null;
    const photo=await store.get(key,{type:'arrayBuffer'});if(!photo)fail(503,'generation_failed');
    return photo;
   },today.seed,workSize(today),today.day);

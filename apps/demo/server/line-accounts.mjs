@@ -2,9 +2,10 @@
 import {createHash,randomBytes} from 'node:crypto';
 import {ApiError} from './atelier-core.mjs';
 import {lineVerifier,validLineConfig} from './line-identity.mjs';
+import {prepareOriginalDeletion} from './delete-originals.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const fail=(status,code)=>{throw new ApiError(status,code);};
-export function lineAccounts(store,{config,now,identity,session,verify=lineVerifier(config??{},{now}),audit=()=>{}}){
+export function lineAccounts(store,{config,now,identity,session,verify=lineVerifier(config??{},{now}),audit=()=>{},purgePhotos=false,images}){
  return async(body,credential)=>{
   let phase='request',intent='unknown';
   const mark=next=>{phase=next;audit({phase,intent});};
@@ -25,7 +26,7 @@ export function lineAccounts(store,{config,now,identity,session,verify=lineVerif
    const url=new URL('https://access.line.me/oauth2/v2.1/authorize');
    // LINE app authentication stays available. Requiring prompt=login disables
    // that path and forces a separate password/QR login, which users backed out of.
-   url.search=new URLSearchParams({response_type:'code',client_id:config.channelId,redirect_uri:config.redirectUri,state,scope:'openid profile',nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',...(intent==='delete'?{prompt:'consent'}:{})}).toString();
+   url.search=new URLSearchParams({response_type:'code',client_id:config.channelId,redirect_uri:config.redirectUri,state,scope:'openid profile',nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',...(['delete','register'].includes(intent)?{prompt:'consent'}:{})}).toString();
    mark('issued');return {enabled:true,url:url.href,state,intent};
   }
   if(body.action!=='account.line')fail(400,'invalid');
@@ -43,7 +44,9 @@ export function lineAccounts(store,{config,now,identity,session,verify=lineVerif
   if(challenge.expires<=now()||current.member!==actor.member||current.account?.username!==actor.account?.username)fail(401,'line_expired');
   if(challenge.intent==='delete'){
    if(!current.account||current.account.lineSubject!==subject)fail(401,'line_invalid');
-   mark('deleting');const result=await store.deleteAccount(current.account,randomBytes(32).toString('hex'),[]);if(!result.modified)fail(401,'account_deleted');
+   if(purgePhotos)await prepareOriginalDeletion(store,current.account,images);
+   if(verified.deauthorize){mark('unlinking');await verified.deauthorize();}
+   mark('deleting');const result=await store.deleteAccount(current.account,randomBytes(32).toString('hex'),[`auth-attempts/${hash(current.account.username)}`,`auth-attempts/${hash('delete/'+current.account.username)}`],{purgePhotos});if(!result.modified)fail(401,'account_deleted');
    mark('deleted');return {deleted:true};
   }
   const mapping=await store.getWithMetadata(`line-identities/${subject}`,{type:'json'});
@@ -57,7 +60,8 @@ export function lineAccounts(store,{config,now,identity,session,verify=lineVerif
   // Login never creates an account. Deletion removes the mapping, so even the
   // same verified LINE identity must explicitly choose a fresh registration.
   if(challenge.intent!=='register'&&!current.account)fail(401,'line_not_registered');
-  const account=current.account??{username:`l_${randomBytes(10).toString('hex')}`,name:verified.name||'Schiilder',member:current.member,since:new Date(now()).toISOString().slice(0,10)};
+  // A fresh registration starts blank, even if LINE still supplies the same name.
+  const account=current.account??{username:`l_${randomBytes(10).toString('hex')}`,name:'',member:current.member,since:new Date(now()).toISOString().slice(0,10)};
   const result=await store.registerLine({...account,lineSubject:subject});
   if(!result.modified){
    if(result.reason==='line'&&challenge.intent==='register')fail(409,'line_registered');

@@ -38,17 +38,18 @@ export function metadataStore(storage,images,{notificationEvents=false,now=()=>D
   });},
   async getWithMetadata(key){const row=storage.sql.exec('SELECT data, etag FROM rooms WHERE key = ?',key).toArray()[0];return row?{data:JSON.parse(row.data),etag:row.etag,metadata:{}}:null;},
   async pruneLineChallenges(now){storage.sql.exec("DELETE FROM rooms WHERE key LIKE 'line-challenges/%' AND json_extract(data,'$.expires') <= ?",now);},
-  async deleteAccount(account,anonymousMember,attemptKeys){return storage.transactionSync(()=>{
+  async deleteAccount(account,anonymousMember,attemptKeys,options={}){return storage.transactionSync(()=>{
    const current=storage.sql.exec('SELECT data FROM rooms WHERE key = ?',`accounts/${account.username}`).toArray()[0];
    if(!current||JSON.parse(current.data).member!==account.member)return {modified:false};
    const rows=storage.sql.exec('SELECT key,data FROM rooms').toArray().map(row=>({key:row.key,data:JSON.parse(row.data)}));
-   const {writes,deletes}=removalChanges(rows,account,anonymousMember,attemptKeys);
+   const {writes,deletes,photoKeys}=removalChanges(rows,account,anonymousMember,attemptKeys,options);
    for(const key of deletes)storage.sql.exec('DELETE FROM rooms WHERE key = ?',key);
    for(const [key,data] of writes){const old=storage.sql.exec('SELECT etag FROM rooms WHERE key = ?',key).toArray()[0];storage.sql.exec('INSERT INTO rooms (key,data,etag) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET data=excluded.data,etag=excluded.etag',key,JSON.stringify(data),String(Number(old?.etag??0)+1));}
+   if(options.purgePhotos){if(!images.deletePhotosSync&&photoKeys.length)throw Error('image_deletion_unavailable');images.deletePhotosSync?.(photoKeys,account.member);}
    return {modified:true};
   });},
   async get(key){return images.get(key);},
-  async set(key,data){return images.set(key,data);},
+  async set(key,data){const read=key=>{const value=storage.sql.exec('SELECT data FROM rooms WHERE key = ?',key).toArray()[0];return value?JSON.parse(value.data):undefined;};if(!metadataWriteAllowed(key,data,read))return {modified:false};return images.set(key,data);},
   async deleteJSON(key){if(!/^push-(preferences|subscriptions|events|deliveries)\/[a-f0-9]{64}$/.test(key))throw Error('metadata_key');storage.sql.exec('DELETE FROM rooms WHERE key = ?',key);},
   async setJSON(key,data,{onlyIfNew,onlyIfMatch}={}){
    if(!/^(rooms\/[A-Z0-9]{8}|globals\/\d{4}-\d{2}-\d{2}|accounts\/[a-z0-9_-]{3,24}|members\/[a-f0-9]{64}|sessions\/[a-f0-9]{64}|auth-attempts\/[a-f0-9]{64}|(google|line)-(challenges|identities)\/[a-f0-9]{64}|push-(preferences|subscriptions|events|deliveries)\/[a-f0-9]{64})$/.test(key))throw Error('metadata_key');

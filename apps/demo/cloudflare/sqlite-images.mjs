@@ -10,21 +10,28 @@ export function imageFilename(key){
 export function sqliteImages(storage){
  storage.sql.exec('CREATE TABLE IF NOT EXISTS image_blobs (name TEXT PRIMARY KEY, byte_length INTEGER NOT NULL, sha256 TEXT NOT NULL)');
  storage.sql.exec('CREATE TABLE IF NOT EXISTS image_chunks (name TEXT NOT NULL, part INTEGER NOT NULL, bytes BLOB NOT NULL, PRIMARY KEY(name,part))');
+ storage.sql.exec('CREATE TABLE IF NOT EXISTS photo_members (name TEXT PRIMARY KEY, member TEXT NOT NULL)');
+ storage.sql.exec('CREATE INDEX IF NOT EXISTS photo_member_index ON photo_members(member)');
  const info=name=>storage.sql.exec('SELECT byte_length,sha256 FROM image_blobs WHERE name = ?',name).toArray()[0]??null;
- function importImage(name,value,expected){
+ function importImage(name,value,expected,member){
   if(!/^[a-f0-9]{64}\.image$/.test(name))throw Error('storage_key');
   const bytes=Buffer.from(value);if(!bytes.length||bytes.length>maxBytes)throw Error('storage_size');
   const sha256=digest(bytes);if(expected&&expected!==sha256)throw Error('storage_integrity');
   return storage.transactionSync(()=>{
-   const previous=info(name);if(previous){if(previous.sha256!==sha256||previous.byte_length!==bytes.length)throw Error('storage_conflict');return {modified:false};}
+   const previous=info(name);if(previous){if(previous.sha256!==sha256||previous.byte_length!==bytes.length)throw Error('storage_conflict');if(member)storage.sql.exec('INSERT OR IGNORE INTO photo_members (name,member) VALUES (?,?)',name,member);return {modified:false};}
    storage.sql.exec('INSERT INTO image_blobs (name,byte_length,sha256) VALUES (?,?,?)',name,bytes.length,sha256);
    for(let offset=0,part=0;offset<bytes.length;offset+=chunkSize,part++)storage.sql.exec('INSERT INTO image_chunks (name,part,bytes) VALUES (?,?,?)',name,part,bytes.subarray(offset,offset+chunkSize));
+   if(member)storage.sql.exec('INSERT OR IGNORE INTO photo_members (name,member) VALUES (?,?)',name,member);
    return {modified:true};
   });
  }
  return {
   info(name){if(!/^[a-f0-9]{64}\.image$/.test(name))throw Error('storage_key');return info(name);},
   importImage,
+  deletePhotosSync(keys,member){
+   const names=new Set([...keys.map(imageFilename),...storage.sql.exec('SELECT name FROM photo_members WHERE member = ?',member).toArray().map(row=>row.name)]);
+   for(const name of names){storage.sql.exec('DELETE FROM image_chunks WHERE name = ?',name);storage.sql.exec('DELETE FROM image_blobs WHERE name = ?',name);storage.sql.exec('DELETE FROM photo_members WHERE name = ?',name);}
+  },
   async get(key){
    const name=imageFilename(key),record=info(name);if(!record)return null;
    if(record.byte_length<1||record.byte_length>maxBytes)throw Error('storage_size');
@@ -34,6 +41,6 @@ export function sqliteImages(storage){
    if(bytes.length!==record.byte_length||digest(bytes)!==record.sha256)throw Error('storage_integrity');
    return bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
   },
-  async set(key,value){const name=imageFilename(key);if(info(name))return {modified:false};return importImage(name,value);},
+  async set(key,value){const name=imageFilename(key),member=key.startsWith('photos/')?key.split('/')[1]:null;if(info(name)){if(member)storage.sql.exec('INSERT OR IGNORE INTO photo_members (name,member) VALUES (?,?)',name,member);return {modified:false};}return importImage(name,value,undefined,member);},
  };
 }

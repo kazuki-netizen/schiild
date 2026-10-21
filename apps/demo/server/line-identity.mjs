@@ -5,6 +5,18 @@ export function validLineConfig(config){
  try{const url=new URL(config.redirectUri);return config.paused!==true&&typeof config.channelId==='string'&&/^\d{5,20}$/.test(config.channelId)&&typeof config.channelSecret==='string'&&/^[\x21-\x7e]{16,256}$/.test(config.channelSecret)&&url.protocol==='https:'&&url.search==='?auth=line'&&!url.hash&&!url.username&&!url.password;}catch{return false;}
 }
 export function readLineConfig(value){try{const config=JSON.parse(value);return validLineConfig(config)?config:null;}catch{return null;}}
+export function lineDeauthorizer(config,userAccessToken,{fetcher=fetch}={}){
+ return async()=>{
+  const post=async(url,values,headers={})=>{try{return await fetcher(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded',...headers},body:new URLSearchParams(values),signal:AbortSignal.timeout(15000),redirect:'manual'});}catch{throw new ApiError(503,'line_unavailable');}};
+  if(typeof userAccessToken!=='string'||!userAccessToken||userAccessToken.length>8192)throw new ApiError(503,'line_unavailable');
+  const response=await post('https://api.line.me/oauth2/v3/token',{grant_type:'client_credentials',client_id:config.channelId,client_secret:config.channelSecret});
+  if(!response.ok)throw new ApiError(503,'line_unavailable');
+  let channel;try{channel=await response.json();}catch{throw new ApiError(503,'line_unavailable');}
+  if(typeof channel.access_token!=='string'||!channel.access_token||channel.access_token.length>8192)throw new ApiError(503,'line_unavailable');
+  const revoked=await post('https://api.line.me/user/v1/deauthorize',{userAccessToken},{Authorization:'Bearer '+channel.access_token});
+  if(revoked.status!==204)throw new ApiError(503,'line_unavailable');
+ };
+}
 export function lineVerifier(config,{fetcher=fetch,now=()=>Date.now()}={}){
  return async({code,verifier,nonce,reauth=false,issuedAfter})=>{
   const post=async(path,values)=>{let response;try{response=await fetcher('https://api.line.me/oauth2/v2.1/'+path,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(values),signal:AbortSignal.timeout(15000),redirect:'manual'});}catch{throw new ApiError(503,'line_unavailable');}
@@ -19,6 +31,6 @@ export function lineVerifier(config,{fetcher=fetch,now=()=>Date.now()}={}){
   // auth_time describes the underlying LINE login, which may predate this app
   // confirmation. Do not force password re-entry for an authenticated LINE app.
   if(reauth&&(!Number.isFinite(issuedAfter)||claims.iat*1000<issuedAfter-60000))throw new ApiError(401,'line_invalid');
-  return {subject:claims.sub,name:typeof claims.name==='string'?claims.name.trim().slice(0,40):''};
+  return {subject:claims.sub,name:typeof claims.name==='string'?claims.name.trim().slice(0,40):'',deauthorize:lineDeauthorizer(config,tokens.access_token,{fetcher})};
  };
 }

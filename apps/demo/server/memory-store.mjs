@@ -31,13 +31,15 @@ export function memoryStore({notificationEvents=false,now=()=>Date.now()}={}){
   },
   async getWithMetadata(key){const value=values.get(key);return value?structuredClone(value):null;},
   async pruneLineChallenges(now){for(const [key,row] of values)if(key.startsWith('line-challenges/')&&row.data.expires<=now)values.delete(key);},
-  async deleteAccount(account,anonymousMember,attemptKeys){
+  async deleteAccount(account,anonymousMember,attemptKeys,options={}){
    if(values.get(`accounts/${account.username}`)?.data.member!==account.member)return {modified:false};
-   const {writes,deletes}=removalChanges([...values].map(([key,row])=>({key,data:row.data})),account,anonymousMember,attemptKeys);
+   const {writes,deletes,photoKeys}=removalChanges([...values].map(([key,row])=>({key,data:row.data})),account,anonymousMember,attemptKeys,options);
+   if(options.purgePhotos)this.deletePhotosSync(photoKeys,account.member);
    for(const key of deletes)values.delete(key);
    for(const [key,data] of writes)values.set(key,{data:structuredClone(data),etag:String(++revision),metadata:{}});
    return {modified:true};
   },
+  deletePhotosSync(keys,member){for(const key of new Set([...keys,...[...values.keys()].filter(key=>key.startsWith(`photos/${member}/`))]))values.delete(key);},
   async get(key,{type}={}){const value=values.get(key)?.data;if(value===undefined)return null;return type==='arrayBuffer'?(value instanceof ArrayBuffer?value.slice(0):Uint8Array.from(value).buffer):structuredClone(value);},
   async setJSON(key,data,options={}){return this.set(key,structuredClone(data),options);},
   async deleteJSON(key){if(!/^push-(preferences|subscriptions|events|deliveries)\/[a-f0-9]{64}$/.test(key))throw Error('metadata_key');values.delete(key);},

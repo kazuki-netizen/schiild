@@ -17,7 +17,7 @@ function fixture(sqlite){
   const storage={sql:{exec(query,...args){const statement=db.prepare(query);if(/^SELECT/.test(query))return {toArray:()=>statement.all(...args)};statement.run(...args);return {toArray:()=>[]};}},transactionSync(callback){db.exec('BEGIN');try{const value=callback();db.exec('COMMIT');return value;}catch(error){db.exec('ROLLBACK');throw error;}}};
   store=metadataStore(storage,sqliteImages(storage));
  }else store=memoryStore();
- const auth=accounts(store,{requireLine:true,now:()=>clock,lineConfig:config,verifyLine:async({code})=>({subject:'U'+(code==='other'?'2':'1').repeat(32),name:'Verified member'})});
+ const auth=accounts(store,{requireLine:true,images,now:()=>clock,lineConfig:config,verifyLine:async({code})=>({subject:'U'+(code==='other'?'2':'1').repeat(32),name:'Verified member'})});
  const legacy=accounts(store,{now:()=>clock});
  async function call(action,values={},credential=first){if(action.startsWith('account.'))return auth.execute({action,...values},credential);const actor=await actorForAction(auth,action,credential);return createAtelierService(store,{now:()=>clock,images,memberForCredential:()=>actor.member,publicOnly:!actor.account})({action,...values},credential);}
  async function login(credential=first,code='valid'){const start=await call('account.line.start',{},credential);return call('account.line',{state:start.state,code},credential);}

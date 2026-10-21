@@ -3,8 +3,6 @@ import {gateway} from './gateway.mjs';
 import {imageMigration} from './image-migration.mjs';
 export async function siteRequest(request,env){
  const url=new URL(request.url);
- // Troubleshooting flags only: never log the OAuth URL, code, state or account data.
- if(url.pathname==='/'&&url.searchParams.get('auth')==='line')console.info(JSON.stringify({tag:'line-flow',phase:'redirect',hasCode:url.searchParams.has('code'),hasState:url.searchParams.has('state'),denied:url.searchParams.has('error')}));
  if(url.hostname==='www.schiild.app'){url.hostname='schiild.app';url.protocol='https:';return Response.redirect(url.href,308);}
  if(url.pathname==='/api/migration/images')return imageMigration(request,env);
  if(url.pathname==='/api/atelier'||!env.ASSETS)return gateway(request,env);

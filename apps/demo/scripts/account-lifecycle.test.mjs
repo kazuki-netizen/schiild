@@ -16,3 +16,11 @@ test('deletion/logout in another tab invalidates the old profile and BFCache/res
  target.dispatchEvent(new Event('focus'));assert.equal(calls.length,5);assert.equal(calls.at(-1),'resume');
  stop();token=null;storage(null);document.dispatchEvent(new Event('visibilitychange'));target.dispatchEvent(new Event('focus'));assert.equal(calls.length,5);
 });
+
+test('deletion clears another open tab, but an old event cannot wipe a newly signed-in account',()=>{
+ const target=new EventTarget(),document=Object.assign(new EventTarget(),{visibilityState:'visible'}),calls=[];let token=null;
+ const stop=watchAccountLifecycle({target,document,readSession:()=>token,onChange:()=>{},onResume:()=>{},onErase:()=>calls.push('erased')});
+ target.dispatchEvent(Object.assign(new Event('storage'),{key:'schiild.account.erased.v1',newValue:'1'}));assert.deepEqual(calls,['erased']);
+ token='fresh';target.dispatchEvent(Object.assign(new Event('storage'),{key:'schiild.account.erased.v1',newValue:'2'}));assert.deepEqual(calls,['erased']);
+ stop();
+});

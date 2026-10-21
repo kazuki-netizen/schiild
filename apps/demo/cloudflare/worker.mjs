@@ -33,7 +33,7 @@ export class AtelierDirectory extends DurableObject {
   try{
    let body;try{body=await request.json();}catch{throw new ApiError(400,'invalid');}
    if(!body||typeof body!=='object'||Array.isArray(body))throw new ApiError(400,'invalid');
-   const {store,push}=this.services(),lineConfig=readLineConfig(this.env.LINE_LOGIN_CONFIG),auth=accounts(store,{requireLine:true,googleClientId:this.env.GOOGLE_CLIENT_ID,lineConfig,lineAudit:value=>console.info(JSON.stringify({tag:'line-flow',...value}))}),credential=request.headers.get('authorization')?.replace(/^Bearer /,'');
+   const {store,push}=this.services(),lineConfig=readLineConfig(this.env.LINE_LOGIN_CONFIG),auth=accounts(store,{requireLine:true,images:workerImages,googleClientId:this.env.GOOGLE_CLIENT_ID,lineConfig}),credential=request.headers.get('authorization')?.replace(/^Bearer /,'');
    let result;
    if(typeof body.action==='string'&&body.action.startsWith('account.')){
     // Disabled feature discovery must not consume password-login/deletion attempts.

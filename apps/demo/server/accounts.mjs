@@ -3,6 +3,7 @@ import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {ApiError} from './atelier-core.mjs';
 import {googleVerifier,validGoogleClient} from './google-identity.mjs';
 import {lineAccounts} from './line-accounts.mjs';
+import {prepareOriginalDeletion} from './delete-originals.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const fail=(status,code)=>{throw new ApiError(status,code);};
 const accountKey=username=>`accounts/${username}`;
@@ -17,7 +18,7 @@ export async function listRecords(store,prefix){
  const rows=await Promise.all((listing.blobs??[]).map(async blob=>({key:blob.key,...await store.getWithMetadata(blob.key,{type:'json'})})));
  return rows;
 }
-export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine,requireLine=false,lineAudit}={}){
+export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine,requireLine=false,lineAudit,images}={}){
  async function identity(credential){
   if(!/^[a-f0-9]{64}$/.test(credential??''))fail(401,'unauthorized');
   const member=hash(credential),session=await store.getWithMetadata(`sessions/${member}`,{type:'json'});
@@ -42,7 +43,7 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
   if(!(await store.setJSON(`sessions/${hash(token)}`,{username:account.username,member:account.member,expires:now()+SESSION_MS,revoked:false},{onlyIfNew:true})).modified)fail(401,'account_deleted');
   return {token,account:await profile(account)};
  }
- const line=lineAccounts(store,{config:lineConfig,now,identity,session,verify:verifyLine,audit:lineAudit});
+ const line=lineAccounts(store,{config:lineConfig,now,identity,session,verify:verifyLine,audit:lineAudit,purgePhotos:requireLine,images});
  async function execute(body,credential){
   if(typeof body.action==='string'&&body.action.startsWith('account.line'))return line(body,credential);
   // Live adapters require LINE. The opt-out exists only for legacy core test fixtures.
@@ -119,6 +120,7 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
   if(!actor.account)fail(401,'unauthorized');
   if(body.action==='account.logout'){await store.setJSON(actor.sessionKey,{username:actor.account.username,expires:0,revoked:true});return {done:true};}
   if(body.action==='account.delete'){
+   if(requireLine&&actor.account.lineSubject)fail(400,'line_invalid');
    if(body.confirmUsername!==actor.account.username||typeof body.password!=='string'||!body.password.length||body.password.length>128)fail(400,'account_invalid');
    if(!actor.account.passwordHash)fail(400,'delete_requires_password');
    const attemptsKey=`auth-attempts/${hash('delete/'+actor.account.username)}`;let claimed;
@@ -132,7 +134,8 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
    if(!timingSafeEqual(Buffer.from(derived,'hex'),Buffer.from(actor.account.passwordHash,'hex')))fail(401,'login_invalid');
    await identity(credential);
    if(!store.deleteAccount)fail(503,'unavailable');
-   const result=await store.deleteAccount(actor.account,randomBytes(32).toString('hex'),[attemptsKey,`auth-attempts/${hash(actor.account.username)}`]);
+   if(requireLine)await prepareOriginalDeletion(store,actor.account,images);
+   const result=await store.deleteAccount(actor.account,randomBytes(32).toString('hex'),[attemptsKey,`auth-attempts/${hash(actor.account.username)}`],{purgePhotos:requireLine});
    if(!result.modified)fail(401,'account_deleted');
    return {done:true};
   }
