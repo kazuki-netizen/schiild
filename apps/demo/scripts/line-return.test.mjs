@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
-import {saveLinePending,consumeLinePending} from '../src/line-pending.ts';
+import {saveLinePending,consumeLinePending,pendingLineDeletion} from '../src/line-pending.ts';
 import {accounts} from '../server/accounts.mjs';
 import {memoryStore} from '../server/memory-store.mjs';
 const state='a'.repeat(64),other='b'.repeat(64),credential='c'.repeat(64),key='schiild.line.pending';
@@ -30,10 +30,20 @@ test('same-tab legacy returns work, denied storage fails safely, and unrelated s
  assert(consumeLinePending(state,{local,session:denied},time));
  assert.throws(()=>saveLinePending({state,intent:'login',startedAt:time},{local:denied,session:denied}),/storage_unavailable/);
 });
+
+test('returning without finishing deletion reports it only in the originating tab and preserves the callback proof',()=>{
+ const local=memory(),session=memory();
+ saveLinePending({state,intent:'delete',startedAt:Date.now()},{local,session});
+ assert.equal(pendingLineDeletion({local,session}),true);
+ assert.equal(pendingLineDeletion({local,session:memory()}),false);
+ assert.equal(consumeLinePending(state,{local,session:memory()}).intent,'delete');
+ saveLinePending({state:other,intent:'login',startedAt:Date.now()},{local,session});
+ assert.equal(pendingLineDeletion({local,session}),false);
+});
 const source=await readFile(new URL('../src/line-login.ts',import.meta.url),'utf8'),compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 function client(local,session,url,request){
  const exports={},location={href:url,assign(next){location.href=next;}},history={state:null,replaceState(_state,_title,next){location.href=new URL(next,location.href).href;}};
- vm.runInNewContext(compiled,{exports,window:{location},history,URL,Date,Error,require(name){if(name==='./preview-mode.ts')return {browserStorage:()=>local,browserSessionStorage:()=>session};if(name==='./line-pending.ts')return {saveLinePending,consumeLinePending};if(name==='./shared-api')return {sharedRequest:request};if(name==='./copy')return {t:key=>key};throw Error('Unexpected module '+name);}});
+ vm.runInNewContext(compiled,{exports,window:{location},history,URL,Date,Error,require(name){if(name==='./preview-mode.ts')return {browserStorage:()=>local,browserSessionStorage:()=>session};if(name==='./line-pending.ts')return {saveLinePending,consumeLinePending,pendingLineDeletion};if(name==='./shared-api')return {sharedRequest:request};if(name==='./copy')return {t:key=>key};throw Error('Unexpected module '+name);}});
  return {api:exports,location};
 }
 test('actual client callback completes LINE account/session in another tab; wrong browser and replay still fail',async()=>{

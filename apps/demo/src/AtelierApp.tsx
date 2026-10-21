@@ -35,7 +35,7 @@ import DailyPostsPage from './DailyPostsPage';
 import type {PostSelection} from './DailyPostsPage';
 import DeleteAccountPage from './DeleteAccountPage';
 import {googleLogout} from './GoogleSignIn';
-import {takeLineCallback,completeLine,beginLine} from './line-login';
+import {takeLineCallback,completeLine,beginLine,hasPendingLineDeletion} from './line-login';
 import {watchAccountLifecycle} from './account-lifecycle';
 import {currentSession} from './shared-api';
 import {preferences,savePreferences} from './preferences';
@@ -63,20 +63,21 @@ export default function AtelierApp(){
  useEffect(()=>{if(!browserReady)return;setCollection(restore());function receive(){const incoming=parseInvite(location.hash);if(incoming){setInvitation(incoming);setInput(incoming.online?incoming.code:location.href);setView('join');}history.replaceState(null,'',location.pathname+location.search);}receive();window.addEventListener('hashchange',receive);return()=>window.removeEventListener('hashchange',receive);},[]);
  useEffect(()=>{if(collection)try{browserStorage().setItem(COLLECTION,JSON.stringify(collection));}catch{setMessage(t('error.server.title'));}},[collection]);
  useEffect(()=>{if(view!=='me'||!account)return;const controller=new AbortController(),request=accountSequence.current,session=currentSession();void sharedRequest<{account:Account|null}>('account.me',{},controller.signal).then(value=>{if(!controller.signal.aborted&&request===accountSequence.current&&session===currentSession())setAccount(value.account);}).catch(cause=>{if(!controller.signal.aborted)setMessage(cause instanceof Error?cause.message:t('error.server.body'));});return()=>controller.abort();},[view]);
- useEffect(()=>{if(!collection||lineCallback)return;const controller=new AbortController(),request=++accountSequence.current;void sharedRequest<{account:Account|null}>('account.me',{},controller.signal).then(value=>{if(request===accountSequence.current){setAccount(value.account);if(value.account)restoreMembership(value.account);else if(['global','atelier'].includes(new URLSearchParams(location.search).get('push')??''))setView('auth');}}).catch(cause=>{if(!controller.signal.aborted&&request===accountSequence.current){if(cause instanceof SharedError&&['session_expired','unauthorized'].includes(cause.code)){clearSession();setAccount(null);setView('auth');}setMessage(cause instanceof Error?cause.message:t('error.server.body'));}});return()=>controller.abort();},[collection?.device]);
+ useEffect(()=>{if(!collection||lineCallback)return;const controller=new AbortController(),request=++accountSequence.current;void sharedRequest<{account:Account|null}>('account.me',{},controller.signal).then(value=>{if(request===accountSequence.current){setAccount(value.account);if(value.account){restoreMembership(value.account);if(hasPendingLineDeletion()){setView('delete-account');setMessage(t('demo.delete.failed'));}}else if(['global','atelier'].includes(new URLSearchParams(location.search).get('push')??''))setView('auth');}}).catch(cause=>{if(!controller.signal.aborted&&request===accountSequence.current){if(cause instanceof SharedError&&['session_expired','unauthorized'].includes(cause.code)){clearSession();setAccount(null);setView('auth');}setMessage(cause instanceof Error?cause.message:t('error.server.body'));}});return()=>controller.abort();},[collection?.device]);
  useEffect(()=>{if(!collection||!lineCallback||lineFinished.current)return;lineFinished.current=true;const request=++accountSequence.current;setView('account-check');void completeLine(lineCallback).then(result=>{if(request!==accountSequence.current)return;if('deleted' in result){finishDeletion();return;}saveSession(result.token);setAccount(result.account);restoreMembership(result.account);setAccountRevision(value=>value+1);setMessage('');const destination=takeAuthDestination();if(destination){setInput(destination.code);setInvitation(null);setView(destination.view);}else setView('me');}).catch(async cause=>{if(request!==accountSequence.current)return;const detail=cause instanceof Error?cause.message:t('demo.line.invalid');if(lineCallback.intent==='delete'){try{const value=await sharedRequest<{account:Account|null}>('account.me');if(request!==accountSequence.current)return;setAccount(value.account);setView(value.account?'delete-account':'auth');setMessage(t('demo.delete.failed')+' '+detail);}catch{if(request===accountSequence.current){setView('auth');setMessage(t('demo.delete.failed')+' '+detail);}}}else{setView('auth');setMessage(detail);}}).finally(()=>{lineInProgress.current=false;});},[collection?.device]);
  useEffect(()=>{
   if(isWeekPreview||!collection)return;
   const refresh=(changed=false)=>{
    if(lineInProgress.current)return;
-   const request=++accountSequence.current,session=currentSession();
+   const request=++accountSequence.current,session=currentSession(),deletionPending=hasPendingLineDeletion();
    if(changed){setAccount(null);setSharing(null);setInvitation(null);setCollection(current=>current?{...current,ateliers:current.ateliers.filter(entry=>!entry.online),selected:''}:current);setView('account-check');}
    void sharedRequest<{account:Account|null}>('account.me').then(value=>{
     if(request!==accountSequence.current||session!==currentSession())return;
     setAccount(value.account);
     if(value.account)restoreMembership(value.account);
     else setCollection(current=>current?{...current,ateliers:current.ateliers.filter(entry=>!entry.online),selected:''}:current);
-    if(changed||!value.account)setView(previous=>changed||['me','settings','delete-account','account-check'].includes(previous)?value.account?'me':'auth':previous);
+    if(value.account&&deletionPending){setView('delete-account');setMessage(t('demo.delete.failed'));}
+    else if(changed||!value.account)setView(previous=>changed||['me','settings','delete-account','account-check'].includes(previous)?value.account?'me':'auth':previous);
    }).catch(cause=>{if(request===accountSequence.current)setMessage(cause instanceof Error?cause.message:t('error.server.body'));});
   };
   return watchAccountLifecycle({target:window,document,readSession:currentSession,onChange:()=>refresh(true),onResume:()=>refresh()});

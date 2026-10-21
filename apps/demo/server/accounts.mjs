@@ -17,7 +17,7 @@ export async function listRecords(store,prefix){
  const rows=await Promise.all((listing.blobs??[]).map(async blob=>({key:blob.key,...await store.getWithMetadata(blob.key,{type:'json'})})));
  return rows;
 }
-export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine,requireLine=false}={}){
+export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine,requireLine=false,lineAudit}={}){
  async function identity(credential){
   if(!/^[a-f0-9]{64}$/.test(credential??''))fail(401,'unauthorized');
   const member=hash(credential),session=await store.getWithMetadata(`sessions/${member}`,{type:'json'});
@@ -42,7 +42,7 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
   if(!(await store.setJSON(`sessions/${hash(token)}`,{username:account.username,member:account.member,expires:now()+SESSION_MS,revoked:false},{onlyIfNew:true})).modified)fail(401,'account_deleted');
   return {token,account:await profile(account)};
  }
- const line=lineAccounts(store,{config:lineConfig,now,identity,session,verify:verifyLine});
+ const line=lineAccounts(store,{config:lineConfig,now,identity,session,verify:verifyLine,audit:lineAudit});
  async function execute(body,credential){
   if(typeof body.action==='string'&&body.action.startsWith('account.line'))return line(body,credential);
   // Live adapters require LINE. The opt-out exists only for legacy core test fixtures.

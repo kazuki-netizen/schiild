@@ -1,11 +1,12 @@
 import {browserStorage,browserSessionStorage} from './preview-mode.ts';
-import {saveLinePending,consumeLinePending} from './line-pending.ts';
+import {saveLinePending,consumeLinePending,pendingLineDeletion} from './line-pending.ts';
 // DEMO ONLY. OAuth codes never persist in history; channel secrets never reach the browser.
 import {sharedRequest} from './shared-api';
 import type {Account} from './shared-api';
 import {t} from './copy';
 export type LineCallback={code:string;state:string;invalid:boolean;intent?:'login'|'register'|'delete'};
 let captured:LineCallback|null|undefined;
+export function hasPendingLineDeletion(){try{return pendingLineDeletion({local:browserStorage(),session:browserSessionStorage()});}catch{return false;}}
 export async function beginLine(intent:'login'|'register'|'delete'='login',confirmUsername?:string){
  const value=await sharedRequest<{enabled:boolean;url:string;state:string;intent:string}>('account.line.start',{intent,confirmUsername});
  const url=new URL(value.url);

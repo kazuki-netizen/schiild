@@ -26,3 +26,10 @@ export function consumeLinePending(state:string,stores:Stores,now=Date.now()):Li
  remove(stores.local,prefix+state);
  return value??null;
 }
+export function pendingLineDeletion(stores:Stores):boolean{
+ // Only the originating tab shows the unfinished-operation notice. Other tabs
+ // must not mistake someone else's in-progress confirmation for their own.
+ // Read only: the actual callback may still be arriving in another tab.
+ const value=read(stores.session,sessionKey);
+ return value?.intent==='delete'&&fresh(value,Date.now());
+}

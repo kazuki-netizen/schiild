@@ -5,6 +5,6 @@ export function watchAccountLifecycle({target,document,readSession,onChange,onRe
  const storage=(event:StorageEvent)=>{if(event.key===null||event.key==='schiild.account.session.v2')check();};
  const resume=()=>{if(document.visibilityState==='visible'&&!check())onResume();};
  const pageshow=(event:PageTransitionEvent)=>{if(event.persisted)resume();};
- target.addEventListener('storage',storage);target.addEventListener('pageshow',pageshow);document.addEventListener('visibilitychange',resume);
- return ()=>{target.removeEventListener('storage',storage);target.removeEventListener('pageshow',pageshow);document.removeEventListener('visibilitychange',resume);};
+ target.addEventListener('storage',storage);target.addEventListener('pageshow',pageshow);target.addEventListener('focus',resume);document.addEventListener('visibilitychange',resume);
+ return ()=>{target.removeEventListener('storage',storage);target.removeEventListener('pageshow',pageshow);target.removeEventListener('focus',resume);document.removeEventListener('visibilitychange',resume);};
 }

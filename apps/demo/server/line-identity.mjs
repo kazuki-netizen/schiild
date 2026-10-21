@@ -6,7 +6,7 @@ export function validLineConfig(config){
 }
 export function readLineConfig(value){try{const config=JSON.parse(value);return validLineConfig(config)?config:null;}catch{return null;}}
 export function lineVerifier(config,{fetcher=fetch,now=()=>Date.now()}={}){
- return async({code,verifier,nonce,reauth=false})=>{
+ return async({code,verifier,nonce,reauth=false,issuedAfter})=>{
   const post=async(path,values)=>{let response;try{response=await fetcher('https://api.line.me/oauth2/v2.1/'+path,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(values),signal:AbortSignal.timeout(15000),redirect:'manual'});}catch{throw new ApiError(503,'line_unavailable');}
    if(!response.ok)throw new ApiError(response.status>=500||response.status===429?503:401,response.status>=500||response.status===429?'line_unavailable':'line_invalid');
    try{return await response.json();}catch{throw new ApiError(503,'line_unavailable');}
@@ -15,7 +15,10 @@ export function lineVerifier(config,{fetcher=fetch,now=()=>Date.now()}={}){
   if(typeof tokens.id_token!=='string'||tokens.id_token.length>16384)throw new ApiError(401,'line_invalid');
   const claims=await post('verify',{id_token:tokens.id_token,client_id:config.channelId,nonce});
   if(claims.iss!=='https://access.line.me'||claims.aud!==config.channelId||typeof claims.sub!=='string'||!/^U[a-f0-9]{32}$/.test(claims.sub)||claims.nonce!==nonce||!Number.isFinite(claims.exp)||claims.exp*1000<=now()||!Number.isFinite(claims.iat)||claims.iat*1000>now()+60000)throw new ApiError(401,'line_invalid');
-  if(reauth&&(!Number.isFinite(claims.auth_time)||claims.auth_time*1000<now()-300000||claims.auth_time*1000>now()+60000))throw new ApiError(401,'line_invalid');
+  // Deletion requires a newly issued, nonce-bound proof of the same LINE user.
+  // auth_time describes the underlying LINE login, which may predate this app
+  // confirmation. Do not force password re-entry for an authenticated LINE app.
+  if(reauth&&(!Number.isFinite(issuedAfter)||claims.iat*1000<issuedAfter-60000))throw new ApiError(401,'line_invalid');
   return {subject:claims.sub,name:typeof claims.name==='string'?claims.name.trim().slice(0,40):''};
  };
 }

@@ -17,6 +17,15 @@ function fixture(store=memoryStore()){
  const finish=(start,credential=first,code='valid')=>auth.execute({action:'account.line',code,state:start.state},credential);
  return {auth,store,start,finish,calls,advance:ms=>clock+=ms};
 }
+
+test('LINE diagnostic stages contain no credential, OAuth state, code, verifier or profile',async()=>{
+ const events=[],auth=accounts(memoryStore(),{lineConfig:config,lineAudit:value=>events.push(value),verifyLine:async()=>({subject,name:'Private display name'})});
+ const start=await auth.execute({action:'account.line.start',intent:'register'},first);
+ await auth.execute({action:'account.line',state:start.state,code:'private-oauth-code'},first);
+ const signed=JSON.stringify(events);for(const secret of [first,start.state,'private-oauth-code',subject,'Private display name',config.channelSecret])assert(!signed.includes(secret));
+ assert.deepEqual(events.map(value=>value.phase),['start','issued','callback','verifying','verified']);
+ assert(events.every(value=>Object.keys(value).every(key=>['phase','intent','error'].includes(key))));
+});
 test('LINE discovery is disabled without complete server configuration and exposes no secrets',async()=>{
  const auth=accounts(memoryStore());assert.deepEqual(await auth.execute({action:'account.line.config'},first),{enabled:false});await assert.rejects(auth.execute({action:'account.line.start'},first),e=>e.code==='line_unavailable');
  assert.equal(readLineConfig('{}'),null);assert.equal(validLineConfig({...config,redirectUri:'http://app.example/?auth=line'}),false);assert.equal(validLineConfig({...config,channelSecret:''}),false);assert.equal(validLineConfig(config),true);
@@ -39,7 +48,9 @@ test('LINE code exchange uses server secret, PKCE and nonce and rejects forged/e
  const verify=lineVerifier(config,{now:()=>clock,fetcher:async(url,options)=>{const body=new URLSearchParams(options.body);requests.push({url,body});if(failure)return new Response('{}',{status:failure});if(url.endsWith('/token'))return Response.json({id_token:'signed-token',access_token:'never-stored'});return Response.json({iss:'https://access.line.me',aud:config.channelId,sub:subject,nonce,iat:clock/1000-1,exp:clock/1000+3600,auth_time:clock/1000-1,...overrides});}});
  const input={code:'one-time-code',verifier:'v'.repeat(64),nonce};assert.equal((await verify(input)).subject,subject);assert.equal(requests[0].body.get('client_secret'),config.channelSecret);assert.equal(requests[0].body.get('code_verifier'),input.verifier);assert.equal(requests[1].body.get('nonce'),nonce);
  for(const value of [{iss:'https://evil.example'},{aud:'wrong'},{nonce:'wrong'},{sub:'invalid'},{exp:clock/1000-1},{iat:clock/1000+120}]){overrides=value;await assert.rejects(verify(input),e=>e.code==='line_invalid');}
- overrides={auth_time:clock/1000-600};await assert.rejects(verify({...input,reauth:true}),e=>e.code==='line_invalid');overrides={};failure=400;await assert.rejects(verify(input),e=>e.code==='line_invalid');failure=503;await assert.rejects(verify(input),e=>e.code==='line_unavailable');
+ overrides={auth_time:undefined};assert.equal((await verify({...input,reauth:true,issuedAfter:clock-1000})).subject,subject);
+ overrides={iat:clock/1000-600};await assert.rejects(verify({...input,reauth:true,issuedAfter:clock-1000}),e=>e.code==='line_invalid');
+ overrides={};await assert.rejects(verify({...input,reauth:true}),e=>e.code==='line_invalid');failure=400;await assert.rejects(verify(input),e=>e.code==='line_invalid');failure=503;await assert.rejects(verify(input),e=>e.code==='line_unavailable');
 });
 test('LINE challenges bind browser/state, expire and allow only one concurrent exchange',async()=>{
  const f=fixture(),start=await f.start(first,{intent:'register'});await f.start(second);
@@ -56,7 +67,7 @@ for(const sqlite of [false,true])test(`LINE creates/restores accounts, links onl
   const password=await f.auth.execute({action:'account.register',username:'line_link_user',password:'line-test-password-29'},third);const conflict=await f.start(password.token);await assert.rejects(f.finish(conflict,password.token),e=>e.code==='line_conflict');
   const linked=await f.finish(await f.start(password.token),password.token,'other');assert.equal(linked.account.username,password.account.username);assert.equal(linked.account.hasPassword,true);
   await assert.rejects(f.auth.execute({action:'account.delete',confirmUsername:signed.account.username,password:'anything'},signed.token),e=>e.code==='delete_requires_password');
-  const wrong=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username});assert.equal(new URL(wrong.url).searchParams.get('max_age'),'0');await assert.rejects(f.finish(wrong,signed.token,'other'),e=>e.code==='line_invalid');assert((await f.auth.execute({action:'account.me'},signed.token)).account);
+  const wrong=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username}),deleteUrl=new URL(wrong.url);assert.equal(deleteUrl.searchParams.get('prompt'),'consent');assert.equal(deleteUrl.searchParams.has('max_age'),false);assert.equal(deleteUrl.searchParams.has('disable_auto_login'),false);await assert.rejects(f.finish(wrong,signed.token,'other'),e=>e.code==='line_invalid');assert((await f.auth.execute({action:'account.me'},signed.token)).account);
   const deletion=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username});assert.deepEqual(await f.finish(deletion,signed.token),{deleted:true});assert.equal(f.calls.at(-1).reauth,true);
   await assert.rejects(f.auth.identity(again.token),e=>e.code==='account_deleted');assert.equal((await f.store.listJSON('line-identities/')).length,1);assert.equal((await f.store.listJSON('line-challenges/')).filter(row=>row.data.member===hash(first)).length,0);
   const restoredRoom=(await f.store.getWithMetadata('rooms/'+room.code)).data;assert(!restoredRoom.members.includes(hash(first)));

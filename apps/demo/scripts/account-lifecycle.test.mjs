@@ -13,5 +13,6 @@ test('deletion/logout in another tab invalidates the old profile and BFCache/res
  document.visibilityState='hidden';document.dispatchEvent(new Event('visibilitychange'));assert.equal(calls.length,2);
  document.visibilityState='visible';token='new';target.dispatchEvent(Object.assign(new Event('pageshow'),{persisted:true}));assert.deepEqual(calls,['change','resume','change']);
  target.dispatchEvent(Object.assign(new Event('pageshow'),{persisted:true}));assert.equal(calls.at(-1),'resume');
- stop();token=null;storage(null);document.dispatchEvent(new Event('visibilitychange'));assert.equal(calls.length,4);
+ target.dispatchEvent(new Event('focus'));assert.equal(calls.length,5);assert.equal(calls.at(-1),'resume');
+ stop();token=null;storage(null);document.dispatchEvent(new Event('visibilitychange'));target.dispatchEvent(new Event('focus'));assert.equal(calls.length,5);
 });
