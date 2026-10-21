@@ -49,7 +49,7 @@ export default function DailyPostsPage({collection,initialSource,onLocalReuse,on
   finally{setBusy(false);}
  }
  const short=shortDate;
- return <section className="daily-posts" data-testid="daily-posts" data-after-capture={Boolean(initialSource)}><div className="subheader"><button className="text-button" disabled={busy} onClick={onBack}>{t('common.back')}</button></div><h1>{t(initialSource?'demo.posts.targets':'demo.posts.title')}</h1>
+ return <section className="daily-posts" data-testid="daily-posts" data-after-capture={Boolean(initialSource)}><h1>{t(initialSource?'demo.posts.targets':'demo.posts.title')}</h1>
   {!initialSource&&<label className="field">{t('demo.posts.source')}<select value={selected} disabled={busy} onChange={event=>setSelected(event.target.value)}><option value="">{t('demo.posts.choose')}</option>{sources.map(value=><option key={sourceKey(value)} value={sourceKey(value)}>{value.name} ／ {value.day}{!value.online?` ／ ${t('demo.shared.local')}`:''}</option>)}</select></label>}
   {!sources.length&&<p>{t(remote?'demo.posts.empty':'common.loading')}</p>}
   {source&&<><p className="window">{t('atelier.window',{start:short(source.day)+' 09:00',end:short(dayAfter(source.day))+' 09:00'})}</p>{photo?<img className="reuse-photo" src={photo} alt={t('demo.posts.photo',{name:source.name})}/>:<p>{t('common.loading')}</p>}{!initialSource&&<h2>{t('demo.posts.targets')}</h2>}

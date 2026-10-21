@@ -5,6 +5,9 @@ import {pushTranslations} from './push-copy.ts';
 import type {CopyKey} from './copy';
 export const translations={
  "demo.line.login":["Sign in with LINE","LINE으로 로그인","Connexion avec LINE","Inloggen met LINE"],
+ 'demo.line.register':['Sign up with LINE','LINE으로 새 계정 만들기','Créer un compte avec LINE','Registreren met LINE'],
+ 'demo.line.not_registered':['This LINE account is not registered. Please sign up to create a new account.','등록되지 않은 LINE 계정입니다. 새 계정을 만들어 주세요.','Ce compte LINE n’est pas inscrit. Créez un nouveau compte.','Dit LINE-account is niet geregistreerd. Maak een nieuw account aan.'],
+ 'demo.line.registered':['This LINE account is already registered. Please sign in.','이미 등록된 LINE 계정입니다. 로그인해 주세요.','Ce compte LINE est déjà inscrit. Connectez-vous.','Dit LINE-account is al geregistreerd. Log in.'],
  "demo.line.linked":["LINE linked", "LINE 연동됨", "LINE associé", "LINE gekoppeld"],
  "demo.line.invalid":["LINE verification failed. Please try again.", "LINE 본인 확인에 실패했습니다. 다시 시도해 주세요.", "La vérification LINE a échoué. Réessayez.", "Verificatie met LINE is mislukt. Probeer het opnieuw."],
  "demo.line.expired":["Please sign in with LINE again.","LINE으로 다시 로그인해 주세요.","Recommencez la connexion avec LINE.","Log opnieuw in met LINE."],
@@ -398,7 +401,7 @@ export const translations={
  "demo.account.limited":["Too many attempts. Wait a while before trying again.","시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.","Trop de tentatives. Patientez avant de réessayer.","Te veel pogingen. Wacht even voordat je opnieuw probeert."],
  'demo.account.expired':["Your sign-in has expired. Sign in again.","로그인 유효기간이 지났습니다. 다시 로그인해 주세요.","Votre session a expiré. Reconnectez-vous.","Je sessie is verlopen. Log opnieuw in."],
  'demo.settings.motion':["Skip reveal and zoom animations","개봉·확대 연출 생략","Ignorer les animations d’ouverture et de zoom","Openings- en zoomanimaties overslaan"],
- 'demo.settings.privacy':["Shared photos and works are stored on Xserver. Membership and accounts are stored on Cloudflare. Passwords are hashed. Sample history and animation settings stay in this browser.","공유 사진과 작품은 Xserver, 참여 정보와 계정은 Cloudflare에 저장합니다. 비밀번호는 해시로 저장합니다. 샘플 기록과 연출 설정은 이 브라우저에 저장합니다.","Les photos partagées et les œuvres sont sur Xserver, les participations et comptes sur Cloudflare. Les mots de passe sont hachés. Les exemples et réglages d’animation restent dans ce navigateur.","Gedeelde foto’s en werken staan op Xserver. Deelnames en accounts staan op Cloudflare. Wachtwoorden worden gehasht. Voorbeeldgeschiedenis en animatie-instellingen blijven in deze browser."],
+ 'demo.settings.privacy':["Shared photos, works, membership and accounts are stored on Cloudflare. Passwords are hashed. Sample history and animation settings stay in this browser.","공유 사진, 작품, 참여 정보와 계정은 Cloudflare에 저장합니다. 비밀번호는 해시로 저장합니다. 샘플 기록과 연출 설정은 이 브라우저에 저장합니다.","Les photos partagées, les œuvres, les participations et les comptes sont stockés sur Cloudflare. Les mots de passe sont hachés. Les exemples et les réglages d’animation restent dans ce navigateur.","Gedeelde foto’s, werken, deelnames en accounts staan op Cloudflare. Wachtwoorden worden gehasht. Voorbeeldgeschiedenis en animatie-instellingen blijven in deze browser."],
  "demo.week.entry":["See a week of activity","일주일의 이용 예시 보기","Explorer une semaine d’utilisation","Bekijk een week aan activiteit"],
  "demo.week.label":["Example · 200 ateliers / 1,000 people / 7 days","이용 예시 · 아틀리에 200개 / 1,000명 / 7일","Exemple · 200 ateliers / 1 000 personnes / 7 jours","Voorbeeld · 200 ateliers / 1.000 mensen / 7 dagen"],
  'demo.calendar.previous_atelier':['Previous atelier','이전 아틀리에','Atelier précédent','Vorig atelier'],

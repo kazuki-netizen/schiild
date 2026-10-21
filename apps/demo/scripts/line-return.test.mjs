@@ -40,7 +40,7 @@ test('actual client callback completes LINE account/session in another tab; wron
  const local=memory(),session=memory(),config={channelId:'1234567890',channelSecret:'f'.repeat(32),redirectUri:'https://app.example/?auth=line'};
  const auth=accounts(memoryStore(),{requireLine:true,lineConfig:config,verifyLine:async()=>({subject:'U'+'1'.repeat(32),name:'Chrome member'})});
  const request=(action,values={})=>auth.execute({action,...values},credential);
- const original=client(local,session,'https://app.example/',request);await original.api.beginLine();
+ const original=client(local,session,'https://app.example/',request);await original.api.beginLine('register');
  const callbackState=new URL(original.location.href).searchParams.get('state'),callbackUrl='https://app.example/?auth=line&code=provider-code&state='+callbackState;
  const resumed=client(local,memory(),callbackUrl,request),callback=resumed.api.takeLineCallback();assert.equal(callback.invalid,false);assert.equal(resumed.location.href,'https://app.example/');
  const result=await resumed.api.completeLine(callback);assert.equal(result.account.lineLinked,true);assert.match(result.token,/^[a-f0-9]{64}$/);

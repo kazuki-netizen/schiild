@@ -10,7 +10,7 @@ export function lineAccounts(store,{config,now,identity,session,verify=lineVerif
   if(!validLineConfig(config))fail(503,'line_unavailable');
   const actor=await identity(credential),key=`line-challenges/${hash(credential)}`;
   if(body.action==='account.line.start'){
-   const intent=body.intent??'login';if(!['login','delete'].includes(intent))fail(400,'invalid');
+   const intent=body.intent??'login';if(!['login','register','delete'].includes(intent))fail(400,'invalid');
    if(intent==='delete'&&(!actor.account?.lineSubject||body.confirmUsername!==actor.account.username))fail(401,'line_invalid');
    const state=randomBytes(32).toString('hex'),nonce=randomBytes(32).toString('hex'),verifier=randomBytes(48).toString('base64url');
    const challenge={stateHash:hash(state),nonce,verifier,intent,member:actor.member,username:actor.account?.username??null,expires:now()+300000,used:false};
@@ -35,14 +35,19 @@ export function lineAccounts(store,{config,now,identity,session,verify=lineVerif
   }
   const mapping=await store.getWithMetadata(`line-identities/${subject}`,{type:'json'});
   if(mapping){
+   if(challenge.intent==='register')fail(409,'line_registered');
    if(current.account&&current.account.username!==mapping.data.username)fail(409,'line_conflict');
    const account=await store.getWithMetadata(`accounts/${mapping.data.username}`,{type:'json'});
    if(!account||account.data.lineSubject!==subject)fail(401,'line_expired');
    return session(account.data);
   }
+  // Login never creates an account. Deletion removes the mapping, so even the
+  // same verified LINE identity must explicitly choose a fresh registration.
+  if(challenge.intent!=='register'&&!current.account)fail(401,'line_not_registered');
   const account=current.account??{username:`l_${randomBytes(10).toString('hex')}`,name:verified.name||'Schiilder',member:current.member,since:new Date(now()).toISOString().slice(0,10)};
   const result=await store.registerLine({...account,lineSubject:subject});
   if(!result.modified){
+   if(result.reason==='line'&&challenge.intent==='register')fail(409,'line_registered');
    if(result.reason==='line'&&(!current.account||current.account.username===result.username)){
     const existing=await store.getWithMetadata(`accounts/${result.username}`,{type:'json'});if(existing?.data.lineSubject===subject)return session(existing.data);
    }

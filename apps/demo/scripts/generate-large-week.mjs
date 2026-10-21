@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {memoryStore} from '../server/memory-store.mjs';
 import {createAtelierService} from '../server/atelier-core.mjs';
 import {images as codec} from '../server/atelier-service.mjs';
+import {compactGlobal} from '../src/global-layout.ts';
 const root=new URL('../public/week/',import.meta.url),lastDay='2026-10-19',population=1000,roomCount=200;
 const first=Date.parse(lastDay+'T00:00:00Z')-6*86400000,days=Array.from({length:7},(_,n)=>new Date(first+n*86400000).toISOString().slice(0,10));
 const digest=value=>createHash('sha256').update(value).digest('hex'),chance=(...parts)=>parseInt(digest(parts.join('/')).slice(0,8),16)/0xffffffff;
@@ -41,10 +42,10 @@ const assetCache=new Map(),commonGlobals={},globalPixels={};
 async function asset(key,image){if(assetCache.has(key))return assetCache.get(key);const file=digest('white-v2/'+key).slice(0,24)+'.png';await writeFile(new URL('art/'+file,root),Buffer.from(image.split(',')[1],'base64'));const url='/week/art/'+file;assetCache.set(key,url);return url;}
 for(const day of days){
  const global=await execute({action:'global',day},credentials[0]);global.image=await asset('global/'+day,global.image);delete global.x;delete global.y;delete global.area;global.artworks=[];
- const raw=(await store.getWithMetadata('globals/'+day)).data;globalPixels[day]=raw.pixels;
+ const raw=(await store.getWithMetadata('globals/'+day)).data,layout=compactGlobal(raw.pixels),mapped=Object.fromEntries(layout.pixels.map(pixel=>[pixel.member,pixel]));globalPixels[day]=mapped;
  for(let r=0;r<roomCount;r++){
   const room=(await store.getWithMetadata('rooms/'+definitions[r].code)).data,record=room.days[day];if(!Object.keys(record.posts).length)continue;
-  const work=await execute({action:record.status==='ready'?'work':'draft',code:room.code,day},credentials[r*5]),positions=Object.entries(sources[day]).filter(([,code])=>code===room.code).map(([person])=>raw.pixels[members[Number(person)]].position);if(!positions.length)continue;
+  const work=await execute({action:record.status==='ready'?'work':'draft',code:room.code,day},credentials[r*5]),positions=Object.entries(sources[day]).filter(([,code])=>code===room.code).map(([person])=>mapped[members[Number(person)]].position);if(!positions.length)continue;
   global.artworks.push({code:room.code,name:room.name,day,image:await asset((record.status==='ready'?'':'draft/')+room.code+'/'+day,work.image),provisional:record.status!=='ready',positions});
  }
  const file='globals/'+day+'.json';await writeFile(new URL(file,root),JSON.stringify(global));commonGlobals[day]='/week/'+file;

@@ -3,6 +3,9 @@ import {pushJapanese} from './push-copy.ts';
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
  'demo.line.login':'LINEでログイン',
+ 'demo.line.register':'LINEで新規登録',
+ 'demo.line.not_registered':'このLINEアカウントは登録されていません。新規登録してください。',
+ 'demo.line.registered':'このLINEアカウントは登録済みです。ログインしてください。',
  'demo.line.linked':'LINE連携済み',
  'demo.line.invalid':'LINEで本人確認できませんでした。もう一度お試しください。',
  'demo.line.expired':'LINEログインを最初からやり直してください。',
@@ -214,7 +217,7 @@ export const demoCopy={
  "demo.account.limited":"試行回数が上限に達しました。時間をおいて、もう一度試してください。",
  'demo.account.expired':'ログインの有効期限が切れました。もう一度ログインしてください。',
  'demo.settings.motion':'開封・ズームの演出を省略する',
- 'demo.settings.privacy':'共有写真と作品はXserver、参加情報とアカウントはCloudflareに保存します。パスワードはハッシュで保存します。サンプル履歴と演出の設定は、このブラウザに保存します。',
+ 'demo.settings.privacy':'共有写真・作品・参加情報・アカウントはCloudflareに保存します。パスワードはハッシュで保存します。サンプル履歴と演出の設定は、このブラウザに保存します。',
  "demo.week.entry":"1週間の利用例を見る",
  "demo.week.label":"利用例 · 200アトリエ / 1,000人 / 7日間",
  'demo.calendar.previous_atelier':'前のアトリエ',

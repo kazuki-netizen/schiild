@@ -6,7 +6,7 @@ import type {Account} from './shared-api';
 import {t} from './copy';
 export type LineCallback={code:string;state:string;invalid:boolean};
 let captured:LineCallback|null|undefined;
-export async function beginLine(intent:'login'|'delete'='login',confirmUsername?:string){
+export async function beginLine(intent:'login'|'register'|'delete'='login',confirmUsername?:string){
  const value=await sharedRequest<{enabled:boolean;url:string;state:string;intent:string}>('account.line.start',{intent,confirmUsername});
  const url=new URL(value.url);
  if(!value.enabled||url.origin!=='https://access.line.me'||url.pathname!=='/oauth2/v2.1/authorize'||!/^[a-f0-9]{64}$/.test(value.state)||url.searchParams.get('state')!==value.state)throw Error(t('demo.line.unavailable'));

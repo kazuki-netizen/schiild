@@ -2,6 +2,9 @@
 import type {CopyKey} from '../copy';
 export default {
   "demo.line.login": "LINE से लॉगिन करें",
+  "demo.line.register": "LINE से नया खाता बनाएं",
+  "demo.line.not_registered": "यह LINE खाता पंजीकृत नहीं है। कृपया नया खाता बनाएं।",
+  "demo.line.registered": "यह LINE खाता पहले से पंजीकृत है। कृपया लॉगिन करें।",
   "demo.line.linked": "LINE से जुड़ा है",
   "demo.line.invalid": "LINE सत्यापन विफल रहा। कृपया पुन: प्रयास करें।",
   "demo.line.expired": "कृपया LINE के साथ फिर से साइन इन करें।",
@@ -395,7 +398,7 @@ export default {
   "demo.account.limited": "बहुत अधिक प्रयास। दोबारा प्रयास करने से पहले थोड़ी देर प्रतीक्षा करें.",
   "demo.account.expired": "आपका साइन-इन समाप्त हो गया है। पुनः साइन इन करें.",
   "demo.settings.motion": "प्रकटीकरण और ज़ूम एनिमेशन छोड़ें",
-  "demo.settings.privacy": "साझा फ़ोटो और कार्य Xserver पर संग्रहीत हैं। सदस्यता और खाते क्लाउडफ़ेयर पर संग्रहीत हैं। पासवर्ड हैश किए गए हैं. नमूना इतिहास और एनीमेशन सेटिंग्स इस ब्राउज़र में रहती हैं।",
+  "demo.settings.privacy": "साझा फ़ोटो, कलाकृतियाँ, सदस्यता और खाते Cloudflare पर रखे जाते हैं। पासवर्ड हैश के रूप में रखे जाते हैं। नमूना इतिहास और एनिमेशन की सेटिंग्स इसी ब्राउज़र में रहती हैं।",
   "demo.week.entry": "एक सप्ताह की गतिविधि देखें",
   "demo.week.label": "उदाहरण · 200 अटेलियर / 1,000 लोग / 7 दिन",
   "demo.calendar.previous_atelier": "पिछला अटेलियर",

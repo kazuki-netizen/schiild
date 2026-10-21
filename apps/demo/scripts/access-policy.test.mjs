@@ -21,7 +21,8 @@ function fixture(sqlite){
  const legacy=accounts(store,{now:()=>clock});
  async function call(action,values={},credential=first){if(action.startsWith('account.'))return auth.execute({action,...values},credential);const actor=await actorForAction(auth,action,credential);return createAtelierService(store,{now:()=>clock,images,memberForCredential:()=>actor.member,publicOnly:!actor.account})({action,...values},credential);}
  async function login(credential=first,code='valid'){const start=await call('account.line.start',{},credential);return call('account.line',{state:start.state,code},credential);}
- return {store,auth,legacy,call,login,advance:ms=>clock+=ms,close:()=>db?.close(),raw:createAtelierService(store,{now:()=>clock,images})};
+ const register=async(credential=first,code='valid')=>{const start=await call('account.line.start',{intent:'register'},credential);return call('account.line',{state:start.state,code},credential);};
+ return {store,auth,legacy,call,login,register,advance:ms=>clock+=ms,close:()=>db?.close(),raw:createAtelierService(store,{now:()=>clock,images})};
 }
 for(const sqlite of [false,true]){
  const backend=sqlite?'SQLite':'memory';
@@ -43,10 +44,10 @@ for(const sqlite of [false,true]){
  });
  test(`verified LINE sessions participate; logout and expiry revoke writes but preserve public viewing (${backend})`,async()=>{
   const f=fixture(sqlite);try{
-   const signed=await f.login(),again=await f.login(second);
+   const signed=await f.register(),again=await f.login(second);
    assert.equal(signed.account.username,again.account.username);assert.equal(signed.account.lineLinked,true);
    const room=await f.call('create',{name:'Public atelier',capacity:2,visibility:'public'},signed.token);
-   const other=await f.login(third,'other');assert.equal((await f.call('join',{code:room.code},other.token)).members,2);
+   const other=await f.register(third,'other');assert.equal((await f.call('join',{code:room.code},other.token)).members,2);
    const photo='data:image/jpeg;base64,'+Buffer.from('photo').toString('base64');
    await f.call('post',{code:room.code,day:room.day,photo},signed.token);
    await f.call('global.record',{day:room.day,sourceCode:room.code},signed.token);
@@ -63,7 +64,7 @@ for(const sqlite of [false,true]){
  });
  test(`public completed works exclude private data and close immediately when visibility changes (${backend})`,async()=>{
   const f=fixture(sqlite);try{
-   const signed=await f.login(),room=await f.call('create',{name:'Public atelier',capacity:2,visibility:'public'},signed.token),privateRoom=await f.call('create',{name:'Private atelier',capacity:2},signed.token);
+   const signed=await f.register(),room=await f.call('create',{name:'Public atelier',capacity:2,visibility:'public'},signed.token),privateRoom=await f.call('create',{name:'Private atelier',capacity:2},signed.token);
    await f.call('post',{code:room.code,day:room.day,photo:'data:image/jpeg;base64,cGhvdG8='},signed.token);await f.call('generate',{code:room.code,day:room.day},signed.token);
    const overview=await f.call('public.atelier',{code:room.code},second),work=await f.call('public.work',{code:room.code,day:room.day},second);
    assert.equal(overview.works[0].day,room.day);assert(work.image.startsWith('data:image/png;base64,'));
@@ -90,7 +91,8 @@ for(const sqlite of [false,true]){
    const reauth=await f.call('account.line.start',{intent:'delete',confirmUsername:linked.account.username},linked.token);
    await f.call('account.line',{state:reauth.state,code:'valid'},linked.token);
    await assert.rejects(f.call('join',{code:room.code},linked.token),e=>e.code==='account_deleted');
-   const recreated=await f.login(second);assert.notEqual(recreated.account.username,linked.account.username);assert.deepEqual(recreated.account.ateliers,[]);
+   await assert.rejects(f.login(second),e=>e.code==='line_not_registered');
+   const recreated=await f.register(second);assert.notEqual(recreated.account.username,linked.account.username);assert.deepEqual(recreated.account.ateliers,[]);
   }finally{f.close();}
  });
 }

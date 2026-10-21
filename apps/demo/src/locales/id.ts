@@ -2,6 +2,9 @@
 import type {CopyKey} from '../copy';
 export default {
   "demo.line.login": "Masuk dengan LINE",
+  "demo.line.register": "Daftar dengan LINE",
+  "demo.line.not_registered": "Akun LINE ini belum terdaftar. Silakan buat akun baru.",
+  "demo.line.registered": "Akun LINE ini sudah terdaftar. Silakan masuk.",
   "demo.line.linked": "Terhubung ke LINE",
   "demo.line.invalid": "Verifikasi LINE gagal. Silakan coba lagi.",
   "demo.line.expired": "Silakan masuk dengan LINE lagi.",
@@ -395,7 +398,7 @@ export default {
   "demo.account.limited": "Terlalu banyak upaya. Tunggu beberapa saat sebelum mencoba lagi.",
   "demo.account.expired": "Proses masuk Anda telah kedaluwarsa. Masuk lagi.",
   "demo.settings.motion": "Lewati animasi pengungkapan dan zoom",
-  "demo.settings.privacy": "Foto dan karya yang dibagikan disimpan di Xserver. Keanggotaan dan akun disimpan di Cloudflare. Kata sandi di-hash. Contoh riwayat dan pengaturan animasi tetap ada di browser ini.",
+  "demo.settings.privacy": "Foto bersama, karya, keanggotaan, dan akun disimpan di Cloudflare. Kata sandi disimpan dalam bentuk hash. Riwayat contoh dan pengaturan animasi tetap tersimpan di browser ini.",
   "demo.week.entry": "Lihat aktivitas selama seminggu",
   "demo.week.label": "Contoh · 200 atelier / 1.000 orang / 7 hari",
   "demo.calendar.previous_atelier": "Atelier sebelumnya",

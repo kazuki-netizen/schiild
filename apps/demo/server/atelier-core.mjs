@@ -68,7 +68,7 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    return {ateliers:page.map(room=>({code:room.code,name:room.name,capacity:room.capacity,concept:dayConcept(room,room.days[day]),members:memberCount(room),total:Object.values(room.days).filter(day=>day.status==='ready').length})),nextCursor:matches.length>24?page.at(-1).code:null};
   }
   if(action==='global')return global.view(String(body.day??utcDay(now())),member);
-  if(action==='global.schiils')return global.schiils(body.day,body.positions);
+  if(action==='global.schiils')return global.schiils(body.day,body.positions,body.layoutRevision);
   if(action==='global.archive')return {days:(await listRecords(store,'globals/')).filter(({data})=>data.day<=utcDay(now())&&Object.keys(data.pixels).length).map(({data})=>({day:data.day,index:0})).sort((a,b)=>b.day.localeCompare(a.day))};
   if(action==='global.record'){
    const day=utcDay(now());if(body.day!==day)fail(409,'window_closed');

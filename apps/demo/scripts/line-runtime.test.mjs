@@ -16,7 +16,7 @@ test('LINE runs authorization-code/PKCE exchange, persistent account restore and
  }});
  async function login(credential,values={}){const response=await call(mf,'account.line.start',values,credential);assert.equal(response.status,200);const start=await response.json(),code=randomBytes(10).toString('hex');issued.set(code,new URL(start.url).searchParams);const result=await call(mf,'account.line',{state:start.state,code},credential),body=await result.json();assert.equal(result.status,200,JSON.stringify({body,tokenRequests,verifyRequests}));return body;}
  try{
-  assert.deepEqual(await (await call(mf,'account.line.config')).json(),{enabled:true});const signed=await login('a'.repeat(64));assert.equal(signed.account.lineLinked,true);assert.equal(signed.account.canDelete,true);assert.equal(signed.account.hasPassword,false);
+  assert.deepEqual(await (await call(mf,'account.line.config')).json(),{enabled:true});const signed=await login('a'.repeat(64),{intent:'register'});assert.equal(signed.account.lineLinked,true);assert.equal(signed.account.canDelete,true);assert.equal(signed.account.hasPassword,false);
   const again=await login('b'.repeat(64));assert.equal(signed.account.username,again.account.username);
   assert.deepEqual(await login(signed.token,{intent:'delete',confirmUsername:signed.account.username}),{deleted:true});assert.equal((await call(mf,'account.me',{},again.token)).status,401);assert.equal(tokenRequests,3);assert.equal(verifyRequests,3);
  }finally{await mf.dispose();}

@@ -4,6 +4,9 @@ import {pushItalian} from './push-copy.ts';
 // DEMO ONLY. Italian (it-IT, tu). Product names and interpolation keys stay unchanged.
 export const italian={
  'demo.line.login':'Accedi con LINE',
+ 'demo.line.register':'Registrati con LINE',
+ 'demo.line.not_registered':'Questo account LINE non è registrato. Crea un nuovo account.',
+ 'demo.line.registered':'Questo account LINE è già registrato. Accedi.',
  'demo.line.linked':'LINE collegato',
  'demo.line.invalid':'La verifica con LINE non è riuscita. Riprova.',
  'demo.line.expired':'Avvia di nuovo l’accesso con LINE.',
@@ -397,7 +400,7 @@ export const italian={
  'demo.account.limited':'Troppi tentativi. Attendi un po’ prima di riprovare.',
  'demo.account.expired':'La sessione è scaduta. Accedi di nuovo.',
  'demo.settings.motion':'Salta le animazioni di apertura e zoom',
- 'demo.settings.privacy':'Le foto condivise e le opere sono salvate su Xserver. Le partecipazioni e gli account, su Cloudflare. Le password sono salvate sotto forma di hash. La cronologia di esempio e le impostazioni delle animazioni rimangono in questo browser.',
+ 'demo.settings.privacy':'Le foto condivise, le opere, le partecipazioni e gli account sono salvati su Cloudflare. Le password sono salvate sotto forma di hash. La cronologia di esempio e le impostazioni delle animazioni rimangono in questo browser.',
  'demo.week.entry':'Esplora una settimana di utilizzo',
  'demo.week.label':'Esempio · 200 atelier / 1.000 persone / 7 giorni',
  'demo.calendar.previous_atelier':'Atelier precedente',

@@ -2,6 +2,9 @@
 import type {CopyKey} from '../copy';
 export default {
   "demo.line.login": "ចូលដោយប្រើ LINE",
+  "demo.line.register": "ចុះឈ្មោះដោយប្រើ LINE",
+  "demo.line.not_registered": "គណនី LINE នេះមិនទាន់បានចុះឈ្មោះទេ។ សូមបង្កើតគណនីថ្មី។",
+  "demo.line.registered": "គណនី LINE នេះបានចុះឈ្មោះរួចហើយ។ សូមចូល។",
   "demo.line.linked": "បានភ្ជាប់ LINE",
   "demo.line.invalid": "ការផ្ទៀងផ្ទាត់ LINE បានបរាជ័យ។ សូមព្យាយាមម្តងទៀត។",
   "demo.line.expired": "សូមចូលជាមួយ LINE ម្តងទៀត។",
@@ -395,7 +398,7 @@ export default {
   "demo.account.limited": "ព្យាយាមច្រើនពេក។ រង់ចាំមួយរយៈសិន មុននឹងព្យាយាមម្តងទៀត។",
   "demo.account.expired": "ការចូលរបស់អ្នកបានផុតកំណត់ហើយ។ ចូលម្តងទៀត។",
   "demo.settings.motion": "រំលងការបង្ហាញ និងពង្រីកចលនា",
-  "demo.settings.privacy": "រូបថត និងស្នាដៃដែលបានចែករំលែកត្រូវបានរក្សាទុកនៅលើ Xserver ។ សមាជិកភាព និងគណនីត្រូវបានរក្សាទុកនៅលើ Cloudflare ។ ពាក្យ​សម្ងាត់​ត្រូវ​បាន​បំបែក។ ប្រវត្តិគំរូ និងការកំណត់ចលនាស្ថិតនៅក្នុងកម្មវិធីរុករកនេះ។",
+  "demo.settings.privacy": "រូបថតរួម ស្នាដៃ ព័ត៌មានសមាជិកភាព និងគណនីត្រូវបានរក្សាទុកនៅលើ Cloudflare។ ពាក្យសម្ងាត់ត្រូវបានរក្សាទុកជាតម្លៃ hash។ ប្រវត្តិគំរូ និងការកំណត់ចលនាស្ថិតនៅក្នុងកម្មវិធីរុករកនេះ។",
   "demo.week.entry": "មើលសកម្មភាពមួយសប្តាហ៍",
   "demo.week.label": "ឧទាហរណ៍ · atelier 200 / មនុស្ស 1,000 នាក់ / 7 ថ្ងៃ",
   "demo.calendar.previous_atelier": "atelier មុន",

@@ -6,6 +6,7 @@ import {voidColor,voidPalette,legacyVoidPalette,VOID_THEME,VOID_PALETTE,colors} 
 import {globalService} from '../server/global-service.mjs';
 import {memoryStore} from '../server/memory-store.mjs';
 import {images as codec} from '../server/atelier-service.mjs';
+import {compactGlobal,GLOBAL_LAYOUT} from '../src/global-layout.ts';
 const root=new URL('../public/week/',import.meta.url),read=async path=>JSON.parse(await readFile(new URL(path.replace('/week/',''),root),'utf8')),digest=value=>createHash('sha256').update(value).digest('hex'),chance=(...parts)=>parseInt(digest(parts.join('/')).slice(0,8),16)/0xffffffff;
 const world=await read('/week/world.json'),people=await Promise.all(world.people.map(person=>read(person.file))),seeds=new Map(),replacements=new Map();
 for(const person of people)for(const [code,state] of Object.entries(person.states)){for(const work of state.works){const image=person.works[code+'/'+work.day]?.image;if(image)seeds.set(image,{seed:work.seed,day:work.day});}if(person.drafts[code])seeds.set(person.drafts[code].image,{seed:state.seed,day:state.day});}
@@ -21,15 +22,18 @@ for(const [day,file] of Object.entries(world.globals)){
  recordings.sort((a,b)=>a.position-b.position);const already=new Set(recordings.map(item=>item.person)),candidates=Array.from({length:people.length},(_,n)=>n).filter(person=>!already.has(person)).sort((a,b)=>(a===0?1:0)-(b===0?1:0)||chance('global-extra',day,a)-chance('global-extra',day,b));
  for(const person of candidates){if(recordings.length>=targets[day])break;const number=numbers[Math.floor(chance('global-only-photo',person,day)*numbers.length)];recordings.push({person,position:recordings.length,image:'/week/photos/'+number+'.jpg',code:'local'});}
  if(recordings.length!==targets[day])throw Error('unexpected_global_count');
- const service=globalService(memoryStore(),{now:()=>Date.parse(day+'T14:00:00Z'),images:{...codec,mean:async photo=>means.get(digest(Buffer.from(photo)))}});
+ const globalStore=memoryStore(),service=globalService(globalStore,{now:()=>Date.parse(day+'T14:00:00Z'),images:{...codec,mean:async photo=>means.get(digest(Buffer.from(photo)))}});
  for(const record of recordings)await service.record(day,'fictional-'+record.person,record.code,normalized.get(record.image));
+ const layout=compactGlobal((await globalStore.getWithMetadata('globals/'+day)).data.pixels),positions=new Map(layout.pixels.map(pixel=>[pixel.member,pixel.position]));
+ for(const record of recordings)record.position=positions.get('fictional-'+record.person);
  const rendered=await service.view(day,'view-only'),overview=Buffer.from(rendered.image.split(',')[1],'base64'),overviewFile='art/'+digest(overview).slice(0,24)+'.png';await writeFile(new URL(overviewFile,root),overview);
- global.count=rendered.count;global.outputSize=rendered.outputSize;global.positions=rendered.positions;global.image='/week/'+overviewFile;global.cumulative=totalRecords;global.schiils=recordings.map(record=>({position:record.position,image:record.image}));
+ global.count=rendered.count;global.outputSize=rendered.outputSize;global.positions=rendered.positions;global.layout=GLOBAL_LAYOUT;global.layoutRevision=rendered.layoutRevision;global.image='/week/'+overviewFile;global.cumulative=totalRecords;global.schiils=recordings.map(record=>({position:record.position,image:record.image}));
  for(const person of people)person.globals[day]={};for(const record of recordings)people[record.person].globals[day]={x:record.position%global.outputSize,y:Math.floor(record.position/global.outputSize)};
  const active=new Set(recordings.map(record=>record.person));for(let person=0;person<people.length;person++){const data=people[person];if(day===world.lastDay?Object.values(data.states).some(state=>state.hasPhoto):Object.values(data.works).some(work=>work.day===day&&work.area?.pixels>0))active.add(person);}
  const daily=world.metadata.daily.find(item=>item.day===day);daily.atelierActivePeople??=daily.activePeople;daily.activePeople=active.size;daily.globalPeople=global.count;
  global.schiils.sort((a,b)=>a.position-b.position);const width=global.outputSize*cellSize,background=Buffer.alloc(width*width*4);for(let y=0;y<width;y++)for(let x=0;x<width;x++)background.set([...voidColor(x,y,0,day),255],(y*width+x)*4);const atlas=await sharp(background,{raw:{width,height:width,channels:4}}).composite(global.schiils.map(tile=>({input:thumbnails.get(tile.image),left:tile.position%global.outputSize*cellSize,top:Math.floor(tile.position/global.outputSize)*cellSize}))).png().toBuffer(),atlasFile='art/'+digest(atlas).slice(0,24)+'.png';await writeFile(new URL(atlasFile,root),atlas);global.schiilImage='/week/'+atlasFile;global.schiilCellSize=cellSize;
- for(const art of global.artworks)art.image=replacements.get(art.image)??art.image;await writeFile(new URL(file.replace('/week/',''),root),JSON.stringify(global));
+ for(const art of global.artworks){art.image=replacements.get(art.image)??art.image;art.positions=recordings.filter(record=>record.code===art.code).map(record=>record.position);}
+ await writeFile(new URL(file.replace('/week/',''),root),JSON.stringify(global));
 }
 world.metadata.voidTheme=VOID_THEME;world.metadata.globalRange=[800,1000];world.metadata.globalPosts=totalRecords;await writeFile(new URL('world.json',root),JSON.stringify(world));await writeFile(new URL('scenario.json',root),JSON.stringify({metadata:world.metadata,credits:'photos/credits.json'},null,2)+'\n');
 for(let n=0;n<people.length;n++){const person=people[n],count=Object.values(person.globals).filter(pixel=>pixel.x!==undefined).length;person.area.global={pixels:count,days:count};for(const work of [...Object.values(person.works),...Object.values(person.drafts)])work.image=replacements.get(work.image)??work.image;await writeFile(new URL(world.people[n].file.replace('/week/',''),root),JSON.stringify(person));}

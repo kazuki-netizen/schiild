@@ -42,7 +42,7 @@ test('LINE code exchange uses server secret, PKCE and nonce and rejects forged/e
  overrides={auth_time:clock/1000-600};await assert.rejects(verify({...input,reauth:true}),e=>e.code==='line_invalid');overrides={};failure=400;await assert.rejects(verify(input),e=>e.code==='line_invalid');failure=503;await assert.rejects(verify(input),e=>e.code==='line_unavailable');
 });
 test('LINE challenges bind browser/state, expire and allow only one concurrent exchange',async()=>{
- const f=fixture(),start=await f.start();await f.start(second);
+ const f=fixture(),start=await f.start(first,{intent:'register'});await f.start(second);
  await assert.rejects(f.finish(start,second),e=>e.code==='line_expired');await assert.rejects(f.auth.execute({action:'account.line',code:'valid',state:'0'.repeat(64)},first),e=>e.code==='line_expired');assert.equal(f.calls.length,0);
  const results=await Promise.allSettled([f.finish(start),f.finish(start)]);assert.equal(results.filter(value=>value.status==='fulfilled').length,1);assert.equal(f.calls.length,1);
  const expired=await f.start(third);f.advance(300001);await assert.rejects(f.finish(expired,third),e=>e.code==='line_expired');
@@ -51,7 +51,7 @@ for(const sqlite of [false,true])test(`LINE creates/restores accounts, links onl
  const storage=sqlite?sqliteStore():{store:memoryStore(),close(){}},f=fixture(storage.store);
  try{
   const room=await createAtelierService(f.store)({action:'create',name:'LINE atelier',capacity:2},first);
-  const signed=await f.finish(await f.start());assert.equal(signed.account.lineLinked,true);assert.equal(signed.account.hasPassword,false);assert.equal(signed.account.canDelete,true);assert.equal(signed.account.ateliers[0].code,room.code);
+  const signed=await f.finish(await f.start(first,{intent:'register'}));assert.equal(signed.account.lineLinked,true);assert.equal(signed.account.hasPassword,false);assert.equal(signed.account.canDelete,true);assert.equal(signed.account.ateliers[0].code,room.code);
   const again=await f.finish(await f.start(second),second);assert.equal(again.account.username,signed.account.username);assert.equal((await f.auth.identity(again.token)).member,(await f.auth.identity(signed.token)).member);
   const password=await f.auth.execute({action:'account.register',username:'line_link_user',password:'line-test-password-29'},third);const conflict=await f.start(password.token);await assert.rejects(f.finish(conflict,password.token),e=>e.code==='line_conflict');
   const linked=await f.finish(await f.start(password.token),password.token,'other');assert.equal(linked.account.username,password.account.username);assert.equal(linked.account.hasPassword,true);
@@ -60,7 +60,8 @@ for(const sqlite of [false,true])test(`LINE creates/restores accounts, links onl
   const deletion=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username});assert.deepEqual(await f.finish(deletion,signed.token),{deleted:true});assert.equal(f.calls.at(-1).reauth,true);
   await assert.rejects(f.auth.identity(again.token),e=>e.code==='account_deleted');assert.equal((await f.store.listJSON('line-identities/')).length,1);assert.equal((await f.store.listJSON('line-challenges/')).filter(row=>row.data.member===hash(first)).length,0);
   const restoredRoom=(await f.store.getWithMetadata('rooms/'+room.code)).data;assert(!restoredRoom.members.includes(hash(first)));
-  const recreated=await f.finish(await f.start('d'.repeat(64)),'d'.repeat(64));assert.notEqual(recreated.account.username,signed.account.username);assert.deepEqual(recreated.account.ateliers,[]);
+  await assert.rejects(f.finish(await f.start('d'.repeat(64)),'d'.repeat(64)),e=>e.code==='line_not_registered');
+  const recreated=await f.finish(await f.start('d'.repeat(64),{intent:'register'}),'d'.repeat(64));assert.notEqual(recreated.account.username,signed.account.username);assert.deepEqual(recreated.account.ateliers,[]);
  }finally{storage.close();}
 });
 test('LINE registration and pending challenges cannot revive a deleted identity',async()=>{
@@ -68,4 +69,37 @@ test('LINE registration and pending challenges cannot revive a deleted identity'
  await f.auth.execute({action:'account.delete',confirmUsername:'line_race',password:'line-test-password-29'},signed.token);
  await assert.rejects(f.finish(pending,signed.token),e=>e.code==='account_deleted');const mapping=await f.store.registerLine({username:'new_line_account',member:hash(first),lineSubject:hash(subject)});assert.equal(mapping.modified,false);
  assert.equal((await f.store.setJSON('line-challenges/'+hash(first),{member:hash(first)})).modified,false);
+});
+
+for(const sqlite of [false,true])test(`login never recreates a deleted LINE account; only explicit signup creates an empty account (${sqlite?'SQLite':'memory'})`,async()=>{
+ const storage=sqlite?sqliteStore():{store:memoryStore(),close(){}},f=fixture(storage.store),fresh='d'.repeat(64);
+ try{
+  const missing=await f.start();
+  await assert.rejects(f.auth.execute({action:'account.line',state:missing.state,code:'valid',intent:'register'},first),e=>e.code==='line_not_registered');
+  assert.equal((await f.store.listJSON('accounts/')).length,0);assert.equal((await f.store.listJSON('sessions/')).length,0);
+  const signed=await f.finish(await f.start(first,{intent:'register'}));
+  const existing=await f.start(second,{intent:'register'});
+  await assert.rejects(f.finish(existing,second),e=>e.code==='line_registered');
+  assert.equal((await f.store.listJSON('accounts/')).length,1);
+  const again=await f.finish(await f.start(second),second),pending=await f.start(again.token);
+  const deletion=await f.start(signed.token,{intent:'delete',confirmUsername:signed.account.username});
+  await f.finish(deletion,signed.token);
+  for(const token of [signed.token,again.token])await assert.rejects(f.auth.identity(token),e=>e.code==='account_deleted');
+  await assert.rejects(f.finish(pending,again.token),e=>e.code==='account_deleted');
+  const before=await f.store.listJSON('accounts/');
+  await assert.rejects(f.finish(await f.start(fresh),fresh),e=>e.code==='line_not_registered');
+  assert.deepEqual(await f.store.listJSON('accounts/'),before);
+  assert.equal((await f.store.listJSON('line-identities/')).length,0);
+  const recreated=await f.finish(await f.start(fresh,{intent:'register'}),fresh);
+  assert.notEqual(recreated.account.username,signed.account.username);assert.deepEqual(recreated.account.ateliers,[]);assert.deepEqual(recreated.account.custody,[]);
+  assert.notEqual((await f.auth.identity(recreated.token)).member,(await f.store.getWithMetadata('sessions/'+hash(signed.token))).data.member);
+ }finally{storage.close();}
+});
+
+test('concurrent explicit LINE registrations cannot create duplicates or overwrite an existing account',async()=>{
+ const f=fixture(),starts=await Promise.all([f.start(first,{intent:'register'}),f.start(second,{intent:'register'})]);
+ const results=await Promise.allSettled([f.finish(starts[0]),f.finish(starts[1],second)]);
+ assert.equal(results.filter(row=>row.status==='fulfilled').length,1);
+ assert.equal(results.filter(row=>row.status==='rejected'&&row.reason.code==='line_registered').length,1);
+ assert.equal((await f.store.listJSON('accounts/')).length,1);assert.equal((await f.store.listJSON('line-identities/')).length,1);
 });

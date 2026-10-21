@@ -3,6 +3,9 @@ import {pushSpanish} from './push-copy.ts';
 // DEMO ONLY. Spanish copy uses the same keys and restrictions as the other languages.
 import type {CopyKey} from './copy';
 export const spanish={
+ 'demo.line.register':'Regístrate con LINE',
+ 'demo.line.not_registered':'Esta cuenta de LINE no está registrada. Crea una cuenta nueva.',
+ 'demo.line.registered':'Esta cuenta de LINE ya está registrada. Inicia sesión.',
  "demo.line.login":"Iniciar sesión con LINE",
  "demo.line.linked":"LINE vinculado",
  "demo.line.invalid":"No se pudo verificar tu identidad con LINE. Inténtalo de nuevo.",
@@ -397,7 +400,7 @@ export const spanish={
  'demo.account.limited':'Demasiados intentos. Espera un momento antes de reintentar.',
  'demo.account.expired':'Tu sesión ha caducado. Inicia sesión de nuevo.',
  'demo.settings.motion':'Omitir animaciones de apertura y zoom',
- 'demo.settings.privacy':'Las fotos compartidas y las obras se guardan en Xserver. Las participaciones y cuentas, en Cloudflare. Las contraseñas se guardan mediante hash. El historial de ejemplo y los ajustes de animación quedan en este navegador.',
+ 'demo.settings.privacy':'Las fotos compartidas, las obras, las participaciones y las cuentas se guardan en Cloudflare. Las contraseñas se guardan mediante hash. El historial de ejemplo y los ajustes de animación quedan en este navegador.',
  "demo.week.entry":"Explorar una semana de uso",
  "demo.week.label":"Ejemplo · 200 ateliers / 1.000 personas / 7 días",
  'demo.calendar.previous_atelier':'Atelier anterior',

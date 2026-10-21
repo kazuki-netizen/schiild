@@ -19,7 +19,7 @@ test('fictional week has 1,000 isolated viewpoints, 200 ateliers and seven UTC d
 test('genuine 256px atelier images, linked GLOBAL art, unique pixels and personal area agree',async()=>{
  const artifacts=new Set(),globals={},coordinates={};for(const [day,file] of Object.entries(world.globals)){
   coordinates[day]=new Set();
-  const work=globals[day]=await read(file);assert.equal(new Set(work.positions).size,work.count);assert.equal(work.outputSize,Math.ceil(Math.sqrt(work.count)));
+  const work=globals[day]=await read(file);assert.equal(work.layout,'random-compact-v2');assert.match(work.layoutRevision,/^[a-f0-9]{64}$/);assert.equal(new Set(work.positions).size,work.count);assert.equal(work.outputSize,Math.ceil(Math.sqrt(work.count)));
   const linked=work.artworks.flatMap(art=>art.positions);assert.equal(new Set(linked).size,linked.length);assert(linked.length<=work.count);assert(work.count>=800&&work.count<=1000);
   for(const art of work.artworks){assert(art.name&&art.code);artifacts.add(art.image);}
   const raw=await sharp(await readFile(new URL(work.image.replace('/week/',''),root))).ensureAlpha().raw().toBuffer();for(let position=work.count;position<work.outputSize**2;position++)assert.deepEqual([...raw.subarray(position*4,position*4+4)],[...voidColor(position%work.outputSize,Math.floor(position/work.outputSize),0,day),255]);
@@ -30,6 +30,14 @@ test('genuine 256px atelier images, linked GLOBAL art, unique pixels and persona
  }
  for(const day of Object.keys(globals))assert.equal(coordinates[day].size,globals[day].count);
  for(const image of artifacts){assert(image.startsWith('/week/art/'));const bytes=await readFile(new URL(image.replace('/week/',''),root));assert.equal(bytes.readUInt32BE(16),256);assert.equal(bytes.readUInt32BE(20),256);}
+});
+
+test('fictional GLOBAL placement is not ordered by person ID on any day',async()=>{
+ const people=await Promise.all(world.people.map(descriptor=>read(descriptor.file)));
+ for(const [day,file] of Object.entries(world.globals)){
+  const global=await read(file),positions=people.map(person=>person.globals[day]).filter(pixel=>pixel.x!==undefined).map(pixel=>pixel.y*global.outputSize+pixel.x);
+  assert.equal(positions.length,global.count);assert.notDeepEqual(positions,[...positions].sort((a,b)=>a-b));
+ }
 });
 
 test('static replay exports no credentials and retains photo attribution',async()=>{

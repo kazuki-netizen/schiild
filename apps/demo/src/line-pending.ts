@@ -1,13 +1,13 @@
 // DEMO ONLY. A short-lived state proof, never an OAuth code, token or channel secret.
 // localStorage allows LINE's Android app to return into another Chrome tab.
-export type LinePending={state:string;intent:'login'|'delete';startedAt:number};
+export type LinePending={state:string;intent:'login'|'register'|'delete';startedAt:number};
 type Stores={local:Storage;session:Storage};
 const sessionKey='schiild.line.pending',prefix=sessionKey+'.';
 const lifetime=300000;
 const validState=(state:string)=>/^[a-f0-9]{64}$/.test(state);
 function read(store:Storage,key:string){try{return JSON.parse(store.getItem(key)??'null');}catch{return null;}}
 function remove(store:Storage,key:string){try{store.removeItem(key);}catch{}}
-function fresh(value:LinePending,now:number){return value&&validState(value.state)&&['login','delete'].includes(value.intent)&&Number.isFinite(value.startedAt)&&value.startedAt<=now+60000&&now-value.startedAt<=lifetime;}
+function fresh(value:LinePending,now:number){return value&&validState(value.state)&&['login','register','delete'].includes(value.intent)&&Number.isFinite(value.startedAt)&&value.startedAt<=now+60000&&now-value.startedAt<=lifetime;}
 export function saveLinePending(value:LinePending,stores:Stores){
  if(!fresh(value,Date.now()))throw Error('invalid_pending');
  // Only our expired state records are removed; other tabs and application data remain.
