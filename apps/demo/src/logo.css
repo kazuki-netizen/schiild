@@ -1,0 +1,7 @@
+/* DEMO ONLY. Each of the three rectangles uses the silver ratio, 1 : sqrt(2).
+   The upper two are portrait; the lower one is landscape. Measure border boxes. */
+.brand-symbol{--logo-width:24px;--logo-gap:2px}
+.opening-symbol{--logo-width:96px;--logo-gap:8px}
+.header .brand-symbol,.brand-opening .opening-symbol{width:var(--logo-width);height:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto;gap:var(--logo-gap);align-items:start;flex-shrink:0}
+.header .brand-symbol i,.brand-opening .opening-symbol i{box-sizing:border-box;display:block;width:100%;height:auto;aspect-ratio:1 / 1.4142135623730951}
+.header .brand-symbol i:last-child,.brand-opening .opening-symbol i:last-child{grid-column:1 / -1;aspect-ratio:1.4142135623730951 / 1}
