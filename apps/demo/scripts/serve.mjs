@@ -5,13 +5,14 @@ import {fileURLToPath} from 'node:url';
 import {ApiError,createAtelierService} from '../server/atelier-service.mjs';
 import {memoryStore} from '../server/memory-store.mjs';
 import {accounts} from '../server/accounts.mjs';
+import {actorForAction} from '../server/access-policy.mjs';
 import {readLineConfig} from '../server/line-identity.mjs';
 import {notificationService,readPushConfig} from '../server/notifications.mjs';
 import {images} from '../server/atelier-service.mjs';
 import webpush from 'web-push';
 const root=path.resolve(fileURLToPath(new URL('../dist/',import.meta.url))),types={'.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css','.png':'image/png','.ttf':'font/ttf','.woff2':'font/woff2','.json':'application/json'};
 const pushFixture=process.env.DEMO_PUSH_FIXTURE==='1',pushConfig=pushFixture?{...webpush.generateVAPIDKeys(),subject:'mailto:test@example.com'}:readPushConfig(process.env.WEB_PUSH_CONFIG);
-const store=memoryStore({notificationEvents:Boolean(pushConfig)}),auth=accounts(store,{googleClientId:process.env.GOOGLE_CLIENT_ID,lineConfig:readLineConfig(process.env.LINE_LOGIN_CONFIG)}),push=notificationService(store,{config:pushConfig,images,...(pushFixture?{send:async()=>({status:201})}:{})});
+const store=memoryStore({notificationEvents:Boolean(pushConfig)}),auth=accounts(store,{requireLine:true,googleClientId:process.env.GOOGLE_CLIENT_ID,lineConfig:readLineConfig(process.env.LINE_LOGIN_CONFIG)}),push=notificationService(store,{requireLine:true,config:pushConfig,images,...(pushFixture?{send:async()=>({status:201})}:{})});
 if(push.enabled)setInterval(()=>void push.drain().catch(()=>{}),1000).unref();
 const service=createAtelierService(store);
 // Local test servers share an in-memory store. Public demo uses Cloudflare/Xserver.
@@ -25,7 +26,7 @@ function createServer(port){http.createServer(async(req,res)=>{
    const body=JSON.parse(text);
    let result;
    if(typeof body.action==='string'&&body.action.startsWith('account.'))result=await auth.execute(body,credential);
-   else{const actor=await auth.identity(credential);result=body.action?.startsWith('push.')?await push.execute(body,actor):await createAtelierService(store,{memberForCredential:()=>actor.member})(body,credential);}
+   else{const actor=await actorForAction(auth,body.action,credential);result=body.action?.startsWith('push.')?await push.execute(body,actor):await createAtelierService(store,{memberForCredential:()=>actor.member,publicOnly:!actor.account})(body,credential);}
    res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(result));return;
   }
   const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
@@ -37,7 +38,7 @@ createServer(8085);
 if(process.env.DEMO_SECOND_ORIGIN==='1')createServer(8086);
 if(process.env.DEMO_FIXTURE==='1'){
  const sharp=(await import('sharp')).default;
- const first='d'.repeat(64),second='e'.repeat(64),room=await service({action:'create',name:'ふたりの体験',capacity:5},first);
+ const first='d'.repeat(64),second='e'.repeat(64),room=await service({action:'create',name:'ふたりの体験',capacity:5,visibility:'public'},first);
  await service({action:'join',code:room.code},second);
  for(const [credential,color] of [[first,'#c39582'],[second,'#87a6b0']]){
   const bytes=await sharp({create:{width:1080,height:1080,channels:3,background:color}}).jpeg({quality:85}).toBuffer();

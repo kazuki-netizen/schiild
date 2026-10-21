@@ -36,6 +36,7 @@ export async function sharedRequest<T=SharedState>(action:string,values:Record<s
  let body;try{body=await response.json();}catch{throw Error(t('demo.shared.unavailable'));}
  if(!response.ok){
   const key=body.error;
+  if(key==='line_required'){window.dispatchEvent(new Event('schiild:line-required'));throw new SharedError(key,t('demo.auth.line_required'));}
   if(key==='session_expired'||key==='unauthorized')window.dispatchEvent(new Event('schiild:session-expired'));
   if(key==='account_deleted'){if(!deletionNotified){deletionNotified=true;window.dispatchEvent(new Event('schiild:account-deleted'));}throw new SharedError(key,t('demo.delete.done'));}
   if(key==='concept_invalid'||key==='concept_forbidden')throw new SharedError(key,t(key==='concept_invalid'?'demo.concept.invalid':'demo.concept.forbidden'));

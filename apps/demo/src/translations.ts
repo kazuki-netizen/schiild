@@ -1,3 +1,4 @@
+import {accessTranslations} from './access-copy.ts';
 import {pushTranslations} from './push-copy.ts';
 // DEMO ONLY. Values follow the existing copy keys, in English, Korean, French and Dutch order.
 // Product names stay Schiil / Schiild; custody never implies a financial right.
@@ -408,5 +409,6 @@ export const translations={
  "demo.week.exit":["Return to demo","일반 데모로","Revenir à la démo","Terug naar de demo"],
  "demo.week.read_only":["Atelier membership in this example is temporary. Return to the demo to try the camera and other features.","이 예시에서는 참여 정보가 저장되지 않습니다. 촬영 등의 기능은 일반 데모에서 이용할 수 있습니다.","La participation aux ateliers de cet exemple est temporaire. Revenez à la démo pour essayer la caméra et les autres fonctions.","Deelname aan ateliers in dit voorbeeld is tijdelijk. Ga terug naar de demo om de camera en andere functies te proberen."],
  "demo.week.person":["View as","화면을 볼 사용자","Voir en tant que","Bekijken als"],
+ ...accessTranslations,
  ...pushTranslations,
 } satisfies Record<CopyKey,readonly [string,string,string,string]>;

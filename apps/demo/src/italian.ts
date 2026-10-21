@@ -1,3 +1,4 @@
+import {accessItalian} from './access-copy.ts';
 import type {CopyKey} from './copy';
 import {pushItalian} from './push-copy.ts';
 // DEMO ONLY. Italian (it-IT, tu). Product names and interpolation keys stay unchanged.
@@ -407,5 +408,6 @@ export const italian={
  'demo.week.exit':'Torna alla demo',
  'demo.week.read_only':'La partecipazione agli atelier di questo esempio è temporanea. Torna alla demo per provare la fotocamera e le altre funzioni.',
  'demo.week.person':'Visualizza come',
+ ...accessItalian,
  ...pushItalian,
 } satisfies Record<CopyKey,string>;

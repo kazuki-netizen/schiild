@@ -88,3 +88,13 @@ test('failed or provisional images do not create ready notifications',async()=>{
  await f.call('global.record',{sourceCode:room.code,day:room.day},a.token);f.setTime('2026-10-20T00:15:00Z');const failing=notificationService(f.store,{config,now:f.now,images:{...images,global:async()=>{throw Error('storage_unavailable');}}});await assert.rejects(failing.finalizeGlobal());assert((await f.store.listJSON('push-events/')).every(row=>row.data.kind!=='globalReady'));
  await f.push.finalizeGlobal();assert.equal((await f.store.listJSON('push-events/')).filter(row=>row.data.kind==='globalReady').length,1);
 });
+
+
+test('LINE-required deployment stops queued notifications for unlinked legacy accounts',async()=>{
+ const f=fixture(),a=await f.register('first_member',1),b=await f.register('legacy_member',2),room=await f.call('create',{name:'Morning',capacity:2},a.token);
+ await f.call('join',{code:room.code},b.token);await f.subscribe(b.token);f.advance(1);
+ await f.call('post',{code:room.code,day:room.day,photo},a.token);
+ const strict=notificationService(f.store,{requireLine:true,config,images,now:f.now,send:async()=>{throw Error('unlinked account received notification');}});
+ await assert.rejects(strict.execute({action:'push.config'},await f.auth.identity(b.token)),error=>error.code==='line_required');
+ await strict.drain();assert.equal(f.sent.length,0);
+});

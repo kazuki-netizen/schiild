@@ -1,3 +1,4 @@
+import {accessJapanese} from './access-copy.ts';
 import {pushJapanese} from './push-copy.ts';
 // Approved demo-only additions. Production copy and requirements remain unchanged.
 export const demoCopy={
@@ -266,5 +267,6 @@ export const demoCopy={
  "error.already_posted":"今日のシールは記録済みです。",
  "error.window_closed":"今日の受付は終了しました。明日から、またシールを記録できます。",
  "onboarding.1.body":"アトリエごとに1日1枚を記録できます。確定した写真の撮り直しや差し替えはできません。",
+ ...accessJapanese,
  ...pushJapanese,
 };

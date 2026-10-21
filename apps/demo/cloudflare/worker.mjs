@@ -7,6 +7,7 @@ import {xserverImages} from './xserver-store.mjs';
 import {siteRequest} from './site.mjs';
 import {sqliteImages} from './sqlite-images.mjs';
 import {accounts} from '../server/accounts.mjs';
+import {actorForAction} from '../server/access-policy.mjs';
 import {validGoogleClient} from '../server/google-identity.mjs';
 import {readLineConfig,validLineConfig} from '../server/line-identity.mjs';
 import {notificationService,readPushConfig} from '../server/notifications.mjs';
@@ -19,7 +20,7 @@ export class AtelierDirectory extends DurableObject {
   // The legacy branch is for migration/rollback tests only. The deployed backend is SQLite.
   const images=this.env.IMAGE_BACKEND==='durable-sqlite'?sqliteImages(this.storage):xserverImages({url:this.env.XSERVER_STORAGE_URL,secret:this.env.XSERVER_STORAGE_SECRET});
   const store=metadataStore(this.storage,images,{notificationEvents:Boolean(readPushConfig(this.env.WEB_PUSH_CONFIG))});
-  return {store,push:notificationService(store,{config:this.env.WEB_PUSH_CONFIG,images:workerImages})};
+  return {store,push:notificationService(store,{requireLine:true,config:this.env.WEB_PUSH_CONFIG,images:workerImages})};
  }
  async importImage(name,bytes,expected){return sqliteImages(this.storage).importImage(name,bytes,expected);}
  async imageInfo(name){return sqliteImages(this.storage).info(name);}
@@ -32,7 +33,7 @@ export class AtelierDirectory extends DurableObject {
   try{
    let body;try{body=await request.json();}catch{throw new ApiError(400,'invalid');}
    if(!body||typeof body!=='object'||Array.isArray(body))throw new ApiError(400,'invalid');
-   const {store,push}=this.services(),lineConfig=readLineConfig(this.env.LINE_LOGIN_CONFIG),auth=accounts(store,{googleClientId:this.env.GOOGLE_CLIENT_ID,lineConfig}),credential=request.headers.get('authorization')?.replace(/^Bearer /,'');
+   const {store,push}=this.services(),lineConfig=readLineConfig(this.env.LINE_LOGIN_CONFIG),auth=accounts(store,{requireLine:true,googleClientId:this.env.GOOGLE_CLIENT_ID,lineConfig}),credential=request.headers.get('authorization')?.replace(/^Bearer /,'');
    let result;
    if(typeof body.action==='string'&&body.action.startsWith('account.')){
     // Disabled feature discovery must not consume password-login/deletion attempts.
@@ -40,9 +41,9 @@ export class AtelierDirectory extends DurableObject {
     if(authAttempt&&this.env.AUTH_RATE_LIMITER&&!((await this.env.AUTH_RATE_LIMITER.limit({key:request.headers.get('X-Demo-IP')??'local'})).success))throw new ApiError(429,'login_limited');
     result=await auth.execute(body,credential);
    }else{
-    const actor=await auth.identity(credential);
+    const actor=await actorForAction(auth,body.action,credential);
     if(typeof body.action==='string'&&body.action.startsWith('push.'))result=await push.execute(body,actor);
-    else{const execute=createAtelierService(store,{images:workerImages,memberForCredential:()=>actor.member});result=await execute(body,credential);}
+    else{const execute=createAtelierService(store,{images:workerImages,memberForCredential:()=>actor.member,publicOnly:!actor.account});result=await execute(body,credential);}
    }
    if(push.enabled&&!await this.storage.getAlarm())await this.storage.setAlarm(Date.now()+1000);
    return Response.json(result);

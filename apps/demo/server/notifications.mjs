@@ -31,16 +31,17 @@ function subscriptionInput(value){
 }
 const deviceProof=body=>{if(!/^[a-f0-9]{64}$/.test(body.clientKey??''))fail(400,'push_invalid');return pushDigest(body.clientKey);};
 const deviceKey=body=>{if(typeof body.endpoint!=='string'||body.endpoint.length>2048)fail(400,'push_invalid');return `push-subscriptions/${pushDigest(body.endpoint)}`;};
-export function notificationService(store,{config,images,now=()=>Date.now(),send=sendPush}={}){
+export function notificationService(store,{config,images,now=()=>Date.now(),send=sendPush,requireLine=false}={}){
  config=readPushConfig(config);
  async function preference(member){return (await read(store,`push-preferences/${member}`))?.data??{member,preferences:{...defaults},enabledSince:Object.fromEntries(kinds.map(kind=>[kind,now()]))};}
  async function live(sub){
   const session=(await read(store,sub.sessionKey))?.data;
   if(!session||session.revoked||session.deleted||session.expires<=now()||session.member!==sub.member)return false;
-  const account=(await read(store,`accounts/${session.username}`))?.data;return account?.member===sub.member;
+  const account=(await read(store,`accounts/${session.username}`))?.data;return account?.member===sub.member&&(!requireLine||Boolean(account.lineSubject));
  }
  async function execute(body,actor){
   if(!actor.account||!actor.sessionKey)fail(401,'unauthorized');
+  if(requireLine&&!actor.account.lineSubject)fail(403,'line_required');
   if(body.action==='push.config')return {enabled:Boolean(config),publicKey:config?.publicKey??null,preferences:(await preference(actor.member)).preferences};
   if(body.action==='push.preferences'){
    if(!body.preferences||kinds.some(kind=>typeof body.preferences[kind]!=='boolean'))fail(400,'push_invalid');

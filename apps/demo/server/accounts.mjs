@@ -17,7 +17,7 @@ export async function listRecords(store,prefix){
  const rows=await Promise.all((listing.blobs??[]).map(async blob=>({key:blob.key,...await store.getWithMetadata(blob.key,{type:'json'})})));
  return rows;
 }
-export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine}={}){
+export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogle=googleVerifier(googleClientId,{now}),lineConfig=null,verifyLine,requireLine=false}={}){
  async function identity(credential){
   if(!/^[a-f0-9]{64}$/.test(credential??''))fail(401,'unauthorized');
   const member=hash(credential),session=await store.getWithMetadata(`sessions/${member}`,{type:'json'});
@@ -45,6 +45,11 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
  const line=lineAccounts(store,{config:lineConfig,now,identity,session,verify:verifyLine});
  async function execute(body,credential){
   if(typeof body.action==='string'&&body.action.startsWith('account.line'))return line(body,credential);
+  // Live adapters require LINE. The opt-out exists only for legacy core test fixtures.
+  if(requireLine){
+   if(body.action==='account.google.start')return {enabled:false};
+   if(['account.register','account.login','account.google'].includes(body.action))fail(403,'line_required');
+  }
   const username=typeof body.username==='string'?body.username.trim().toLowerCase():'';
   if(body.action==='account.google.start'){
    if(!validGoogleClient(googleClientId))return {enabled:false};
@@ -110,7 +115,7 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
    return session(row.data);
   }
   const actor=await identity(credential);
-  if(body.action==='account.me')return {account:actor.account?await profile(actor.account):null};
+  if(body.action==='account.me')return {account:actor.account&&(!requireLine||actor.account.lineSubject)?await profile(actor.account):null};
   if(!actor.account)fail(401,'unauthorized');
   if(body.action==='account.logout'){await store.setJSON(actor.sessionKey,{username:actor.account.username,expires:0,revoked:true});return {done:true};}
   if(body.action==='account.delete'){
@@ -132,6 +137,7 @@ export function accounts(store,{now=()=>Date.now(),googleClientId='',verifyGoogl
    return {done:true};
   }
   if(body.action==='account.update'){
+   if(requireLine&&!actor.account.lineSubject)fail(403,'line_required');
    if(typeof body.name!=='string'||!body.name.trim()||body.name.length>40)fail(400,'account_invalid');
    for(let n=0;n<20;n++){
     const row=await store.getWithMetadata(accountKey(actor.account.username),{type:'json'});

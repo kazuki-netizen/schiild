@@ -1,17 +1,8 @@
-import React,{useEffect,useState} from 'react';
+import React from 'react';
 import {t} from './copy';
-import HelpDetails from './HelpDetails';
 import LanguageSelect from './LanguageSelect';
 import type {Language} from './language';
-import GoogleSignIn from './GoogleSignIn';
 import LineSignIn from './LineSignIn';
-export default function AuthPage({language,onLanguage,onAuthenticate,onGoogle}:{language:Language;onLanguage:(value:Language)=>void;onAuthenticate:(register:boolean,username:string,password:string,name:string)=>Promise<void>;onGoogle:(idToken:string)=>Promise<void>}){
- const [register,setRegister]=useState(false),[username,setUsername]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
- useEffect(()=>setError(''),[language]);
- async function submit(task:()=>Promise<void>){if(busy)return;setBusy(true);setError('');try{await task();setPassword('');}catch(cause){setError(cause instanceof Error?cause.message:t('error.server.body'));}finally{setBusy(false);}}
- return <section className="account-page auth-page" data-testid="auth-page"><h1>{t(register?'demo.account.register':'demo.account.login')}</h1><div className="choice"><button aria-pressed={!register} disabled={busy} onClick={()=>{setRegister(false);setError('');}}>{t('demo.account.login')}</button><button aria-pressed={register} disabled={busy} onClick={()=>{setRegister(true);setError('');}}>{t('demo.account.register')}</button></div>
-  <form onSubmit={event=>{event.preventDefault();void submit(()=>onAuthenticate(register,username,password,name));}}><label className="field">{t('demo.account.id')}<input value={username} autoComplete="username" autoCapitalize="none" spellCheck={false} minLength={3} maxLength={24} required disabled={busy} onChange={event=>setUsername(event.target.value)}/></label>{register&&<span className="field-hint">{t('demo.account.id_hint')}</span>}{register&&<label className="field">{t('demo.account.name')}<input value={name} maxLength={40} disabled={busy} onChange={event=>setName(event.target.value)}/></label>}<label className="field">{t('demo.account.password')}<input type="password" value={password} autoComplete={register?'new-password':'current-password'} minLength={register?12:1} maxLength={128} required disabled={busy} onChange={event=>setPassword(event.target.value)}/></label>{register&&<span className="field-hint">{t('demo.account.password_hint')}</span>}<button className="button" disabled={busy}>{t(busy?'common.loading':register?'demo.account.register':'demo.account.login')}</button></form>{register&&<p className="shared-note">{t('demo.account.recovery')}</p>}<HelpDetails label="demo.help.account"><p>{t('demo.account.rules')}</p>{!register&&<p>{t('demo.account.recovery')}</p>}</HelpDetails>
-  <GoogleSignIn disabled={busy} onAuthenticate={async token=>{if(busy)return;setBusy(true);setError('');try{await onGoogle(token);}finally{setBusy(false);}}}/>{error&&<p className="error" role="alert">{error}</p>}
-  <LineSignIn disabled={busy}/><LanguageSelect value={language} onChange={onLanguage}/>
- </section>;
+export default function AuthPage({language,onLanguage}:{language:Language;onLanguage:(value:Language)=>void}){
+ return <section className="account-page auth-page" data-testid="auth-page"><h1>{t('demo.auth.title')}</h1><p>{t('demo.auth.line_required')}</p><LineSignIn required/><LanguageSelect value={language} onChange={onLanguage}/></section>;
 }

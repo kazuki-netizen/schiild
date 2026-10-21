@@ -1,3 +1,4 @@
+import {accessSpanish} from './access-copy.ts';
 import {pushSpanish} from './push-copy.ts';
 // DEMO ONLY. Spanish copy uses the same keys and restrictions as the other languages.
 import type {CopyKey} from './copy';
@@ -407,5 +408,6 @@ export const spanish={
  "demo.week.exit":"Volver a la demo",
  "demo.week.read_only":"La participación en los ateliers de este ejemplo es temporal. Vuelve a la demo para probar la cámara y las demás funciones.",
  "demo.week.person":"Ver como",
+ ...accessSpanish,
  ...pushSpanish,
 } satisfies Record<CopyKey,string>;

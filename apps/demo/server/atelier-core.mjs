@@ -21,7 +21,7 @@ const dayConcept=(room,record)=>record?.concept??(!record||record.status==='open
 
 // The store contract uses strong reads and conditional writes. Never overwrite a
 // room revision after another participant has changed it.
-export function createAtelierService(store,{now=()=>Date.now(),images,memberForCredential=digest}={}){
+export function createAtelierService(store,{now=()=>Date.now(),images,memberForCredential=digest,publicOnly=false}={}){
  const global=globalService(store,{now,images});
  async function read(code){const entry=await store.getWithMetadata(roomKey(code),{type:'json'});if(!entry)fail(404,'not_found');return entry;}
  async function mutate(code,change){
@@ -115,8 +115,19 @@ export function createAtelierService(store,{now=()=>Date.now(),images,memberForC
    fail(503,'retry');
   }
   if(!codePattern.test(code))fail(404,'not_found');
+  if(action==='public.atelier'||action==='public.work'){
+   const {data:room}=await read(code);if(room.visibility!=='public')fail(404,'not_found');
+   const works=Object.values(room.days).filter(record=>record.status==='ready'&&record.day<=utcDay(now()));
+   if(action==='public.atelier')return {code,name:room.name,concept:dayConcept(room,room.days[utcDay(now())]),works:works.sort((a,b)=>b.day.localeCompare(a.day)).map(record=>({day:record.day,index:record.index,concept:dayConcept(room,record)}))};
+   const work=works.find(record=>record.day===body.day);if(!work)fail(404,'not_found');
+   const bytes=await store.get(`works/${code}/${work.day}`,{type:'arrayBuffer'});if(!bytes)fail(503,'generation_failed');
+   // Visibility can change while loading a generated image. Never serve original photos.
+   if((await read(code)).data.visibility!=='public')fail(404,'not_found');
+   return {day:work.day,index:work.index,concept:dayConcept(room,work),image:`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`};
+  }
   if(action==='preview'){
    const {data:room}=await read(code);
+   if(publicOnly&&room.visibility!=='public')fail(404,'not_found');
    return {code,name:room.name,capacity:room.capacity,concept:dayConcept(room,room.days[utcDay(now())]),members:memberCount(room),total:Object.values(room.days).filter(d=>d.status==='ready').length};
   }
   if(action==='join'){
