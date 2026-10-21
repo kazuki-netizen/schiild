@@ -40,7 +40,7 @@
 
 利用者は自分のLINEアカウントから登録・ログインできます。初回はSchiildのアカウントを自動作成し、次回以降は同じアカウントと所属アトリエへ戻ります。既存のID・パスワードのアカウントへ連携する場合は、先にそのアカウントへログインし、プロフィールのLINEログインから連携します。表示名やメールアドレスだけではアカウントを結合しません。LINE公式アカウント管理者としてのログインとは別の機能です。WhatsAppとGoogleの新しい接続は保留を維持します。
 
-[公開接続の確認待ち・2026年10月21日] 保存済みのChannel IDはLINEの認可画面で `Invalid client_id` と判定されました。有効な「LINEログイン」チャネルへの差し替えが済むまで、公開環境の `LINE_LOGIN_CONFIG` は `paused: true` を維持します。アプリ側の新規登録・再ログイン・既存アカウントとの連携は、SQLiteを含む自動テストで確認しています。
+[公開設定済み・2026年10月21日] Schiild専用プロバイダー `2005662016` 内に、ウェブアプリ用のLINEログインチャネル `2012141224` を作成・公開しました。戻り先は `https://schiild.app/?auth=line` です。接続情報をWindows資格情報とCloudflare Secretへ保存し、`paused: false` へ変更しています。公開アプリの「LINEでログイン」から、このチャネルのLINE認証画面へ到達することを確認しました。同日、利用者本人から実際にLINEでログインできたことの確認を受けています。初回登録・再ログイン・既存アカウントとの連携はSQLiteを含む自動テストで検証しています。
 
 LINE DevelopersのLINEログインチャネルでウェブアプリを有効にし、コールバックURLを `https://schiild.app/?auth=line` に設定してください。一般の利用者に使ってもらう場合は、チャネルを公開する必要があります。要求スコープは `openid profile` だけです。メールアドレス・電話番号・友だち一覧にはアクセスしません。
 
@@ -129,7 +129,7 @@ LINEだけで作ったアカウントも設定から完全削除できます。I
 
 現在のプランを維持し、R2の利用開始・プラン変更は行いません。静的UIはWorkers Assets、非公開の画像は既存のSQLite Durable Object内に64KiB単位のBLOBとして保持します。画像の論理キー・ハッシュ名・バイト列と、`ATELIERS` / `AtelierDirectory` / `shared-demo-v1` は維持します。アカウント、参加履歴、作品を初期化しません。画像は1件3MBまで、同じキーには上書きしません。これは現在の少量のデモ用構成です。保存量とWorkers/Durable Objectsの利用上限はCloudflareの管理画面で確認してください。
 
-Cloudflareの認証情報はチャットやGit、Expoの公開環境変数に入れません。Windowsでは `LocalApiKeys/cloudflare` に保存し、実行する子プロセスにだけ渡します。既存の通知・認証用Worker Secretsは維持します。GoogleとLINEの接続は保留中です。
+Cloudflareの認証情報はチャットやGit、Expoの公開環境変数に入れません。Windowsでは `LocalApiKeys/cloudflare` に保存し、実行する子プロセスにだけ渡します。既存の通知・認証用Worker Secretsは維持します。LINEの接続は有効です。Googleの接続は保留中です。
 
 ```sh
 pnpm install --frozen-lockfile
