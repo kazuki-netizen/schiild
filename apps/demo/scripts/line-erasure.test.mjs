@@ -8,7 +8,7 @@ import {memoryStore} from '../server/memory-store.mjs';
 import {metadataStore} from '../cloudflare/metadata-store.mjs';
 import {sqliteImages,imageFilename} from '../cloudflare/sqlite-images.mjs';
 import {createAtelierService,images} from '../server/atelier-service.mjs';
-import {lineDeauthorizer} from '../server/line-identity.mjs';
+import {lineDeauthorizer,lineVerifier} from '../server/line-identity.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex'),config={channelId:'1234567890',channelSecret:'f'.repeat(32),redirectUri:'https://app.example/?auth=line'};
 const first='a'.repeat(64),second='b'.repeat(64),fresh='c'.repeat(64);
 const photos=await Promise.all(['#c39582','#78a4bd'].map(async color=>'data:image/jpeg;base64,'+(await sharp({create:{width:1080,height:1080,channels:3,background:color}}).jpeg().toBuffer()).toString('base64')));
@@ -68,6 +68,47 @@ test('an unfinished shared work can still generate after its departed contributo
 });
 test('LINE unlink uses fresh server-only channel/user tokens and refuses provider failure',async()=>{
  const requests=[];let status=204;
- const unlink=lineDeauthorizer(config,'private-user-token',{fetcher:async(url,options)=>{requests.push({url,options});return url.endsWith('/v3/token')?Response.json({access_token:'private-channel-token'}):new Response(null,{status});}});
- await unlink();assert.equal(requests[0].url,'https://api.line.me/oauth2/v3/token');assert.equal(requests[0].options.body.get('client_secret'),config.channelSecret);assert.equal(requests[1].options.headers.Authorization,'Bearer private-channel-token');assert.equal(requests[1].options.body.get('userAccessToken'),'private-user-token');assert.equal(requests[1].options.redirect,'manual');status=503;await assert.rejects(unlink(),error=>error.code==='line_unavailable');
+ const unlink=lineDeauthorizer(config,'private-user-token',{fetcher:async(url,options)=>{
+  requests.push({url,options});const request=new Request(url,options);
+  if(url.endsWith('/v3/token')){assert.equal(request.headers.get('content-type'),'application/x-www-form-urlencoded');return Response.json({access_token:'private-channel-token'});}
+  // Match LINE's actual wire contract: form data fails with HTTP 415.
+  if(request.headers.get('content-type')!=='application/json')return new Response(null,{status:415});
+  assert.deepEqual(await request.json(),{userAccessToken:'private-user-token'});return new Response(null,{status});
+ }});
+ await unlink();assert.equal(requests[0].url,'https://api.line.me/oauth2/v3/token');assert.equal(requests[0].options.body.get('client_secret'),config.channelSecret);assert.equal(requests[1].options.headers.Authorization,'Bearer private-channel-token');assert.equal(requests[1].options.redirect,'manual');status=503;await assert.rejects(unlink(),error=>error.code==='line_unavailable');
+});
+
+test('full LINE callback unlinks via JSON, invalidates every session and permits only an empty explicit signup',async()=>{
+ const proofs=new Map();let unlinkRequests=0;
+ const verify=lineVerifier(config,{fetcher:async(url,options)=>{
+  const request=new Request(url,options),path=new URL(url).pathname;
+  if(path==='/user/v1/deauthorize'){
+   if(request.headers.get('content-type')!=='application/json')return new Response(null,{status:415});
+   assert.equal(request.headers.get('authorization'),'Bearer channel-test-token');
+   assert.deepEqual(await request.json(),{userAccessToken:'user-test-token'});unlinkRequests++;return new Response(null,{status:204});
+  }
+  assert.equal(request.headers.get('content-type'),'application/x-www-form-urlencoded');
+  const body=new URLSearchParams(await request.text());assert.equal(body.get('client_id'),config.channelId);
+  if(path==='/oauth2/v3/token'){assert.equal(body.get('grant_type'),'client_credentials');return Response.json({access_token:'channel-test-token'});}
+  if(path==='/oauth2/v2.1/token'){
+   const proof=proofs.get(body.get('code'));assert(proof);assert.equal(hash(body.get('code_verifier')),proof.verifierHash);assert.equal(body.get('redirect_uri'),config.redirectUri);
+   return Response.json({access_token:'user-test-token',id_token:body.get('code')});
+  }
+  assert.equal(path,'/oauth2/v2.1/verify');const proof=proofs.get(body.get('id_token'));assert(proof);assert.equal(body.get('nonce'),proof.nonce);
+  const seconds=Math.floor(Date.now()/1000);return Response.json({iss:'https://access.line.me',aud:config.channelId,sub:'U'+'1'.repeat(32),nonce:proof.nonce,iat:seconds,exp:seconds+3600,name:'Old LINE display name'});
+ }});
+ const store=memoryStore(),auth=accounts(store,{requireLine:true,images,lineConfig:config,verifyLine:verify});let sequence=0;
+ async function line(token,intent='login',confirmUsername){
+  const start=await auth.execute({action:'account.line.start',intent,confirmUsername},token),params=new URL(start.url).searchParams,code='test-code-'+(++sequence);
+  // Find the server-held verifier to validate the provider exchange in this fixture.
+  const challenge=(await store.listJSON('line-challenges/')).find(row=>row.data.stateHash===hash(start.state)).data;
+  proofs.set(code,{nonce:params.get('nonce'),verifierHash:hash(challenge.verifier)});
+  return auth.execute({action:'account.line',code,state:start.state,expectedIntent:intent},token);
+ }
+ const a=await line(first,'register'),otherSession=await line(second);
+ await auth.execute({action:'account.update',name:'Private profile'},a.token);
+ assert.deepEqual(await line(a.token,'delete',a.account.username),{deleted:true});assert.equal(unlinkRequests,1);
+ for(const token of [a.token,otherSession.token])await assert.rejects(auth.execute({action:'account.me'},token),error=>error.code==='account_deleted');
+ await assert.rejects(line(fresh),error=>error.code==='line_not_registered');const next=await line(fresh,'register');
+ assert.notEqual(next.account.username,a.account.username);assert.equal(next.account.name,'');assert.deepEqual(next.account.ateliers,[]);assert.deepEqual(next.account.custody,[]);
 });

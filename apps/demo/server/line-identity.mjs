@@ -7,13 +7,15 @@ export function validLineConfig(config){
 export function readLineConfig(value){try{const config=JSON.parse(value);return validLineConfig(config)?config:null;}catch{return null;}}
 export function lineDeauthorizer(config,userAccessToken,{fetcher=fetch}={}){
  return async()=>{
-  const post=async(url,values,headers={})=>{try{return await fetcher(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded',...headers},body:new URLSearchParams(values),signal:AbortSignal.timeout(15000),redirect:'manual'});}catch{throw new ApiError(503,'line_unavailable');}};
+  const post=async(url,values,headers={},json=false)=>{try{return await fetcher(url,{method:'POST',headers:{'Content-Type':json?'application/json':'application/x-www-form-urlencoded',...headers},body:json?JSON.stringify(values):new URLSearchParams(values),signal:AbortSignal.timeout(15000),redirect:'manual'});}catch{throw new ApiError(503,'line_unavailable');}};
   if(typeof userAccessToken!=='string'||!userAccessToken||userAccessToken.length>8192)throw new ApiError(503,'line_unavailable');
   const response=await post('https://api.line.me/oauth2/v3/token',{grant_type:'client_credentials',client_id:config.channelId,client_secret:config.channelSecret});
   if(!response.ok)throw new ApiError(503,'line_unavailable');
   let channel;try{channel=await response.json();}catch{throw new ApiError(503,'line_unavailable');}
   if(typeof channel.access_token!=='string'||!channel.access_token||channel.access_token.length>8192)throw new ApiError(503,'line_unavailable');
-  const revoked=await post('https://api.line.me/user/v1/deauthorize',{userAccessToken},{Authorization:'Bearer '+channel.access_token});
+  // LINE's deauthorize endpoint requires JSON, unlike its OAuth token endpoint.
+  // Form encoding returns 415 and must never be mistaken for successful erasure.
+  const revoked=await post('https://api.line.me/user/v1/deauthorize',{userAccessToken},{Authorization:'Bearer '+channel.access_token},true);
   if(revoked.status!==204)throw new ApiError(503,'line_unavailable');
  };
 }

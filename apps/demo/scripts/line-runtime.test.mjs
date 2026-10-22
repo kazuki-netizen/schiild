@@ -10,9 +10,10 @@ const call=(mf,action,values={},credential='a'.repeat(64))=>mf.dispatchFetch('ht
 test('LINE runs authorization-code/PKCE exchange, persistent account restore and deletion inside workerd',{skip:!bundle},async()=>{
  const issued=new Map();let tokenRequests=0,verifyRequests=0;
  const mf=await runtime({bindings:{ALLOWED_ORIGINS:'https://app.example',XSERVER_STORAGE_URL:'https://storage.example/storage.php',XSERVER_STORAGE_SECRET:'f'.repeat(64),LINE_LOGIN_CONFIG:JSON.stringify(config)},outboundService:async request=>{
-  const url=new URL(request.url),body=new URLSearchParams(await request.text());assert.equal(url.origin,'https://api.line.me');
+  const url=new URL(request.url);assert.equal(url.origin,'https://api.line.me');
+  if(url.pathname==='/user/v1/deauthorize'){assert.equal(request.headers.get('authorization'),'Bearer private-channel-token');assert.equal(request.headers.get('content-type'),'application/json');assert.deepEqual(await request.json(),{userAccessToken:'private-user-token'});return new Response(null,{status:204});}
+  const body=new URLSearchParams(await request.text());
   if(url.pathname==='/oauth2/v3/token')return Response.json({access_token:'private-channel-token'});
-  if(url.pathname==='/user/v1/deauthorize'){assert.equal(request.headers.get('authorization'),'Bearer private-channel-token');assert.equal(body.get('userAccessToken'),'private-user-token');return new Response(null,{status:204});}
   if(url.pathname.endsWith('/token')){tokenRequests++;assert.equal(body.get('client_secret'),config.channelSecret);assert.equal(body.get('redirect_uri'),config.redirectUri);const challenge=issued.get(body.get('code'));assert(challenge);assert.equal(createHash('sha256').update(body.get('code_verifier')).digest('base64url'),challenge.get('code_challenge'));return Response.json({id_token:body.get('code'),access_token:'private-user-token'});}
   assert.equal(url.pathname,'/oauth2/v2.1/verify');verifyRequests++;const challenge=issued.get(body.get('id_token'));assert(challenge);assert.equal(body.get('nonce'),challenge.get('nonce'));const seconds=Math.floor(Date.now()/1000);return Response.json({iss:'https://access.line.me',aud:config.channelId,sub:'U'+'1'.repeat(32),nonce:challenge.get('nonce'),iat:seconds,exp:seconds+3600,auth_time:seconds,name:'Runtime LINE'});
  }});
