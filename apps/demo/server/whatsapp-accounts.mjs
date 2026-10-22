@@ -23,10 +23,11 @@ async function claimQuota(store,now){
   if(!claimed)fail(429,'whatsapp_limited');
  }
 }
-function sender(message,phoneNumberId){
- const scoped=message.from_user_id;
- if(typeof scoped==='string'&&/^[A-Za-z0-9._-]{3,128}$/.test(scoped))return {subject:hash(phoneNumberId+'/bsuid/'+scoped),hint:'WhatsApp'};
- if(typeof message.from==='string'&&/^[1-9][0-9]{6,14}$/.test(message.from))return {subject:hash(phoneNumberId+'/phone/'+message.from),hint:'•••• '+message.from.slice(-4)};
+function sender(message,phoneNumberId,conversation){
+ const phone=typeof message.from==='string'&&/^[1-9][0-9]{6,14}$/.test(message.from)?message.from:null;
+ const scoped=message.from_user_id??conversation?.business_scoped_user_id;
+ if(typeof scoped==='string'&&/^[A-Za-z0-9._-]{3,128}$/.test(scoped))return {subject:hash(phoneNumberId+'/bsuid/'+scoped),hint:phone?'•••• '+phone.slice(-4):'WhatsApp'};
+ if(phone)return {subject:hash(phoneNumberId+'/phone/'+phone),hint:'•••• '+phone.slice(-4)};
  return null;
 }
 export function whatsappAccounts(store,{config,now=()=>Date.now(),identity,session,purgePhotos=false,images}){
@@ -90,13 +91,20 @@ export function whatsappAccounts(store,{config,now=()=>Date.now(),identity,sessi
   if(items.length>50)fail(400,'invalid');
   for(const item of items){
    const message=item?.message;
-   if(item?.phone_number_id!==config.phoneNumberId||message?.type!=='text'||message?.kapso?.direction!=='inbound'||typeof message['id']!=='string'||message['id'].length>512)continue;
+   if(item?.phone_number_id!==config.phoneNumberId||message?.type!=='text'||typeof message['id']!=='string'||message['id'].length>512)continue;
+   // Live Kapso v2 deliveries identify inbound messages by their signed root type;
+   // the optional message.kapso extension is absent on these deliveries.
+   const direction=message.kapso?.direction;
+   if(item.type!==undefined&&item.type!=='whatsapp.message.received')continue;
+   if(direction!==undefined&&direction!=='inbound')continue;
+   if(direction!=='inbound'&&item.type!=='whatsapp.message.received')continue;
+   if(item.conversation?.phone_number_id!==undefined&&item.conversation.phone_number_id!==config.phoneNumberId)continue;
    const text=message.text?.body;
    if(typeof text!=='string'||text.length>512)continue;
-   const match=/^Schiild (LOGIN|REGISTER|DELETE) ([a-f0-9]{64})\nOnly send this message if you started this action on schiild\.app\. Do not forward it\.$/.exec(text.trim());
+   const match=/^Schiild (LOGIN|REGISTER|DELETE) ([a-f0-9]{64}) Only send this message if you started this action on schiild\.app\. Do not forward it\.$/.exec(text.trim().replace(/\s+/g,' '));
    if(!match)continue;
    const key=`whatsapp-challenges/${hash(match[2])}`,row=await store.getWithMetadata(key,{type:'json'}),value=row?.data;
-   const identity=sender(message,config.phoneNumberId),sentAt=Number(message.timestamp)*1000;
+   const identity=sender(message,config.phoneNumberId,item.conversation),sentAt=Number(message.timestamp)*1000;
    if(!identity||!value||value.used||value.subject||value.expires<=now()||value.intent!==match[1].toLowerCase()||!Number.isFinite(sentAt)||sentAt<value.createdAt-10000||sentAt>now()+30000)continue;
    await store.setJSON(key,{...value,...identity,messageHash:hash(message['id'])},{onlyIfMatch:row.etag});
   }

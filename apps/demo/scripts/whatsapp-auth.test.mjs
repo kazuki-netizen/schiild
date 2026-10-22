@@ -103,3 +103,31 @@ test('production SQLite atomically claims WhatsApp identities and removes their 
   assert.equal((await f.store.listJSON('whatsapp-identities/')).length,0);assert.equal((await f.store.listJSON('whatsapp-challenges/')).filter(row=>row.data.member===member).length,0);await assert.rejects(f.call('account.me',{},signed.token),error=>error.code==='account_deleted');
  }finally{db.close();}
 });
+
+test('live Kapso v2 envelopes accept single-line WhatsApp prefills and stable conversation BSUIDs',async()=>{
+ const f=fixture(),value=await f.start(),payload=f.payload(value);
+ delete payload.message.kapso;payload.type='whatsapp.message.received';
+ payload.message.text.body=payload.message.text.body.replace(/\s+/g,' ');
+ payload.conversation={phone_number_id:config.phoneNumberId,phone_number:payload.message.from,business_scoped_user_id:'JP.1234567890123456'};
+ const raw=JSON.stringify(payload),signature=createHmac('sha256',config.webhookSecret).update(raw).digest('hex');
+ const env={WHATSAPP_LOGIN_CONFIG:JSON.stringify(config),ATELIERS:{idFromName:()=>1,get:()=>({receiveWhatsApp:body=>f.auth.receiveWhatsApp(body)})}};
+ assert.equal((await whatsappWebhook(new Request('https://schiild.app/api/auth/whatsapp',{method:'POST',headers:{'X-Webhook-Signature':signature,'X-Webhook-Event':'whatsapp.message.received'},body:raw}),env)).status,200);
+ assert.equal((await f.call('account.whatsapp.status',{state:value.state})).received,true);
+ assert.equal((await f.call('account.whatsapp.status',{state:value.state})).hint,'•••• 0123');
+ const signed=await f.finish(value);assert(signed.account.whatsappLinked);
+ const again=await f.start('login',second),returning=f.payload(again);
+ delete returning.message.kapso;delete returning.message.from;returning.type='whatsapp.message.received';returning.conversation={phone_number_id:config.phoneNumberId,business_scoped_user_id:payload.conversation.business_scoped_user_id};
+ returning.message.text.body=returning.message.text.body.replace(/\s+/g,' ');
+ await f.auth.receiveWhatsApp(returning);assert.equal((await f.finish(again,second)).account.username,signed.account.username);
+});
+test('root event classification never accepts outbound, unclassified or mismatched conversation deliveries',async()=>{
+ const f=fixture(),value=await f.start();
+ for(const change of [
+  payload=>{payload.type='whatsapp.message.sent';},
+  payload=>{payload.type='whatsapp.message.received';payload.message.kapso.direction='outbound';},
+  payload=>{delete payload.message.kapso;},
+  payload=>{delete payload.message.kapso;payload.type='whatsapp.message.received';payload.conversation={phone_number_id:'222222222222222',business_scoped_user_id:'JP.1234567890123456'};},
+  payload=>{delete payload.message.kapso;payload.type='whatsapp.message.received';payload.message.text.body='Schiild REGISTER '+value.state;},
+ ]){const payload=f.payload(value);change(payload);await f.auth.receiveWhatsApp(payload);assert.equal((await f.call('account.whatsapp.status',{state:value.state})).received,false);}
+ const correct=f.payload(value);delete correct.message.kapso;correct.type='whatsapp.message.received';correct.message.text.body=correct.message.text.body.replace('\n','\r\n');await f.auth.receiveWhatsApp(correct);assert.equal((await f.call('account.whatsapp.status',{state:value.state})).received,true);
+});

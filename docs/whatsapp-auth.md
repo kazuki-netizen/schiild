@@ -5,12 +5,12 @@ Approved scope: customers register and sign in by sending a pre-filled WhatsApp 
 ## Protocol
 
 1. A browser starts a register/login/delete challenge, bound to its existing credential and intent. The cryptographic random challenge expires in five minutes.
-2. The customer follows a wa.me link, sends the complete message, and returns to the original browser.
+2. The customer follows a wa.me link, sends the complete message, and returns to the original browser. Whitespace-only transformations (including a single-line prefill) are normalized before matching the intent, token and complete warning.
 3. Kapso delivers only `whatsapp.message.received` events (v2, buffering off) to `https://schiild.app/api/auth/whatsapp`.
-4. The Worker validates HMAC SHA-256 over the exact raw body, event, configured destination number, inbound direction, timestamp, and challenge. It stores the hashed sender identity; the webhook cannot issue a login session.
+4. The Worker validates HMAC SHA-256 over the exact raw body, event, configured destination number, inbound classification, timestamp, and challenge. Live v2 deliveries carry `type: whatsapp.message.received` and may omit `message.kapso.direction`; explicit outbound direction or a conflicting root type is always rejected. It stores the hashed sender identity; the webhook cannot issue a login session.
 5. The bound browser checks for receipt and explicitly continues with the masked sender. Atomic consumption prevents replay and duplicate registration. Login cannot register a new identity, registration cannot silently sign into an existing identity, and deletion requires fresh proof from the registered sender.
 
-The phone number or business-scoped user ID is hashed before storage. A short-lived challenge stores only the final four phone digits for the confirmation screen (or a generic WhatsApp hint for BSUID-only events). Raw unrelated messages are ignored and not stored or logged by Schiild. Kapso retains its own records under its service settings. Existing LINE accounts are not automatically merged.
+The phone number or business-scoped user ID is hashed before storage. The BSUID can come from `message.from_user_id` or the signed conversation’s `business_scoped_user_id`. A short-lived challenge stores only the final four phone digits for the confirmation screen (or a generic WhatsApp hint for BSUID-only events). Raw unrelated messages are ignored and not stored or logged by Schiild. Kapso retains its own records under its service settings. Existing LINE accounts are not automatically merged.
 
 ## Configuration and rollout
 
